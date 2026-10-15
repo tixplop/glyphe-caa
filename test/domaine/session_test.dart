@@ -89,6 +89,7 @@ class VoixQuiLeve extends FauxVoix {
 }
 
 void main() {
+  testsSetterDonnees();
   group('REQ-002 parole et ajout', () {
     test('REQ002_AC1 texte prononcé dit et élément ajouté', () async {
       final t = cree();
@@ -359,6 +360,55 @@ void main() {
 
     test('REQ010_AC2 activé : retour à l\'accueil', () async {
       expect((await dansManger(true)).grilleCourante.id, 'acc');
+    });
+  });
+}
+
+void testsSetterDonnees() {
+  group('Session.donnees (setter)', () {
+    test('REQ018 remplacement conserve la grille courante si elle existe', () {
+      final x = cree();
+      x.s.appuyerCase(c(x.s, 'd-manger'));
+      final d = donnees(reglages: const Reglages(retourAccueilApresMot: true));
+      x.s.donnees = d;
+      expect(x.s.grilleCourante.id, 'manger-g');
+      expect(x.s.donnees, same(d));
+    });
+
+    test(
+      'grille courante supprimée : retour à l\'accueil, historique vidé',
+      () {
+        final x = cree();
+        x.s.appuyerCase(c(x.s, 'd-manger'));
+        final d = donnees();
+        x.s.donnees = Donnees(accueilId: 'acc', grilles: [d.grillePar('acc')!]);
+        expect(x.s.grilleCourante.id, 'acc');
+        x.s.retour();
+        expect(x.s.grilleCourante.id, 'acc');
+      },
+    );
+
+    test('grille d\'historique supprimée : retiré de l\'historique', () {
+      final x = cree();
+      x.s.appuyerCase(c(x.s, 'd-manger'));
+      x.s.appuyerCase(c(x.s, 'd-fruits'));
+      final d = donnees();
+      x.s.donnees = Donnees(
+        accueilId: 'acc',
+        grilles: [d.grillePar('acc')!, d.grillePar('fruits-g')!],
+      );
+      expect(x.s.grilleCourante.id, 'fruits-g');
+      x.s.retour();
+      expect(x.s.grilleCourante.id, 'acc');
+    });
+
+    test('accueil introuvable : erreur explicite, état inchangé', () {
+      final x = cree();
+      expect(
+        () => x.s.donnees = Donnees(accueilId: 'nulle part'),
+        throwsArgumentError,
+      );
+      expect(x.s.grilleCourante.id, 'acc');
     });
   });
 }

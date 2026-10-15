@@ -37,8 +37,16 @@ class Session extends ChangeNotifier {
   Donnees get donnees => _donnees;
 
   /// Remplace les données (ex. après édition) ; si la grille courante a
-  /// disparu, retour à l'accueil.
+  /// disparu, retour à l'accueil. Lève [ArgumentError] si la grille d'accueil
+  /// des nouvelles données n'existe pas (l'état reste inchangé).
   set donnees(Donnees d) {
+    if (d.grillePar(d.accueilId) == null) {
+      throw ArgumentError.value(
+        d.accueilId,
+        'accueilId',
+        'grille d\'accueil introuvable',
+      );
+    }
     _donnees = d;
     _historique.removeWhere((id) => d.grillePar(id) == null);
     if (d.grillePar(_grilleId) == null) {
