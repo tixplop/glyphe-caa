@@ -17,7 +17,9 @@ class GlypheApp extends StatelessWidget {
     final e = etat;
     return MaterialApp(
       title: Textes.titreAppli,
-      theme: themeGlyphe(),
+      theme: themeGlyphe(Brightness.light),
+      darkTheme: themeGlyphe(Brightness.dark),
+      themeMode: ThemeMode.system,
       builder: (context, child) =>
           PhotosScope(photos: e?.photos, child: child ?? const SizedBox()),
       home: e != null && e.pret

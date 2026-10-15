@@ -150,5 +150,8 @@ class Textes {
       'Creative Commons BY-NC-SA.';
   static const String gratuitNonCommercial =
       'Glyphe est gratuit et non commercial.';
+  static const String creditPolice =
+      'Police : Atkinson Hyperlegible (Braille Institute), licence SIL '
+      'Open Font License 1.1.';
   static const String versionLabel = 'Version';
 }

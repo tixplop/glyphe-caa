@@ -171,7 +171,7 @@ class _EcranReglagesState extends State<EcranReglages> {
     padding: const EdgeInsets.symmetric(horizontal: 16),
     child: Row(
       children: [
-        SizedBox(width: 96, child: Text('$nom : ${format(valeur)}')),
+        SizedBox(width: 144, child: Text('$nom : ${format(valeur)}')),
         Expanded(
           child: Slider(
             key: cle,

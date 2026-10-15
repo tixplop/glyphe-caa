@@ -27,6 +27,8 @@ class EcranAPropos extends StatelessWidget {
             Text('${Textes.versionLabel} $versionAppli', style: style),
             const SizedBox(height: 12),
             Text(Textes.attributionArasaac, style: style),
+            const SizedBox(height: 12),
+            Text(Textes.creditPolice, style: style),
           ],
         ),
       ),

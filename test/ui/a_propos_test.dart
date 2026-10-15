@@ -39,6 +39,19 @@ void main() {
     },
   );
 
+  testWidgets('REQ027_AC3 crédite la police Atkinson Hyperlegible', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: EcranAPropos()));
+    expect(
+      find.text(
+        'Police : Atkinson Hyperlegible (Braille Institute), licence SIL '
+        'Open Font License 1.1.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   for (final edition in [false, true]) {
     testWidgets('REQ027_AC1 accessible depuis la communication (édition: '
         '$edition)', (tester) async {
