@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyphe/domaine/modeles.dart';
 import 'package:glyphe/ui/app.dart';
@@ -248,24 +249,83 @@ void main() {
       expect(e.etat.session.barre, isEmpty);
     });
 
-    testWidgets('REQ008_AC4 dossier a une icône dossier, pas un mot', (
+    testWidgets('REQ008_AC4 dossier a un coin replié, pas un mot', (
       tester,
     ) async {
       await lance(tester);
       expect(
         find.descendant(
           of: find.byKey(const Key('case-d-manger')),
-          matching: find.byIcon(Icons.folder),
+          matching: find.byKey(const Key('coin-dossier')),
         ),
         findsOneWidget,
       );
+      expect(find.byIcon(Icons.folder), findsNothing);
       expect(
         find.descendant(
           of: find.byKey(const Key('case-eau')),
-          matching: find.byIcon(Icons.folder),
+          matching: find.byKey(const Key('coin-dossier')),
         ),
         findsNothing,
       );
+    });
+
+    testWidgets('REQ033_AC4 Tab : cases de la ligne 0 de gauche à droite', (
+      tester,
+    ) async {
+      await lance(tester);
+      final anneau = find.byKey(const Key('anneau-focus'));
+      // Les commandes de l'écran précèdent la grille dans l'ordre de focus.
+      var essais = 0;
+      while (anneau.evaluate().isEmpty && essais++ < 30) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+      }
+      for (final id in ['je', 'veux', 'manger', 'eau', 'wc']) {
+        expect(anneau, findsOneWidget);
+        expect(
+          find.descendant(of: find.byKey(Key('case-$id')), matching: anneau),
+          findsOneWidget,
+          reason: id,
+        );
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+      }
+    });
+
+    testWidgets('REQ033_AC5 emplacement libre : rien en communication', (
+      tester,
+    ) async {
+      await lance(tester);
+      expect(find.byKey(const Key('vide-0-0')), findsNothing);
+      expect(find.byIcon(Icons.add), findsNothing);
+    });
+
+    testWidgets('REQ033_AC5 emplacement libre en édition : contour, « + »', (
+      tester,
+    ) async {
+      final e = await lance(tester);
+      e.etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      final vide = find.byKey(const Key('vide-1-3'));
+      expect(vide, findsOneWidget);
+      final deco =
+          tester
+                  .widget<DecoratedBox>(
+                    find.descendant(
+                      of: vide,
+                      matching: find.byType(DecoratedBox),
+                    ),
+                  )
+                  .decoration
+              as BoxDecoration;
+      expect((deco.border! as Border).top.color, GlypheTokens.clair.border);
+      expect(deco.borderRadius, BorderRadius.circular(14));
+      final icone = tester.widget<Icon>(
+        find.descendant(of: vide, matching: find.byIcon(Icons.add)),
+      );
+      expect(icone.color, GlypheTokens.clair.ink);
+      expect(find.bySemanticsLabel('Ajouter une case'), findsWidgets);
     });
 
     testWidgets('REQ009_AC1 Retour remonte pas à pas', (tester) async {

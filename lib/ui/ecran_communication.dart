@@ -11,6 +11,7 @@ import 'ecran_grilles.dart';
 import 'ecran_reglages.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
+import 'tokens.dart';
 import 'widgets/barre_phrase.dart';
 import 'widgets/cadenas.dart';
 import 'widgets/case_widget.dart';
@@ -370,7 +371,13 @@ class _GrilleWidget extends StatelessWidget {
               children: [
                 for (var col = 0; col < grille.colonnes; col++)
                   Expanded(
-                    child: _cellule(grille, l, col, parPosition[(l, col)]),
+                    child: _cellule(
+                      context,
+                      grille,
+                      l,
+                      col,
+                      parPosition[(l, col)],
+                    ),
                   ),
               ],
             ),
@@ -379,24 +386,33 @@ class _GrilleWidget extends StatelessWidget {
     );
   }
 
-  Widget _cellule(Grille grille, int l, int col, Case? c) {
+  Widget _cellule(
+    BuildContext context,
+    Grille grille,
+    int l,
+    int col,
+    Case? c,
+  ) {
     if (c == null) {
       if (!modeEdition) return const SizedBox.shrink();
+      final t = GlypheTokens.of(context);
       return Padding(
         padding: const EdgeInsets.all(3),
         child: Semantics(
           button: true,
           label: Textes.ajouterCase,
           excludeSemantics: true,
+          onTap: () => onEditer(grille, ligne: l, colonne: col),
           child: InkWell(
             key: Key('vide-$l-$col'),
+            borderRadius: BorderRadius.circular(GlypheTokens.rayonMd),
             onTap: () => onEditer(grille, ligne: l, colonne: col),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.black38),
-                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: t.border),
+                borderRadius: BorderRadius.circular(GlypheTokens.rayonMd),
               ),
-              child: const Center(child: Icon(Icons.add)),
+              child: Center(child: Icon(Icons.add, color: t.ink)),
             ),
           ),
         ),
