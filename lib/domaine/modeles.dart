@@ -180,7 +180,7 @@ class Reglages {
     this.debit = 1.0,
     this.hauteur = 1.0,
     this.volume = 1.0,
-    this.delaiAntiRepetitionMs = 1000,
+    this.delaiAntiRepetitionMs = 0,
     this.retourAccueilApresMot = false,
   });
 
