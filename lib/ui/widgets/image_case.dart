@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../domaine/modeles.dart';
 import '../../domaine/photos.dart';
+import '../tokens.dart';
 
 /// Rend le dossier des photos accessible aux images de cases.
 class PhotosScope extends InheritedWidget {
@@ -26,8 +27,10 @@ class ImageCaseWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget absente(BuildContext _, Object _, StackTrace? _) =>
-        const Icon(Icons.image_not_supported_outlined, color: Colors.black54);
+    Widget absente(BuildContext _, Object _, StackTrace? _) => Icon(
+      Icons.image_not_supported_outlined,
+      color: GlypheTokens.of(context).inkMuted,
+    );
     return switch (image) {
       ImageArasaac(:final id) => Image.asset(
         'assets/arasaac/$id.png',

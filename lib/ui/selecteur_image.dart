@@ -7,6 +7,7 @@ import '../domaine/modeles.dart';
 import '../domaine/source_photo.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
+import 'tokens.dart';
 import 'widgets/image_case.dart';
 
 /// Image choisie ; [motCle] propose un libellé pour un pictogramme (REQ-015).
@@ -134,7 +135,9 @@ class _SelecteurImageState extends State<SelecteurImage> {
                 mot,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.black, fontSize: 14),
+                style: GlypheTokens.caption.copyWith(
+                  color: GlypheTokens.of(context).ink,
+                ),
               ),
             ],
           ),

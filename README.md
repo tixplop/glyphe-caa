@@ -52,6 +52,16 @@ dart run tool/generer_banque_arasaac.dart
 
 Le code est compatible iOS, mais il n'est pas compilé ni testé sans Mac : seul Android est construit.
 
+## Disposition (version 1.1.0)
+
+- **Communication** : en haut, la barre de phrase (la phrase composée, avec « Effacer » et « Parler »). Un appui long sur « Effacer » vide toute la phrase ; « Parler » devient « Arrêter » pendant la lecture. Dessous, les onglets des grilles, puis la grille de cases qui remplit l'écran, sans défilement. Le cadenas est discret et se maintient appuyé pour déverrouiller l'édition.
+- **Édition** : une barre en bas propose « Terminer », « Ajouter une case » et le menu « Plus » (code, grilles, taille de la grille, réglages, À propos).
+- **Catégories de cases** : chaque case a une catégorie grammaticale (personne, action, objet, description, social, question, petit mot) qui détermine sa couleur de fond et de contour, comme dans Grid 3.
+- **Thème sombre automatique** : l'appli suit le réglage clair ou sombre du système ; il n'y a pas de réglage manuel. Les couleurs viennent des tokens du design system (`lib/ui/tokens.dart`).
+- **Police** : Atkinson Hyperlegible (Braille Institute), embarquée, licence SIL Open Font License 1.1 (`assets/fonts/OFL.txt`). Aucun téléchargement à l'exécution.
+- **Taille de texte du système** : appliquée aux réglages, à l'édition et à À propos ; l'écran de communication garde sa géométrie.
+- **Sauvegarde** : le format est la version 2 (grilles avec catégories) ; les sauvegardes de la version 1 restent importables.
+
 ## Usage
 
 - **Déverrouiller l'édition** : maintenir le cadenas appuyé 3 secondes. Si un code est défini, il est demandé.

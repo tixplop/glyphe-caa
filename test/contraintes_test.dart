@@ -43,4 +43,18 @@ void main() {
       }
     }
   });
+
+  test('REQ035_AC2 aucune couleur en dur dans lib/ui', () {
+    final fautes = <String>[];
+    for (final f in Directory('lib/ui').listSync(recursive: true)) {
+      if (f is! File || !f.path.endsWith('.dart')) continue;
+      final src = f.readAsStringSync().replaceAll(RegExp(r'//[^\n]*'), '');
+      for (final m in RegExp(r'Colors\.(\w+)').allMatches(src)) {
+        if (m.group(1) != 'transparent') {
+          fautes.add('${f.path} : ${m.group(0)}');
+        }
+      }
+    }
+    expect(fautes, isEmpty);
+  });
 }
