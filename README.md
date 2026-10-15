@@ -52,10 +52,12 @@ dart run tool/generer_banque_arasaac.dart
 
 Le code est compatible iOS, mais il n'est pas compilé ni testé sans Mac : seul Android est construit.
 
-## Disposition (version 1.1.0)
+## Disposition (version 1.2.0)
 
-- **Communication** : en haut, la barre de phrase (la phrase composée, avec « Effacer » et « Parler »). Un appui long sur « Effacer » vide toute la phrase ; « Parler » devient « Arrêter » pendant la lecture. Dessous, les onglets des grilles, puis la grille de cases qui remplit l'écran, sans défilement. Le cadenas est discret et se maintient appuyé pour déverrouiller l'édition.
-- **Édition** : une barre en bas propose « Terminer », « Ajouter une case » et le menu « Plus » (code, grilles, taille de la grille, réglages, À propos).
+- **Communication** : en haut, la barre de phrase (la phrase composée) avec deux boutons icônes : « Effacer le dernier mot » (appui long : tout effacer) et « Parler » (qui devient « Arrêter » pendant la lecture). Dessous, la barre de navigation : Retour en icône, onglets de grilles en pictogrammes (seul un onglet sans image garde son texte), puis le cadenas, discret, à maintenir appuyé pour déverrouiller l'édition. La grille de cases remplit le reste de l'écran, sans défilement.
+- **Édition** : la barre d'édition remplace la barre de phrase ; elle affiche le titre (« Mode édition » et le nom de la grille), « Ajouter une case », le menu « Plus » (code, grilles, taille de la grille, réglages, À propos) et « Terminer » (icône de cadenas) pour refermer l'édition.
+- **Édition d'une case** : les actions sont des icônes dans la barre d'application, toujours visibles : Supprimer, Échanger avec l'emplacement…, Ouvrir (dossier), Enregistrer. On touche l'aperçu de l'image, à côté du libellé, pour choisir l'image.
+- **Aide pour l'aidant** : les boutons de la barre d'édition et de l'édition de case ont une info-bulle (appui long) qui donne leur nom ; l'écran de communication n'en affiche pas.
 - **Catégories de cases** : chaque case a une catégorie grammaticale (personne, action, objet, description, social, question, petit mot) qui détermine sa couleur de fond et de contour, comme dans Grid 3.
 - **Thème sombre automatique** : l'appli suit le réglage clair ou sombre du système ; il n'y a pas de réglage manuel. Les couleurs viennent des tokens du design system (`lib/ui/tokens.dart`).
 - **Police** : Atkinson Hyperlegible (Braille Institute), embarquée, licence SIL Open Font License 1.1 (`assets/fonts/OFL.txt`). Aucun téléchargement à l'exécution.

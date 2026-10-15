@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyphe/domaine/banque_pictos.dart';
+import 'package:glyphe/domaine/modeles.dart';
 import 'package:glyphe/domaine/photos.dart';
 import 'package:glyphe/ui/app.dart';
 import 'package:glyphe/ui/ecran_a_propos.dart';
@@ -213,4 +214,141 @@ void main() {
       });
     }
   }
+
+  group('REQ036 écrans transverses', () {
+    EtatAppli etatDossier() {
+      final etat = EtatAppli(
+        stockage: FauxStockage(
+          Donnees(
+            accueilId: 'acc',
+            grilles: [
+              Grille(
+                id: 'acc',
+                nom: 'Accueil',
+                lignes: 2,
+                colonnes: 2,
+                cases: [
+                  Case(
+                    id: 'je',
+                    ligne: 0,
+                    colonne: 0,
+                    type: TypeCase.mot,
+                    libelle: 'je',
+                  ),
+                  Case(
+                    id: 'd-man',
+                    ligne: 0,
+                    colonne: 1,
+                    type: TypeCase.dossier,
+                    libelle: 'Manger',
+                    cibleId: 'man',
+                  ),
+                ],
+              ),
+              Grille(
+                id: 'man',
+                nom: 'Manger',
+                lignes: 2,
+                colonnes: 2,
+                cases: [],
+              ),
+            ],
+          ),
+        ),
+        voix: FauxVoix(),
+        horloge: FausseHorloge(),
+        jsonExemples: '{}',
+      );
+      return etat;
+    }
+
+    Future<EtatAppli> lancer(
+      WidgetTester tester,
+      Size taille,
+      bool sombre,
+    ) async {
+      tester.view.physicalSize = taille;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      if (sombre) {
+        tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      }
+      final etat = etatDossier();
+      await etat.init();
+      await tester.pumpWidget(GlypheApp(etat: etat));
+      await tester.pumpAndSettle();
+      return etat;
+    }
+
+    for (final sombre in const [false, true]) {
+      for (final taille in const [Size(360, 640), Size(640, 360)]) {
+        testWidgets('REQ036_AC5 AC6 communication, édition, menu Plus, '
+            'édition de case, ${sombre ? 'sombre' : 'clair'} $taille', (
+          tester,
+        ) async {
+          final h = tester.ensureSemantics();
+          final etat = await lancer(tester, taille, sombre);
+          await tester.tap(find.byKey(const Key('case-je')));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          await verifier(tester); // communication
+
+          etat.ouvrirEdition();
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          await verifier(tester); // édition
+
+          await tester.tap(find.byKey(const Key('bouton-plus')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('bouton-reglages')), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await verifier(tester); // menu Plus ouvert
+          await tester.tapAt(const Offset(2, 2));
+          await tester.pumpAndSettle();
+
+          await tester.tap(find.byKey(const Key('case-d-man')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('ecran-edition-case')), findsOneWidget);
+          expect(find.byKey(const Key('bouton-ouvrir')), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await verifier(tester); // édition de case
+          h.dispose();
+        });
+      }
+    }
+
+    testWidgets('REQ036_AC1 libellés et cibles des trois barres', (
+      tester,
+    ) async {
+      final h = tester.ensureSemantics();
+      final etat = await lancer(tester, const Size(360, 640), false);
+      await tester.tap(find.byKey(const Key('case-je')));
+      await tester.tap(find.byKey(const Key('case-d-man')));
+      await tester.pumpAndSettle();
+      void commande(String cle, String libelle, {bool bouton = true}) {
+        expect(
+          tester.getSemantics(find.byKey(Key(cle))),
+          bouton
+              ? isSemantics(label: libelle, isButton: true)
+              : isSemantics(label: libelle),
+          reason: '$cle / $libelle',
+        );
+        final taille = tester.getSize(find.byKey(Key(cle)));
+        expect(taille.width, greaterThanOrEqualTo(48), reason: cle);
+        expect(taille.height, greaterThanOrEqualTo(48), reason: cle);
+      }
+
+      commande('bouton-retour', 'Retour');
+      commande('bouton-effacer', 'Effacer le dernier mot');
+      commande('bouton-parler', 'Parler');
+      commande('cadenas', 'Verrouillé', bouton: false);
+      etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      commande('bouton-terminer', 'Terminer');
+      commande('ajouter-case', 'Ajouter une case');
+      commande('bouton-plus', 'Plus');
+      h.dispose();
+    });
+  });
 }

@@ -48,7 +48,7 @@ ThemeData themeGlyphe(Brightness luminosite) {
       bodyLarge: s(GlypheTokens.body),
       bodyMedium: s(GlypheTokens.body),
       bodySmall: s(GlypheTokens.caption),
-      labelLarge: s(GlypheTokens.caption.copyWith(fontWeight: FontWeight.w700)),
+      labelLarge: s(GlypheTokens.body.copyWith(fontWeight: FontWeight.w700)),
       labelMedium: s(
         GlypheTokens.caption.copyWith(fontWeight: FontWeight.w700),
       ),
