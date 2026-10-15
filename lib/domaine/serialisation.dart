@@ -2,6 +2,7 @@
 library;
 
 import 'modeles.dart';
+import 'photos.dart';
 
 class FormatInvalide implements Exception {
   FormatInvalide(this.message);
@@ -77,7 +78,7 @@ ImageCase _imageDepuisChaine(String s) {
   if (s.startsWith('arasaac:')) {
     final id = int.tryParse(s.substring(8));
     if (id != null) return ImageArasaac(id);
-  } else if (s.startsWith('photo:') && s.length > 6) {
+  } else if (s.startsWith('photo:') && nomPhotoValide(s.substring(6))) {
     return ImagePhoto(s.substring(6));
   }
   throw FormatInvalide('image inconnue : $s');

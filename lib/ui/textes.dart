@@ -49,6 +49,21 @@ class Textes {
   static const String nomNouvelleGrille = 'Nouvelle grille';
   static const String image = 'Image';
   static const String imageAucune = 'aucune';
+  static const String choisirImage = 'Choisir une image';
+  static const String rechercherPicto = 'Rechercher un pictogramme';
+  static const String indiceRecherche =
+      'Tapez un mot pour chercher un pictogramme';
+  static const String aucunPicto = 'Aucun pictogramme trouvé';
+  static const String prendrePhoto = 'Prendre une photo';
+  static const String choisirGalerie = 'Choisir dans la galerie';
+  static const String cameraRefusee =
+      'Accès à l\'appareil photo refusé. Autorisez-le dans les réglages '
+      'de l\'appareil ; les pictogrammes restent utilisables.';
+  static const String galerieRefusee =
+      'Accès aux photos refusé. Autorisez-le dans les réglages de '
+      'l\'appareil ; les pictogrammes restent utilisables.';
+  static const String erreurPhoto = 'Impossible d\'enregistrer cette photo';
+  static String picto(String motCle) => 'Pictogramme $motCle';
   static const String ouvrir = 'Ouvrir';
   static const String supprimer = 'Supprimer';
   static const String echanger = 'Échanger avec l\'emplacement…';

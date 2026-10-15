@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'domaine/horloge.dart';
+import 'domaine/photos.dart';
+import 'plateforme/source_photo_image_picker.dart';
 import 'plateforme/stockage_fichier.dart';
 import 'plateforme/voix_flutter_tts.dart';
 import 'ui/app.dart';
@@ -17,12 +19,16 @@ Future<void> main() async {
       '${(await getApplicationSupportDirectory()).path}/glyphe',
     );
     await dossier.create(recursive: true);
+    final stockage = StockageFichier(dossier);
     final etat = EtatAppli(
-      stockage: StockageFichier(dossier),
+      stockage: stockage,
       voix: VoixFlutterTts(),
       horloge: const HorlogeSysteme(),
       jsonExemples: await EtatAppli.chargerExemples(),
       jsonPhrases: await EtatAppli.chargerPhrases(),
+      banque: await EtatAppli.chargerBanque(),
+      sourcePhoto: SourcePhotoImagePicker(),
+      photos: Photos(stockage.dossierPhotos),
     );
     await etat.init();
     runApp(GlypheApp(etat: etat));

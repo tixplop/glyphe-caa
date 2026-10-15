@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../domaine/edition.dart';
 import '../domaine/modeles.dart';
 import 'etat_appli.dart';
+import 'selecteur_image.dart';
 import 'textes.dart';
 import 'theme.dart';
 import 'widgets/image_case.dart';
@@ -45,6 +46,9 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
   String? _cible;
   String? _erreur;
 
+  /// Une photo a été importée pendant l'édition : à nettoyer si non retenue.
+  bool _photoImportee = false;
+
   Case? get _existante => widget.caseExistante;
 
   @override
@@ -66,7 +70,21 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
   void dispose() {
     _libelle.dispose();
     _texte.dispose();
+    if (_photoImportee) widget.etat.nettoyerPhotos();
     super.dispose();
+  }
+
+  Future<void> _choisirImage() async {
+    final r = await Navigator.of(context).push<ResultatImage>(
+      MaterialPageRoute(builder: (_) => SelecteurImage(etat: widget.etat)),
+    );
+    if (r == null || !mounted) return;
+    setState(() {
+      _image = r.image;
+      if (r.image is ImagePhoto) _photoImportee = true;
+      final mot = r.motCle;
+      if (mot != null && _libelle.text.trim().isEmpty) _libelle.text = mot;
+    });
   }
 
   Donnees get _donnees => widget.etat.session.donnees;
@@ -335,11 +353,10 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
               children: [
                 SizedBox(width: 56, height: 56, child: ImageCaseWidget(_image)),
                 const SizedBox(width: 12),
-                // Le sélecteur d'image arrive avec T-010.
-                const OutlinedButton(
-                  key: Key('bouton-image'),
-                  onPressed: null,
-                  child: Text(Textes.image),
+                OutlinedButton(
+                  key: const Key('bouton-image'),
+                  onPressed: _choisirImage,
+                  child: const Text(Textes.image),
                 ),
                 const SizedBox(width: 12),
                 if (_image is ImageAucune) const Text(Textes.imageAucune),

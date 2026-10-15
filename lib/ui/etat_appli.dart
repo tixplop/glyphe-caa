@@ -1,19 +1,26 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../domaine/banque_pictos.dart';
 import '../domaine/donnees_initiales.dart';
 import '../domaine/horloge.dart';
 import '../domaine/modeles.dart';
+import '../domaine/photos.dart';
 import '../domaine/session.dart';
+import '../domaine/source_photo.dart';
 import '../domaine/stockage.dart';
 import '../domaine/verrou.dart';
 import '../domaine/voix.dart';
 
 /// Chemin du fichier embarqué des grilles d'exemple.
 const String cheminExemples = 'assets/exemples/grilles_exemple.json';
+
+/// Chemin de l'index embarqué de la banque ARASAAC.
+const String cheminIndexPictos = 'assets/arasaac/index.json';
 
 /// Chemin du fichier embarqué des phrases de secours.
 const String cheminPhrases = 'assets/phrases_secours.json';
@@ -29,6 +36,9 @@ class EtatAppli extends ChangeNotifier {
     required this.horloge,
     required this.jsonExemples,
     this.jsonPhrases = '[]',
+    this.banque,
+    this.sourcePhoto,
+    this.photos,
     Random? aleatoire,
   }) : aleatoire = aleatoire ?? Random();
 
@@ -44,6 +54,19 @@ class EtatAppli extends ChangeNotifier {
   /// Liste JSON des phrases de secours (code oublié).
   final String jsonPhrases;
   final Random aleatoire;
+
+  /// Banque ARASAAC embarquée ; null : recherche de pictos vide.
+  final BanquePictos? banque;
+
+  /// Appareil photo et galerie ; null : photos indisponibles.
+  final SourcePhoto? sourcePhoto;
+
+  /// Dossier des photos personnelles ; null : photos indisponibles.
+  final Photos? photos;
+
+  /// Charge l'index de la banque ARASAAC depuis les assets embarqués.
+  static Future<BanquePictos> chargerBanque() async =>
+      BanquePictos.depuisJson(await rootBundle.loadString(cheminIndexPictos));
 
   /// Charge les phrases de secours depuis les assets embarqués.
   static Future<String> chargerPhrases() =>
@@ -113,5 +136,16 @@ class EtatAppli extends ChangeNotifier {
     }
     session.donnees = d;
     await stockage.enregistrer(d);
+    await nettoyerPhotos();
+  }
+
+  /// Supprime les photos qu'aucune case ne référence plus (AC-020-4).
+  /// Meilleur effort : une erreur d'entrée-sortie n'est pas remontée.
+  Future<void> nettoyerPhotos() async {
+    try {
+      await photos?.nettoyerPhotosInutilisees(session.donnees);
+    } on FileSystemException {
+      // Les fichiers restants seront supprimés au prochain nettoyage.
+    }
   }
 }
