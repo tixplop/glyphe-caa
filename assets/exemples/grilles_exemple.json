@@ -1,0 +1,513 @@
+{
+ "versionFormat": 1,
+ "accueilId": "accueil",
+ "grilles": [
+  {
+   "id": "accueil",
+   "nom": "Accueil",
+   "lignes": 4,
+   "colonnes": 4,
+   "cases": [
+    {
+     "id": "accueil-0",
+     "ligne": 0,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "je",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "accueil-1",
+     "ligne": 0,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "veux",
+     "textePrononce": "",
+     "image": "arasaac:5441",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "accueil-2",
+     "ligne": 0,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "oui",
+     "textePrononce": "",
+     "image": "arasaac:5583",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "accueil-3",
+     "ligne": 0,
+     "colonne": 3,
+     "type": "mot",
+     "libelle": "non",
+     "textePrononce": "",
+     "image": "arasaac:5525",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "accueil-4",
+     "ligne": 1,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "encore",
+     "textePrononce": "",
+     "image": "arasaac:37163",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "accueil-5",
+     "ligne": 1,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "fini",
+     "textePrononce": "",
+     "image": "arasaac:5358",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "accueil-6",
+     "ligne": 1,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "eau",
+     "textePrononce": "",
+     "image": "arasaac:2248",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "accueil-7",
+     "ligne": 1,
+     "colonne": 3,
+     "type": "dossier",
+     "libelle": "Besoins",
+     "textePrononce": "",
+     "image": "arasaac:37160",
+     "couleur": 4290502395,
+     "cibleId": "besoins"
+    },
+    {
+     "id": "accueil-8",
+     "ligne": 2,
+     "colonne": 0,
+     "type": "dossier",
+     "libelle": "Émotions",
+     "textePrononce": "",
+     "image": "arasaac:12359",
+     "couleur": 4290502395,
+     "cibleId": "emotions"
+    },
+    {
+     "id": "accueil-9",
+     "ligne": 2,
+     "colonne": 1,
+     "type": "dossier",
+     "libelle": "Manger",
+     "textePrononce": "",
+     "image": "arasaac:2349",
+     "couleur": 4290502395,
+     "cibleId": "manger"
+    },
+    {
+     "id": "accueil-10",
+     "ligne": 2,
+     "colonne": 2,
+     "type": "dossier",
+     "libelle": "Jouer",
+     "textePrononce": "",
+     "image": "arasaac:2439",
+     "couleur": 4290502395,
+     "cibleId": "jouer"
+    }
+   ]
+  },
+  {
+   "id": "manger",
+   "nom": "Manger",
+   "lignes": 4,
+   "colonnes": 4,
+   "cases": [
+    {
+     "id": "manger-0",
+     "ligne": 0,
+     "colonne": 0,
+     "type": "dossier",
+     "libelle": "Fruits",
+     "textePrononce": "",
+     "image": "arasaac:28339",
+     "couleur": 4290502395,
+     "cibleId": "fruits"
+    },
+    {
+     "id": "manger-1",
+     "ligne": 0,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "pain",
+     "textePrononce": "",
+     "image": "arasaac:2494",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "manger-2",
+     "ligne": 0,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "gâteau",
+     "textePrononce": "",
+     "image": "arasaac:2502",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "manger-3",
+     "ligne": 0,
+     "colonne": 3,
+     "type": "mot",
+     "libelle": "eau",
+     "textePrononce": "",
+     "image": "arasaac:2248",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "manger-4",
+     "ligne": 1,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "boire",
+     "textePrononce": "",
+     "image": "arasaac:6061",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "manger-5",
+     "ligne": 1,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "manger",
+     "textePrononce": "",
+     "image": "arasaac:6456",
+     "couleur": null,
+     "cibleId": null
+    }
+   ]
+  },
+  {
+   "id": "fruits",
+   "nom": "Fruits",
+   "lignes": 4,
+   "colonnes": 4,
+   "cases": [
+    {
+     "id": "fruits-0",
+     "ligne": 0,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "pomme",
+     "textePrononce": "",
+     "image": "arasaac:2462",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "fruits-1",
+     "ligne": 0,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "banane",
+     "textePrononce": "",
+     "image": "arasaac:2530",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "fruits-2",
+     "ligne": 0,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "orange",
+     "textePrononce": "",
+     "image": "arasaac:2483",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "fruits-3",
+     "ligne": 0,
+     "colonne": 3,
+     "type": "mot",
+     "libelle": "fraise",
+     "textePrononce": "",
+     "image": "arasaac:2400",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "fruits-4",
+     "ligne": 1,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "poire",
+     "textePrononce": "",
+     "image": "arasaac:2561",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "fruits-5",
+     "ligne": 1,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "raisin",
+     "textePrononce": "",
+     "image": "arasaac:3247",
+     "couleur": null,
+     "cibleId": null
+    }
+   ]
+  },
+  {
+   "id": "besoins",
+   "nom": "Besoins",
+   "lignes": 4,
+   "colonnes": 4,
+   "cases": [
+    {
+     "id": "besoins-0",
+     "ligne": 0,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "toilettes",
+     "textePrononce": "",
+     "image": "arasaac:5921",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "besoins-1",
+     "ligne": 0,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "boire",
+     "textePrononce": "",
+     "image": "arasaac:6061",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "besoins-2",
+     "ligne": 0,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "manger",
+     "textePrononce": "",
+     "image": "arasaac:6456",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "besoins-3",
+     "ligne": 0,
+     "colonne": 3,
+     "type": "mot",
+     "libelle": "dormir",
+     "textePrononce": "",
+     "image": "arasaac:6479",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "besoins-4",
+     "ligne": 1,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "aide",
+     "textePrononce": "",
+     "image": "arasaac:7171",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "besoins-5",
+     "ligne": 1,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "fatigué",
+     "textePrononce": "",
+     "image": "arasaac:35537",
+     "couleur": null,
+     "cibleId": null
+    }
+   ]
+  },
+  {
+   "id": "emotions",
+   "nom": "Émotions",
+   "lignes": 4,
+   "colonnes": 4,
+   "cases": [
+    {
+     "id": "emotions-0",
+     "ligne": 0,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "content",
+     "textePrononce": "",
+     "image": "arasaac:35547",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "emotions-1",
+     "ligne": 0,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "triste",
+     "textePrononce": "",
+     "image": "arasaac:35545",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "emotions-2",
+     "ligne": 0,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "fatigué",
+     "textePrononce": "",
+     "image": "arasaac:35537",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "emotions-3",
+     "ligne": 0,
+     "colonne": 3,
+     "type": "mot",
+     "libelle": "joyeux",
+     "textePrononce": "",
+     "image": "arasaac:35533",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "emotions-4",
+     "ligne": 1,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "peur",
+     "textePrononce": "",
+     "image": "arasaac:35571",
+     "couleur": null,
+     "cibleId": null
+    }
+   ]
+  },
+  {
+   "id": "jouer",
+   "nom": "Jouer",
+   "lignes": 4,
+   "colonnes": 4,
+   "cases": [
+    {
+     "id": "jouer-0",
+     "ligne": 0,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "jouer",
+     "textePrononce": "",
+     "image": "arasaac:2439",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "jouer-1",
+     "ligne": 0,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "jeu",
+     "textePrononce": "",
+     "image": "arasaac:9810",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "jouer-2",
+     "ligne": 0,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "ballon",
+     "textePrononce": "",
+     "image": "arasaac:2408",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "jouer-3",
+     "ligne": 0,
+     "colonne": 3,
+     "type": "mot",
+     "libelle": "musique",
+     "textePrononce": "",
+     "image": "arasaac:24791",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "jouer-4",
+     "ligne": 1,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "livre",
+     "textePrononce": "",
+     "image": "arasaac:25191",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "jouer-5",
+     "ligne": 1,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "dessiner",
+     "textePrononce": "",
+     "image": "arasaac:8088",
+     "couleur": null,
+     "cibleId": null
+    },
+    {
+     "id": "jouer-6",
+     "ligne": 1,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "puzzle",
+     "textePrononce": "",
+     "image": "arasaac:2540",
+     "couleur": null,
+     "cibleId": null
+    }
+   ]
+  }
+ ],
+ "reglages": {
+  "voixId": null,
+  "debit": 1.0,
+  "hauteur": 1.0,
+  "volume": 1.0,
+  "delaiAntiRepetitionMs": 0,
+  "retourAccueilApresMot": false
+ }
+}
