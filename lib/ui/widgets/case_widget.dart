@@ -7,10 +7,18 @@ import 'image_case.dart';
 
 /// Une case de la grille : image, libellé dessous, fond coloré.
 class CaseWidget extends StatelessWidget {
-  const CaseWidget({super.key, required this.caseData, required this.onTap});
+  const CaseWidget({
+    super.key,
+    required this.caseData,
+    required this.onTap,
+    this.orphelin = false,
+  });
 
   final Case caseData;
   final VoidCallback onTap;
+
+  /// Dossier dont la grille cible n'existe plus (signalé en édition).
+  final bool orphelin;
 
   bool get _dossier => caseData.type == TypeCase.dossier;
 
@@ -18,7 +26,8 @@ class CaseWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final libelle = caseData.libelle;
     final nom = libelle.isEmpty ? Textes.caseSansNom : libelle;
-    final etiquette = _dossier ? Textes.dossier(nom) : nom;
+    final base = _dossier ? Textes.dossier(nom) : nom;
+    final etiquette = orphelin ? '$base, ${Textes.grilleIntrouvable}' : base;
     final fond = caseData.couleur != null
         ? Color(caseData.couleur!)
         : PaletteCases.parDefaut;
@@ -63,6 +72,17 @@ class CaseWidget extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (orphelin)
+                  const Positioned(
+                    key: Key('badge-orphelin'),
+                    top: 0,
+                    left: 0,
+                    child: Icon(
+                      Icons.warning_amber,
+                      size: 22,
+                      color: Colors.red,
+                    ),
+                  ),
                 if (_dossier)
                   const Positioned(
                     top: 0,

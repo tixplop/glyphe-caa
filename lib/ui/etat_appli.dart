@@ -96,6 +96,11 @@ class EtatAppli extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Nouvel identifiant unique pour une case ou une grille.
+  String nouvelId(String prefixe) =>
+      '$prefixe-${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}-'
+      '${aleatoire.nextInt(1 << 32).toRadixString(36)}';
+
   /// Remplace les données et les enregistre. Lève [ArgumentError] (rien
   /// n'est écrit) si la grille d'accueil n'existe pas.
   Future<void> modifierDonnees(Donnees d) async {

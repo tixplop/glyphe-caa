@@ -4,6 +4,7 @@ import '../domaine/modeles.dart';
 import '../domaine/session.dart';
 import 'dialogue_code.dart';
 import 'ecran_code.dart';
+import 'ecran_edition_case.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
 import 'widgets/barre_phrase.dart';
@@ -22,6 +23,7 @@ class EcranCommunication extends StatefulWidget {
 
 class _EcranCommunicationState extends State<EcranCommunication> {
   late final AppLifecycleListener _cycleDeVie;
+  late bool _etaitVerrouille;
 
   EtatAppli get etat => widget.etat;
 
@@ -29,6 +31,7 @@ class _EcranCommunicationState extends State<EcranCommunication> {
   void initState() {
     super.initState();
     // Arrière-plan ou fermeture : reverrouillage (AC-014-2).
+    _etaitVerrouille = etat.verrouille;
     etat.addListener(_surChangement);
     _cycleDeVie = AppLifecycleListener(
       onPause: etat.verrouiller,
@@ -46,9 +49,41 @@ class _EcranCommunicationState extends State<EcranCommunication> {
 
   /// Au reverrouillage, referme tout écran ou dialogue d'édition poussé
   /// au-dessus de l'écran de communication (AC-014-2, AC-011-4).
+  /// Seule la transition déverrouillé -> verrouillé ferme les routes.
   void _surChangement() {
-    if (!etat.verrouille || !mounted) return;
+    final passeAuVerrou = etat.verrouille && !_etaitVerrouille;
+    _etaitVerrouille = etat.verrouille;
+    if (!passeAuVerrou || !mounted) return;
     Navigator.of(context).popUntil((r) => r.isFirst);
+  }
+
+  Future<void> _editer(Grille grille, {Case? c, int? ligne, int? colonne}) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => EcranEditionCase(
+            etat: etat,
+            grilleId: grille.id,
+            caseExistante: c,
+            ligne: ligne,
+            colonne: colonne,
+          ),
+        ),
+      );
+
+  /// Ajoute une case au premier emplacement libre, sinon invite à agrandir
+  /// la grille (AC-015-1).
+  Future<void> _ajouter() async {
+    final grille = etat.session.grilleCourante;
+    final libre = grille.emplacementLibre();
+    if (libre == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text(Textes.erreurGrillePleine)),
+        );
+      return;
+    }
+    await _editer(grille, ligne: libre.ligne, colonne: libre.colonne);
   }
 
   Future<void> _deverrouiller() async {
@@ -93,6 +128,7 @@ class _EcranCommunicationState extends State<EcranCommunication> {
                       onDeverrouille: _deverrouiller,
                       onTerminer: etat.verrouiller,
                       onCode: _ouvrirEcranCode,
+                      onAjouter: _ajouter,
                     );
                     // Paysage peu haut : barre et commandes côte à côte pour
                     // laisser assez de hauteur aux cases (>= 48 dp).
@@ -114,7 +150,13 @@ class _EcranCommunicationState extends State<EcranCommunication> {
                           commandes,
                         ],
                         const SizedBox(height: 6),
-                        Expanded(child: _GrilleWidget(session: session)),
+                        Expanded(
+                          child: _GrilleWidget(
+                            session: session,
+                            modeEdition: etat.modeEdition,
+                            onEditer: _editer,
+                          ),
+                        ),
                       ],
                     );
                   },
@@ -135,6 +177,7 @@ class _Commandes extends StatelessWidget {
     required this.onDeverrouille,
     required this.onTerminer,
     required this.onCode,
+    required this.onAjouter,
   });
 
   final Session session;
@@ -142,6 +185,7 @@ class _Commandes extends StatelessWidget {
   final VoidCallback onDeverrouille;
   final VoidCallback onTerminer;
   final VoidCallback onCode;
+  final VoidCallback onAjouter;
 
   Widget _bouton(String nom, IconData icone, VoidCallback onPressed) =>
       IconButton.filledTonal(
@@ -180,10 +224,16 @@ class _Commandes extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         principale,
-        Row(
-          mainAxisSize: MainAxisSize.min,
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _bouton(Textes.codeVerrouillage, Icons.pin, onCode),
+            TextButton(
+              key: const Key('ajouter-case'),
+              onPressed: onAjouter,
+              style: TextButton.styleFrom(minimumSize: const Size(56, 56)),
+              child: const Text(Textes.ajouterCase),
+            ),
             TextButton(
               onPressed: onTerminer,
               style: TextButton.styleFrom(minimumSize: const Size(56, 56)),
@@ -197,9 +247,16 @@ class _Commandes extends StatelessWidget {
 }
 
 class _GrilleWidget extends StatelessWidget {
-  const _GrilleWidget({required this.session});
+  const _GrilleWidget({
+    required this.session,
+    required this.modeEdition,
+    required this.onEditer,
+  });
 
   final Session session;
+  final bool modeEdition;
+  final Future<void> Function(Grille, {Case? c, int? ligne, int? colonne})
+  onEditer;
 
   @override
   Widget build(BuildContext context) {
@@ -215,7 +272,9 @@ class _GrilleWidget extends StatelessWidget {
             child: Row(
               children: [
                 for (var col = 0; col < grille.colonnes; col++)
-                  Expanded(child: _cellule(parPosition[(l, col)])),
+                  Expanded(
+                    child: _cellule(grille, l, col, parPosition[(l, col)]),
+                  ),
               ],
             ),
           ),
@@ -223,12 +282,39 @@ class _GrilleWidget extends StatelessWidget {
     );
   }
 
-  Widget _cellule(Case? c) {
-    if (c == null) return const SizedBox.shrink();
+  Widget _cellule(Grille grille, int l, int col, Case? c) {
+    if (c == null) {
+      if (!modeEdition) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.all(3),
+        child: Semantics(
+          button: true,
+          label: Textes.ajouterCase,
+          excludeSemantics: true,
+          child: InkWell(
+            key: Key('vide-$l-$col'),
+            onTap: () => onEditer(grille, ligne: l, colonne: col),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black38),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Center(child: Icon(Icons.add)),
+            ),
+          ),
+        ),
+      );
+    }
+    final orphelin =
+        modeEdition &&
+        c.type == TypeCase.dossier &&
+        (c.cibleId == null || session.donnees.grillePar(c.cibleId!) == null);
     return CaseWidget(
       key: Key('case-${c.id}'),
       caseData: c,
-      onTap: () => session.appuyerCase(c),
+      orphelin: orphelin,
+      onTap: () =>
+          modeEdition ? onEditer(grille, c: c) : session.appuyerCase(c),
     );
   }
 }
