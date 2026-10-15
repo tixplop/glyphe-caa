@@ -22,6 +22,7 @@ Future<void> main() async {
       voix: VoixFlutterTts(),
       horloge: const HorlogeSysteme(),
       jsonExemples: await EtatAppli.chargerExemples(),
+      jsonPhrases: await EtatAppli.chargerPhrases(),
     );
     await etat.init();
     runApp(GlypheApp(etat: etat));
