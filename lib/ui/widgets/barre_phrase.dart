@@ -35,7 +35,7 @@ class _BarrePhraseState extends State<BarrePhrase> {
 
   /// Plafond du bouton Parler : le libellé rétrécit plutôt que de prendre la
   /// place de la zone de mots.
-  static const double _largeurMaxParler = 128;
+  static const double _largeurMaxParler = 116;
 
   final ScrollController _controleur = ScrollController();
   bool _appuiLong = false;

@@ -359,7 +359,7 @@ void testsVisibilite() {
       await lance(tester, taille: taille);
       final ecran = Offset.zero & taille;
       for (final f in [
-        find.widgetWithText(TextButton, 'Terminer'),
+        find.widgetWithText(FilledButton, 'Terminer'),
         find.byKey(const Key('ajouter-case')),
         find.byKey(const Key('bouton-plus')),
       ]) {

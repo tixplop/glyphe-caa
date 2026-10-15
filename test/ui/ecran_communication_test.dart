@@ -1,10 +1,16 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyphe/domaine/modeles.dart';
+import 'package:glyphe/domaine/serialisation.dart';
 import 'package:glyphe/ui/app.dart';
 import 'package:glyphe/ui/tokens.dart';
 import 'package:glyphe/ui/etat_appli.dart';
+import 'package:glyphe/ui/widgets/barre_edition.dart';
+import 'package:glyphe/ui/widgets/barre_navigation.dart';
 import 'package:glyphe/ui/widgets/barre_phrase.dart';
 
 import '../faux/faux_stockage.dart';
@@ -350,7 +356,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(grille('Fruits'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Accueil'));
+      await tester.tap(find.byKey(const Key('onglet-acc')));
       await tester.pumpAndSettle();
       expect(grille('eau'), findsOneWidget);
       await tester.tap(find.byTooltip('Retour'));
@@ -541,21 +547,30 @@ void main() {
       });
     }
 
-    testWidgets('REQ028_AC1 boutons de barre et de navigation >= 56 dp', (
-      tester,
-    ) async {
-      await lance(tester);
-      for (final f in [
-        find.byKey(const Key('bouton-parler')),
-        find.byKey(const Key('bouton-effacer')),
-        find.byTooltip('Retour'),
-        find.byTooltip('Accueil'),
-      ]) {
-        final r = tester.getSize(f);
-        expect(r.width, greaterThanOrEqualTo(56), reason: '$f');
-        expect(r.height, greaterThanOrEqualTo(56), reason: '$f');
-      }
-    });
+    testWidgets(
+      'REQ028_AC1 Effacer et Parler >= 56 dp, autres contrôles >= 48',
+      (tester) async {
+        await lance(tester);
+        for (final f in [
+          find.byKey(const Key('bouton-parler')),
+          find.byKey(const Key('bouton-effacer')),
+        ]) {
+          final r = tester.getSize(f);
+          expect(r.width, greaterThanOrEqualTo(56), reason: '$f');
+          expect(r.height, greaterThanOrEqualTo(56), reason: '$f');
+        }
+        for (final f in [
+          find.byKey(const Key('bouton-retour')),
+          find.byKey(const Key('onglet-acc')),
+          find.byKey(const Key('onglet-manger-g')),
+          find.byKey(const Key('cadenas')),
+        ]) {
+          final r = tester.getSize(f);
+          expect(r.width, greaterThanOrEqualTo(48), reason: '$f');
+          expect(r.height, greaterThanOrEqualTo(48), reason: '$f');
+        }
+      },
+    );
 
     for (final taille in const [
       Size(360, 640),
@@ -574,7 +589,14 @@ void main() {
           expect(zone.contains(r.topLeft), isTrue, reason: l);
           expect(zone.contains(r.bottomRight), isTrue, reason: l);
         }
-        expect(find.byType(Scrollable), findsOneWidget); // la barre seule
+        // La grille ne défile pas (AC-030-2).
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('grille')),
+            matching: find.byType(Scrollable),
+          ),
+          findsNothing,
+        );
         final cible = tester.getSize(
           find.descendant(
             of: find.byKey(const Key('case-h')),
@@ -585,5 +607,381 @@ void main() {
         expect(cible.height, greaterThanOrEqualTo(48));
       });
     }
+  });
+
+  group('Disposition (REQ-030, REQ-031, REQ-009)', () {
+    Future<Env> exemples(WidgetTester tester, {Size? taille}) => lance(
+      tester,
+      taille: taille ?? const Size(360, 640),
+      d: donneesDepuisJson(
+        jsonDecode(
+          File('assets/exemples/grilles_exemple.json').readAsStringSync(),
+        ),
+      ),
+    );
+
+    Color? fondOnglet(WidgetTester tester, String id) =>
+        tester.widget<Material>(find.byKey(Key('onglet-$id'))).color;
+
+    testWidgets('REQ031_AC1/AC2 onglets des grilles d\'exemple', (
+      tester,
+    ) async {
+      await exemples(tester, taille: const Size(1280, 800));
+      for (final id in ['accueil', 'besoins', 'emotions', 'manger', 'jouer']) {
+        expect(find.byKey(Key('onglet-$id')), findsOneWidget, reason: id);
+      }
+      expect(find.byKey(const Key('onglet-fruits')), findsNothing);
+      final x = [
+        for (final id in ['accueil', 'besoins', 'emotions', 'manger', 'jouer'])
+          tester.getTopLeft(find.byKey(Key('onglet-$id'))).dx,
+      ];
+      expect(x, [...x]..sort());
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('onglet-accueil')),
+          matching: find.byIcon(Icons.home),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.getSize(find.byKey(const Key('onglet-manger'))).height, 48);
+    });
+
+    testWidgets('REQ031_AC1 les onglets défilent horizontalement', (
+      tester,
+    ) async {
+      await exemples(tester);
+      final liste = find.byKey(const Key('onglets'));
+      expect(liste, findsOneWidget);
+      final etat = tester.state<ScrollableState>(
+        find.descendant(of: liste, matching: find.byType(Scrollable)),
+      );
+      expect(etat.position.maxScrollExtent, greaterThan(0));
+      expect(etat.position.axis, Axis.horizontal);
+    });
+
+    testWidgets('REQ031_AC4 Fruits : l\'onglet Manger est actif', (
+      tester,
+    ) async {
+      final e = await exemples(tester, taille: const Size(1280, 800));
+      final t = GlypheTokens.clair;
+      expect(fondOnglet(tester, 'accueil'), t.primary);
+      expect(fondOnglet(tester, 'manger'), t.surface000);
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      await tester.tap(grille('Fruits'));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'fruits');
+      expect(fondOnglet(tester, 'manger'), t.primary);
+      expect(fondOnglet(tester, 'accueil'), t.surface000);
+    });
+
+    testWidgets('REQ031_AC4 onglet actif exposé comme sélectionné', (
+      tester,
+    ) async {
+      final h = tester.ensureSemantics();
+      await exemples(tester, taille: const Size(1280, 800));
+      expect(
+        tester.getSemantics(find.byKey(const Key('onglet-accueil'))),
+        isSemantics(label: 'Accueil', isSelected: true, isButton: true),
+      );
+      h.dispose();
+    });
+
+    testWidgets('REQ031_AC3 appui sur un onglet : rien dit, barre intacte', (
+      tester,
+    ) async {
+      final e = await exemples(tester, taille: const Size(1280, 800));
+      await tester.tap(grille('je'));
+      await tester.pumpAndSettle();
+      final avant = [for (final x in e.etat.session.barre) x.libelle];
+      expect(avant, isNotEmpty);
+      final dits = e.voix.journal.length;
+      e.etat.session.ouvrirGrille('fruits');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('onglet-manger')));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'manger');
+      expect(e.etat.session.chemin, ['accueil', 'manger']);
+      expect(e.voix.journal.length, dits);
+      expect([for (final x in e.etat.session.barre) x.libelle], avant);
+      await tester.tap(find.byTooltip('Retour'));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'accueil');
+      await tester.tap(find.byKey(const Key('onglet-jouer')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('onglet-accueil')));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.chemin, ['accueil']);
+    });
+
+    testWidgets('REQ031_AC6 supprimer la grille Jouer retire son onglet', (
+      tester,
+    ) async {
+      final e = await exemples(tester, taille: const Size(1280, 800));
+      final d = e.etat.session.donnees;
+      await e.etat.modifierDonnees(
+        d.copyWith(
+          grilles: [
+            for (final g in d.grilles)
+              if (g.id != 'jouer') g,
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('onglet-jouer')), findsNothing);
+      expect(find.byKey(const Key('onglet-manger')), findsOneWidget);
+    });
+
+    testWidgets('REQ009_AC5 Retour atténué et sans effet sur l\'accueil', (
+      tester,
+    ) async {
+      final e = await lance(tester);
+      double opacite() => tester
+          .widget<Opacity>(find.byKey(const Key('bouton-retour')))
+          .opacity;
+      expect(opacite(), 0.4);
+      await tester.tap(find.byKey(const Key('bouton-retour')));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'acc');
+      await tester.tap(grille('Manger'));
+      await tester.pumpAndSettle();
+      expect(opacite(), 1);
+      await tester.tap(find.byKey(const Key('bouton-retour')));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'acc');
+    });
+
+    testWidgets('REQ009_AC5 case-dossier vers l\'accueil : Retour atténué', (
+      tester,
+    ) async {
+      final base = donnees();
+      final d = base.copyWith(
+        grilles: [
+          for (final g in base.grilles)
+            if (g.id == 'manger-g')
+              Grille(
+                id: g.id,
+                nom: g.nom,
+                lignes: g.lignes,
+                colonnes: g.colonnes,
+                cases: [...g.cases, dossier('d-maison', 'Maison', 1, 0, 'acc')],
+              )
+            else
+              g,
+        ],
+      );
+      final h = tester.ensureSemantics();
+      final e = await lance(tester, d: d);
+      await tester.tap(grille('Manger'));
+      await tester.pumpAndSettle();
+      await tester.tap(grille('Maison'));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'acc');
+      expect(
+        tester.widget<Opacity>(find.byKey(const Key('bouton-retour'))).opacity,
+        0.4,
+      );
+      await tester.tap(find.byKey(const Key('bouton-retour')));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'acc');
+      expect(
+        tester.getSemantics(find.byKey(const Key('onglet-acc'))),
+        isSemantics(label: 'Accueil', isSelected: true, isButton: true),
+      );
+      h.dispose();
+    });
+
+    testWidgets('REQ009_AC5 plus de bouton Accueil séparé', (tester) async {
+      await lance(tester);
+      expect(find.byTooltip('Accueil'), findsNothing);
+      expect(find.byIcon(Icons.home), findsOneWidget); // dans l'onglet
+    });
+
+    testWidgets('REQ030_AC1 portrait : barre 72, navigation 56, marges', (
+      tester,
+    ) async {
+      await lance(tester);
+      final barre = tester.getRect(find.byType(BarrePhrase));
+      final nav = tester.getRect(find.byType(BarreNavigation));
+      final zone = tester.getRect(find.byKey(const Key('grille')));
+      expect(barre.height, 72);
+      expect(nav.height, 56);
+      expect(barre.left, 12);
+      expect(barre.right, 360 - 12);
+      expect(nav.left, 12);
+      expect(nav.right, 360 - 12);
+      expect(nav.top - barre.bottom, 8);
+      // La zone de grille inclut 4 de marge propre à chaque case.
+      expect(zone.top + 4 - nav.bottom, 8);
+      // Rectangle visible d'une case : sans sa marge propre de 3.
+      Rect visible(String id) =>
+          tester.getRect(find.byKey(Key('case-$id'))).deflate(3);
+      final a = visible('je');
+      final b = visible('veux');
+      final c = visible('wc');
+      expect(a.left, 12);
+      expect(b.left - a.right, 8);
+      expect(c.top - a.bottom, 8);
+      expect(
+        tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+        isNull,
+      );
+      expect(
+        Theme.of(tester.element(find.byType(Scaffold))).scaffoldBackgroundColor,
+        GlypheTokens.clair.surface100,
+      );
+    });
+
+    testWidgets('REQ030_AC2 la grille remplit sans défiler (1x1 et 8x8)', (
+      tester,
+    ) async {
+      for (final n in [1, 8]) {
+        final d = Donnees(
+          accueilId: 'g',
+          grilles: [
+            Grille(
+              id: 'g',
+              nom: 'G',
+              lignes: n,
+              colonnes: n,
+              cases: [mot('m', 'm', 0, 0)],
+            ),
+          ],
+        );
+        await lance(tester, d: d);
+        final zone = tester.getRect(find.byKey(const Key('grille')));
+        final cm = tester.getRect(find.byKey(const Key('case-m')));
+        expect(tester.takeException(), isNull);
+        expect(cm.width, closeTo((zone.width / n) - 2, 0.01));
+        expect(zone.bottom, closeTo(640 - 12 + 4, 0.01));
+        expect(find.byKey(const Key('vide-0-1')), findsNothing);
+      }
+    });
+
+    testWidgets('REQ030_AC3 paysage peu haut : une seule rangée de 72', (
+      tester,
+    ) async {
+      await lance(tester, taille: const Size(640, 360));
+      final barre = tester.getRect(find.byType(BarrePhrase));
+      final nav = tester.getRect(find.byType(BarreNavigation));
+      expect(barre.height, 72);
+      expect(nav.height, 56);
+      expect(barre.left, 12);
+      expect(nav.right, 640 - 12);
+      expect(nav.left, greaterThan(barre.right));
+      expect(barre.center.dy, closeTo(nav.center.dy, 0.01));
+      final total = 640 - 24 - 8;
+      expect(barre.width / total, closeTo(0.55, 0.01));
+      final zone = tester.getRect(find.byKey(const Key('grille')));
+      expect(zone.top + 4, 8 + 72 + 8);
+    });
+
+    testWidgets('REQ030_AC3 paysage haut (>= 480) : deux rangées', (
+      tester,
+    ) async {
+      await lance(tester, taille: const Size(1280, 800));
+      final barre = tester.getRect(find.byType(BarrePhrase));
+      final nav = tester.getRect(find.byType(BarreNavigation));
+      expect(nav.top, greaterThan(barre.bottom));
+    });
+
+    for (final edition in [false, true]) {
+      testWidgets('REQ030_AC4 barre d\'édition à la place de la barre de '
+          'phrase (édition: $edition)', (tester) async {
+        final e = await lance(tester);
+        final barre = tester.getRect(find.byType(BarrePhrase));
+        if (edition) {
+          e.etat.ouvrirEdition();
+          await tester.pumpAndSettle();
+          expect(find.byType(BarrePhrase), findsNothing);
+          expect(tester.getRect(find.byType(BarreEdition)), barre);
+          expect(find.byKey(const Key('cadenas')), findsNothing);
+          expect(find.byKey(const Key('espace-cadenas')), findsOneWidget);
+          expect(find.byKey(const Key('onglet-acc')), findsOneWidget);
+          for (final f in [
+            find.widgetWithText(FilledButton, 'Terminer'),
+            find.byKey(const Key('ajouter-case')),
+            find.byKey(const Key('bouton-plus')),
+          ]) {
+            expect(tester.getSize(f).height, greaterThanOrEqualTo(48));
+          }
+          await tester.tap(find.byKey(const Key('bouton-plus')));
+          await tester.pumpAndSettle();
+          for (final k in [
+            'bouton-code',
+            'bouton-grilles',
+            'bouton-taille',
+            'bouton-reglages',
+            'bouton-a-propos',
+          ]) {
+            expect(find.byKey(Key(k)), findsOneWidget, reason: k);
+          }
+        } else {
+          expect(find.byType(BarreEdition), findsNothing);
+          expect(find.byKey(const Key('cadenas')), findsOneWidget);
+        }
+      });
+    }
+
+    for (final taille in const [
+      Size(360, 640),
+      Size(412, 915),
+      Size(640, 360),
+      Size(915, 412),
+      Size(800, 1280),
+      Size(1280, 800),
+    ]) {
+      testWidgets('REQ030_AC5 mêmes rectangles de cases en communication et '
+          'en édition $taille', (tester) async {
+        final e = await lance(tester, taille: taille);
+        final ids = ['je', 'veux', 'g', 'h'];
+        final avant = [
+          for (final i in ids) tester.getRect(find.byKey(Key('case-$i'))),
+        ];
+        e.etat.ouvrirEdition();
+        await tester.pumpAndSettle();
+        final apres = [
+          for (final i in ids) tester.getRect(find.byKey(Key('case-$i'))),
+        ];
+        expect(apres, avant);
+      });
+
+      testWidgets('REQ028_AC3 cases >= 48 et lisibles en $taille', (
+        tester,
+      ) async {
+        await lance(tester, taille: taille);
+        expect(tester.takeException(), isNull);
+        final r = tester.getRect(find.byKey(const Key('case-h')));
+        expect(r.width, greaterThanOrEqualTo(48));
+        expect(r.height, greaterThanOrEqualTo(48));
+        if (taille == const Size(412, 915)) {
+          expect(r.width, greaterThanOrEqualTo(80));
+        }
+      });
+    }
+
+    testWidgets('REQ030_AC6 aucun autre contrôle en communication', (
+      tester,
+    ) async {
+      await lance(tester);
+      expect(find.byKey(const Key('bouton-a-propos')), findsNothing);
+      expect(find.text('À propos'), findsNothing);
+      expect(find.text('Terminer'), findsNothing);
+      expect(find.byKey(const Key('bouton-plus')), findsNothing);
+    });
+
+    testWidgets('REQ035_AC4 échelle de texte 2 : libellé de case en 17', (
+      tester,
+    ) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await lance(tester, taille: const Size(412, 915));
+      final texte = tester.widget<Text>(grille('je'));
+      expect(texte.style!.fontSize, 17);
+      expect(
+        MediaQuery.of(tester.element(find.byType(BarrePhrase))).textScaler,
+        TextScaler.noScaling,
+      );
+    });
   });
 }

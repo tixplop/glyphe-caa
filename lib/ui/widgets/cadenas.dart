@@ -64,8 +64,8 @@ class _CadenasState extends State<Cadenas> with SingleTickerProviderStateMixin {
         onPointerUp: (_) => _annuler(),
         onPointerCancel: (_) => _annuler(),
         child: SizedBox(
-          width: 56,
-          height: 56,
+          width: 48,
+          height: 48,
           child: AnimatedBuilder(
             animation: _controleur,
             builder: (context, _) => Stack(
@@ -73,11 +73,11 @@ class _CadenasState extends State<Cadenas> with SingleTickerProviderStateMixin {
               children: [
                 if (_controleur.isAnimating)
                   SizedBox(
-                    width: 52,
-                    height: 52,
+                    width: 44,
+                    height: 44,
                     child: CircularProgressIndicator(
                       value: _controleur.value,
-                      strokeWidth: 5,
+                      strokeWidth: 4,
                     ),
                   ),
                 const Icon(Icons.lock),

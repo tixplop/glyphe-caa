@@ -53,8 +53,8 @@ void main() {
   });
 
   for (final edition in [false, true]) {
-    testWidgets('REQ027_AC1 accessible depuis la communication (édition: '
-        '$edition)', (tester) async {
+    testWidgets('REQ027_AC1 accessible depuis le menu Plus du mode édition '
+        '(édition: $edition)', (tester) async {
       tester.view.physicalSize = const Size(360, 640);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -75,6 +75,13 @@ void main() {
       await etat.init();
       if (edition) etat.ouvrirEdition();
       await tester.pumpWidget(GlypheApp(etat: etat));
+      await tester.pumpAndSettle();
+      if (!edition) {
+        // AC-030-6 : plus de bouton À propos en communication.
+        expect(find.byKey(const Key('bouton-a-propos')), findsNothing);
+        return;
+      }
+      await tester.tap(find.byKey(const Key('bouton-plus')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('bouton-a-propos')));
       await tester.pumpAndSettle();

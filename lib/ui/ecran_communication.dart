@@ -12,11 +12,12 @@ import 'ecran_reglages.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
 import 'tokens.dart';
+import 'widgets/barre_edition.dart';
+import 'widgets/barre_navigation.dart';
 import 'widgets/barre_phrase.dart';
-import 'widgets/cadenas.dart';
 import 'widgets/case_widget.dart';
 
-/// Écran principal : barre de phrase, commandes, grille courante.
+/// Écran principal : barre de phrase (ou d'édition), navigation, grille.
 class EcranCommunication extends StatefulWidget {
   const EcranCommunication({super.key, required this.etat});
 
@@ -103,14 +104,6 @@ class _EcranCommunicationState extends State<EcranCommunication> {
       Navigator.of(context)
           .push(MaterialPageRoute<void>(builder: (_) => const EcranAPropos()));
 
-  Widget _boutonAPropos() => TextButton.icon(
-    key: const Key('bouton-a-propos'),
-    onPressed: _ouvrirAPropos,
-    style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-    icon: const Icon(Icons.info_outline),
-    label: const Text(Textes.aPropos),
-  );
-
   Future<void> _regler() => reglerTaille(context, etat);
 
   Future<void> _deverrouiller() async {
@@ -139,90 +132,16 @@ class _EcranCommunicationState extends State<EcranCommunication> {
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) session.retour();
           },
-          child: Scaffold(
-            body: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: LayoutBuilder(
-                  builder: (context, c) {
-                    final barre = BarrePhrase(
-                      elements: session.barre,
-                      enLecture: session.enLecture,
-                      onLire: session.lireBarre,
-                      onArreter: session.arreterLecture,
-                      onEffacerDernier: session.effacerDernier,
-                      onToutEffacer: session.toutEffacer,
-                    );
-                    _Commandes commandes([_Partie partie = _Partie.tout]) =>
-                        _Commandes(
-                          partie: partie,
-                          session: session,
-                          modeEdition: etat.modeEdition,
-                          onDeverrouille: _deverrouiller,
-                          onTerminer: etat.verrouiller,
-                          onCode: _ouvrirEcranCode,
-                          onAjouter: _ajouter,
-                          onGrilles: _ouvrirGrilles,
-                          onTaille: _regler,
-                          onReglages: _ouvrirReglages,
-                          aPropos: IconButton(
-                            key: const Key('bouton-a-propos'),
-                            tooltip: Textes.aPropos,
-                            onPressed: _ouvrirAPropos,
-                            icon: const Icon(Icons.info_outline),
-                            iconSize: 28,
-                            style: IconButton.styleFrom(
-                              minimumSize: const Size(56, 56),
-                            ),
-                          ),
-                        );
-                    final aPropos = Align(
-                      alignment: Alignment.centerRight,
-                      child: _boutonAPropos(),
-                    );
-                    // Paysage peu haut : barre et commandes côte à côte pour
-                    // laisser assez de hauteur aux cases (>= 48 dp).
-                    final compact =
-                        c.maxHeight < 480 && c.maxWidth > c.maxHeight;
-                    return Column(
-                      children: [
-                        if (compact && etat.modeEdition) ...[
-                          Row(
-                            children: [
-                              Expanded(child: barre),
-                              const SizedBox(width: 6),
-                              commandes(_Partie.navigation),
-                            ],
-                          ),
-                          commandes(_Partie.edition),
-                        ] else if (compact)
-                          Row(
-                            children: [
-                              Expanded(child: barre),
-                              const SizedBox(width: 6),
-                              Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [commandes(), aPropos],
-                              ),
-                            ],
-                          )
-                        else ...[
-                          barre,
-                          const SizedBox(height: 6),
-                          commandes(),
-                          if (!etat.modeEdition) aPropos,
-                        ],
-                        SizedBox(height: compact && etat.modeEdition ? 2 : 6),
-                        Expanded(
-                          child: _GrilleWidget(
-                            session: session,
-                            modeEdition: etat.modeEdition,
-                            onEditer: _editer,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+          // La disposition de communication ignore l'échelle de texte du
+          // système (AC-035-4).
+          child: MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.noScaling),
+            child: Scaffold(
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: GlypheTokens.espace2),
+                  child: LayoutBuilder(builder: _disposition),
                 ),
               ),
             ),
@@ -231,121 +150,78 @@ class _EcranCommunicationState extends State<EcranCommunication> {
       },
     );
   }
-}
 
-/// Partie des commandes rendue (paysage compact en édition : navigation à
-/// côté de la barre, actions d'édition en dessous).
-enum _Partie { tout, navigation, edition }
+  /// Marge latérale de l'écran (AC-030-1).
+  static const double _marge = GlypheTokens.espace3;
 
-class _Commandes extends StatelessWidget {
-  const _Commandes({
-    required this.session,
-    required this.modeEdition,
-    required this.onDeverrouille,
-    required this.onTerminer,
-    required this.onCode,
-    required this.onAjouter,
-    required this.onGrilles,
-    required this.onTaille,
-    required this.onReglages,
-    required this.aPropos,
-    this.partie = _Partie.tout,
-  });
-
-  final Session session;
-  final bool modeEdition;
-  final VoidCallback onDeverrouille;
-  final VoidCallback onTerminer;
-  final VoidCallback onCode;
-  final VoidCallback onAjouter;
-  final VoidCallback onGrilles;
-  final VoidCallback onTaille;
-  final VoidCallback onReglages;
-  final Widget aPropos;
-  final _Partie partie;
-
-  static final ButtonStyle _styleTexte = TextButton.styleFrom(
-    minimumSize: const Size(56, 56),
-    padding: const EdgeInsets.symmetric(horizontal: 8),
-  );
-
-  Widget _bouton(String nom, IconData icone, VoidCallback onPressed) =>
-      IconButton.filledTonal(
-        tooltip: nom,
-        icon: Icon(icone),
-        onPressed: onPressed,
-        constraints: const BoxConstraints.tightFor(width: 56, height: 56),
-        padding: EdgeInsets.zero,
-        style: IconButton.styleFrom(
-          minimumSize: const Size(56, 56),
-          tapTargetSize: MaterialTapTargetSize.padded,
-        ),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final principale = Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _bouton(Textes.retour, Icons.arrow_back, session.retour),
-        _bouton(Textes.accueil, Icons.home, session.accueil),
-        if (!modeEdition) Cadenas(onDeverrouille: onDeverrouille),
-      ],
+  Widget _disposition(BuildContext context, BoxConstraints c) {
+    final session = etat.session;
+    final haut = etat.modeEdition
+        ? BarreEdition(
+            onTerminer: etat.verrouiller,
+            onAjouter: _ajouter,
+            onCode: _ouvrirEcranCode,
+            onGrilles: _ouvrirGrilles,
+            onTaille: _regler,
+            onReglages: _ouvrirReglages,
+            onAPropos: _ouvrirAPropos,
+          )
+        : BarrePhrase(
+            elements: session.barre,
+            enLecture: session.enLecture,
+            onLire: session.lireBarre,
+            onArreter: session.arreterLecture,
+            onEffacerDernier: session.effacerDernier,
+            onToutEffacer: session.toutEffacer,
+          );
+    final navigation = BarreNavigation(
+      session: session,
+      modeEdition: etat.modeEdition,
+      onDeverrouille: _deverrouiller,
     );
-    // Actions d'édition : rendues uniquement en mode édition (AC-011-4).
-    if (!modeEdition || partie == _Partie.navigation) return principale;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (partie == _Partie.tout) principale,
-        Wrap(
-          alignment: WrapAlignment.center,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            TextButton(
-              onPressed: onTerminer,
-              style: _styleTexte,
-              child: const Text(Textes.terminer),
-            ),
-            TextButton(
-              key: const Key('ajouter-case'),
-              onPressed: onAjouter,
-              style: _styleTexte,
-              child: const Text(Textes.ajouterCase),
-            ),
-            aPropos,
-            PopupMenuButton<VoidCallback>(
-              key: const Key('bouton-plus'),
-              tooltip: Textes.plus,
-              icon: const Icon(Icons.more_vert),
-              iconSize: 28,
-              style: IconButton.styleFrom(minimumSize: const Size(56, 56)),
-              onSelected: (action) => action(),
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  key: const Key('bouton-code'),
-                  value: onCode,
-                  child: const Text(Textes.codeVerrouillage),
-                ),
-                PopupMenuItem(
-                  key: const Key('bouton-grilles'),
-                  value: onGrilles,
-                  child: const Text(Textes.grilles),
-                ),
-                PopupMenuItem(
-                  key: const Key('bouton-taille'),
-                  value: onTaille,
-                  child: const Text(Textes.tailleGrille),
-                ),
-                PopupMenuItem(
-                  key: const Key('bouton-reglages'),
-                  value: onReglages,
-                  child: const Text(Textes.reglages),
-                ),
+    // Paysage peu haut : les deux barres sur une seule rangée de 72
+    // (AC-030-3).
+    final compact = c.maxHeight < 480 && c.maxWidth > c.maxHeight;
+    final barres = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _marge),
+      child: compact
+          ? SizedBox(
+              height: GlypheTokens.barrePhrase,
+              child: Row(
+                children: [
+                  Expanded(flex: 55, child: haut),
+                  const SizedBox(width: GlypheTokens.espace2),
+                  Expanded(flex: 45, child: Center(child: navigation)),
+                ],
+              ),
+            )
+          : Column(
+              children: [
+                haut,
+                const SizedBox(height: GlypheTokens.espace2),
+                navigation,
               ],
             ),
-          ],
+    );
+    return Column(
+      children: [
+        barres,
+        // Les cases portent déjà 4 dp de marge propre : on retire cette part
+        // pour obtenir marges de 12 et gouttière de 8 (AC-030-1).
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              _marge - _GrilleWidget.margeCase,
+              GlypheTokens.espace2 - _GrilleWidget.margeCase,
+              _marge - _GrilleWidget.margeCase,
+              _marge - _GrilleWidget.margeCase,
+            ),
+            child: _GrilleWidget(
+              session: session,
+              modeEdition: etat.modeEdition,
+              onEditer: _editer,
+            ),
+          ),
         ),
       ],
     );
@@ -364,6 +240,10 @@ class _GrilleWidget extends StatelessWidget {
   final Future<void> Function(Grille, {Case? c, int? ligne, int? colonne})
   onEditer;
 
+  /// Marge totale autour de chaque case : 3 propres à la case + 1 ajouté ici,
+  /// soit une gouttière de 8 entre deux cases (AC-030-1).
+  static const double margeCase = 4;
+
   @override
   Widget build(BuildContext context) {
     final grille = session.grilleCourante;
@@ -379,12 +259,15 @@ class _GrilleWidget extends StatelessWidget {
               children: [
                 for (var col = 0; col < grille.colonnes; col++)
                   Expanded(
-                    child: _cellule(
-                      context,
-                      grille,
-                      l,
-                      col,
-                      parPosition[(l, col)],
+                    child: Padding(
+                      padding: const EdgeInsets.all(margeCase - 3),
+                      child: _cellule(
+                        context,
+                        grille,
+                        l,
+                        col,
+                        parPosition[(l, col)],
+                      ),
                     ),
                   ),
               ],

@@ -68,6 +68,9 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Chemin de navigation : historique puis grille courante (REQ-031).
+  List<String> get chemin => List.unmodifiable([..._historique, _grilleId]);
+
   Grille get grilleCourante =>
       _donnees.grillePar(_grilleId) ?? _donnees.grillePar(_donnees.accueilId)!;
 
