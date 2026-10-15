@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../domaine/banque_pictos.dart';
+import '../domaine/choix_voix.dart';
 import '../domaine/donnees_initiales.dart';
 import '../domaine/horloge.dart';
 import '../domaine/modeles.dart';
@@ -116,7 +117,53 @@ class EtatAppli extends ChangeNotifier {
     _verrou = await Verrou.charger(stockage, phrases);
     _session = Session(donnees, voix, horloge);
     _verrouille = true;
+    await verifierVoix();
+  }
+
+  List<InfoVoix> _voixDisponibles = const [];
+  ChoixVoix _choixVoix = const ChoixVoix(
+    voixId: null,
+    voixEnregistreeIndisponible: false,
+    aucuneVoix: false,
+  );
+
+  /// Voix de l'appareil, françaises d'abord (AC-021-1).
+  List<InfoVoix> get voixDisponibles => _voixDisponibles;
+
+  /// Aucune voix de synthèse sur l'appareil (AC-005-2).
+  bool get aucuneVoix => _choixVoix.aucuneVoix;
+
+  /// La voix enregistrée a disparu (AC-022-1).
+  bool get voixEnregistreeIndisponible =>
+      _choixVoix.voixEnregistreeIndisponible;
+
+  /// Interroge le moteur de synthèse et recalcule la voix effective (au
+  /// lancement et au retour au premier plan). Une erreur du moteur est
+  /// traitée comme « aucune voix » : la communication continue (REQ-005).
+  Future<void> verifierVoix() async {
+    List<InfoVoix> liste;
+    try {
+      liste = trierVoix(await voix.voixDisponibles());
+    } catch (_) {
+      liste = const [];
+    }
+    _voixDisponibles = liste;
+    _choixVoix = choisirVoix(liste, session.donnees.reglages.voixId);
+    session.choixVoix = _choixVoix;
     notifyListeners();
+  }
+
+  /// Enregistre de nouveaux réglages (voix, délai, retour à l'accueil).
+  Future<void> modifierReglages(Reglages r) {
+    // La partie synchrone de modifierDonnees met déjà les données de session
+    // à jour : voix effective et abonnés suivent avant la fin de l'écriture,
+    // y compris si celle-ci échoue (la session garde alors les nouvelles
+    // valeurs en mémoire).
+    final ecriture = modifierDonnees(session.donnees.copyWith(reglages: r));
+    _choixVoix = choisirVoix(_voixDisponibles, r.voixId);
+    session.choixVoix = _choixVoix;
+    notifyListeners();
+    return ecriture;
   }
 
   /// Nouvel identifiant unique pour une case ou une grille.

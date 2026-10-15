@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'choix_voix.dart';
 import 'horloge.dart';
 import 'modeles.dart';
 import 'voix.dart';
@@ -61,10 +62,19 @@ class Session extends ChangeNotifier {
 
   List<ElementBarre> get barre => List.unmodifiable(_barre);
 
-  ParametresVoix get _parametres {
+  /// Voix effective vérifiée par l'état de l'appli ; null : voix enregistrée
+  /// utilisée telle quelle.
+  ChoixVoix? choixVoix;
+
+  /// Paramètres de prononciation courants : si la voix enregistrée est
+  /// indisponible, la voix par défaut est utilisée (AC-022-2).
+  ParametresVoix get parametres {
     final r = _donnees.reglages;
+    final choix = choixVoix;
     return ParametresVoix(
-      voixId: r.voixId,
+      voixId: choix != null && choix.voixEnregistreeIndisponible
+          ? choix.voixId
+          : r.voixId,
       debit: r.debit,
       hauteur: r.hauteur,
       volume: r.volume,
@@ -105,10 +115,13 @@ class Session extends ChangeNotifier {
     if (texte.isNotEmpty) await _dire(texte);
   }
 
+  /// Prononce [texte] avec les réglages courants (essai de la voix).
+  Future<void> essayerVoix(String texte) => _dire(texte);
+
   Future<void> _dire(String texte) async {
     try {
       await _voix.arreter();
-      await _voix.parler(texte, _parametres);
+      await _voix.parler(texte, parametres);
     } catch (_) {
       // La voix ne doit jamais empêcher la communication (REQ-005).
     }

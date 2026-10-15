@@ -7,6 +7,7 @@ import 'ecran_code.dart';
 import 'dialogue_taille.dart';
 import 'ecran_edition_case.dart';
 import 'ecran_grilles.dart';
+import 'ecran_reglages.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
 import 'widgets/barre_phrase.dart';
@@ -39,6 +40,8 @@ class _EcranCommunicationState extends State<EcranCommunication> {
       onPause: etat.verrouiller,
       onHide: etat.verrouiller,
       onDetach: etat.verrouiller,
+      // Retour au premier plan : la voix a pu être (dés)installée (AC-022-1).
+      onResume: etat.verifierVoix,
     );
   }
 
@@ -91,6 +94,9 @@ class _EcranCommunicationState extends State<EcranCommunication> {
   Future<void> _ouvrirGrilles() => Navigator.of(context)
       .push(MaterialPageRoute<void>(builder: (_) => EcranGrilles(etat: etat)));
 
+  Future<void> _ouvrirReglages() => Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => EcranReglages(etat: etat)));
+
   Future<void> _regler() => reglerTaille(context, etat);
 
   Future<void> _deverrouiller() async {
@@ -138,6 +144,7 @@ class _EcranCommunicationState extends State<EcranCommunication> {
                       onAjouter: _ajouter,
                       onGrilles: _ouvrirGrilles,
                       onTaille: _regler,
+                      onReglages: _ouvrirReglages,
                     );
                     // Paysage peu haut : barre et commandes côte à côte pour
                     // laisser assez de hauteur aux cases (>= 48 dp).
@@ -195,6 +202,7 @@ class _Commandes extends StatelessWidget {
     required this.onAjouter,
     required this.onGrilles,
     required this.onTaille,
+    required this.onReglages,
   });
 
   final Session session;
@@ -205,6 +213,7 @@ class _Commandes extends StatelessWidget {
   final VoidCallback onAjouter;
   final VoidCallback onGrilles;
   final VoidCallback onTaille;
+  final VoidCallback onReglages;
 
   static final ButtonStyle _styleTexte = TextButton.styleFrom(
     minimumSize: const Size(56, 56),
@@ -285,6 +294,11 @@ class _Commandes extends StatelessWidget {
                   key: const Key('bouton-taille'),
                   value: onTaille,
                   child: const Text(Textes.tailleGrille),
+                ),
+                PopupMenuItem(
+                  key: const Key('bouton-reglages'),
+                  value: onReglages,
+                  child: const Text(Textes.reglages),
                 ),
               ],
             ),

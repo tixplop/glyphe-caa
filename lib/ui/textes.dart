@@ -103,4 +103,33 @@ class Textes {
       'Ligne ${ligne + 1}, colonne ${colonne + 1}';
 
   static String dossier(String libelle) => 'dossier $libelle';
+
+  // Réglages (REQ-004, REQ-005, REQ-010, REQ-021, REQ-022).
+  static const String reglages = 'Réglages';
+  static const String sectionVoix = 'Voix';
+  static const String voixParDefaut = 'Voix par défaut du système';
+  static const String aucuneVoix = 'Aucune voix de synthèse disponible';
+  static const String installerVoix =
+      'Installez une voix dans les réglages de l\'appareil (synthèse '
+      'vocale), puis revenez dans Glyphe.';
+  static const String voixIndisponible =
+      'La voix choisie n\'est plus disponible';
+  static const String debit = 'Débit';
+  static const String hauteur = 'Hauteur';
+  static const String volume = 'Volume';
+  static String valeurMultiple(double v) =>
+      '${v.toStringAsFixed(1).replaceAll('.', ',')}×';
+  static String valeurPourcent(double v) => '${(v * 100).round()} %';
+  static const String tester = 'Tester';
+  static const String phraseTest = 'Bonjour, je m\'appelle Glyphe';
+  static const String delaiAntiRepetition = 'Délai anti-répétition';
+  static const String delaiDesactive = 'Désactivé';
+  static String delaiSecondes(int ms) =>
+      '${(ms / 1000).toStringAsFixed(ms % 1000 == 0 ? 0 : 1).replaceAll('.', ',')} s';
+  static const String retourAccueilApresMot =
+      'Revenir à l\'accueil après un mot';
+  static const String codeDeverrouillage = 'Code de déverrouillage';
+  static const String sectionSauvegarde = 'Sauvegarde';
+  static const String exporter = 'Exporter';
+  static const String importer = 'Importer';
 }
