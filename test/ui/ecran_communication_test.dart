@@ -1,11 +1,9 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyphe/domaine/modeles.dart';
 import 'package:glyphe/ui/app.dart';
+import 'package:glyphe/ui/tokens.dart';
 import 'package:glyphe/ui/etat_appli.dart';
-import 'package:glyphe/ui/theme.dart';
 import 'package:glyphe/ui/widgets/barre_phrase.dart';
 
 import '../faux/faux_stockage.dart';
@@ -18,7 +16,7 @@ Case mot(
   int l,
   int c, {
   String texte = '',
-  int? couleur,
+  Categorie categorie = Categorie.petitMot,
 }) => Case(
   id: id,
   ligne: l,
@@ -27,7 +25,7 @@ Case mot(
   libelle: lib,
   textePrononce: texte,
   image: ImageArasaac(2617),
-  couleur: couleur,
+  categorie: categorie,
 );
 
 Case dossier(String id, String lib, int l, int c, String? cible) => Case(
@@ -51,7 +49,7 @@ Donnees donnees() => Donnees(
         mot('je', 'je', 0, 0),
         mot('veux', 'veux', 0, 1),
         mot('manger', 'manger', 0, 2),
-        mot('eau', 'eau', 0, 3, couleur: 0xFFBBDEFB),
+        mot('eau', 'eau', 0, 3, categorie: Categorie.description),
         mot('wc', 'WC', 1, 0, texte: 'je veux aller aux toilettes'),
         dossier('d-manger', 'Manger', 1, 1, 'manger-g'),
         dossier('d-orph', 'Perdu', 1, 2, 'inexistante'),
@@ -194,22 +192,23 @@ void main() {
     });
   });
 
-  group('Thème', () {
-    double lum(Color c) {
-      double f(double v) =>
-          v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4).toDouble();
-      return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
-    }
-
-    test('REQ028_AC2 palette de 8 couleurs, contraste >= 4,5 avec le noir', () {
-      expect(PaletteCases.couleurs, hasLength(8));
-      for (final c in PaletteCases.couleurs) {
-        expect((lum(c) + 0.05) / 0.05, greaterThanOrEqualTo(4.5), reason: '$c');
-      }
-    });
-  });
-
   group('Écran de communication', () {
+    testWidgets('REQ032_AC2 le fond d\'une case est celui de sa catégorie', (
+      tester,
+    ) async {
+      await lance(tester);
+      Color fond(String id) => tester
+          .widget<Material>(
+            find.descendant(
+              of: find.byKey(Key('case-$id')),
+              matching: find.byType(Material),
+            ),
+          )
+          .color!;
+      expect(fond('eau'), GlypheTokens.clair.catDescribeBg);
+      expect(fond('je'), GlypheTokens.clair.catLittleBg);
+    });
+
     testWidgets('REQ002_AC1 appui sur eau : parlé et ajouté à la barre', (
       tester,
     ) async {

@@ -51,21 +51,33 @@ void main() {
     expect(g.redimensionner(1, 2).emplacementLibre(), isNull);
   });
 
-  test('copyWith conserve et remplace, couleur et cible annulables', () {
-    const c = Case(
-      id: 'a',
-      ligne: 0,
-      colonne: 0,
-      type: TypeCase.dossier,
-      couleur: 5,
-      cibleId: 'x',
-    );
-    expect(c.copyWith(libelle: 'L').cibleId, 'x');
-    expect(c.copyWith(couleur: () => null).couleur, isNull);
-    final d = Donnees(accueilId: 'g', grilles: [pleine(1)]);
-    expect(d.copyWith(reglages: const Reglages(debit: 2)).reglages.debit, 2);
-    expect(d.versionFormat, 1);
-  });
+  test(
+    'copyWith conserve et remplace, cible annulable, categorie par defaut',
+    () {
+      const c = Case(
+        id: 'a',
+        ligne: 0,
+        colonne: 0,
+        type: TypeCase.dossier,
+        categorie: Categorie.objet,
+        cibleId: 'x',
+      );
+      expect(c.copyWith(libelle: 'L').cibleId, 'x');
+      expect(c.copyWith(libelle: 'L').categorie, Categorie.objet);
+      expect(
+        c.copyWith(categorie: Categorie.social).categorie,
+        Categorie.social,
+      );
+      expect(c.copyWith(cibleId: () => null).cibleId, isNull);
+      expect(
+        const Case(id: 'n', ligne: 0, colonne: 0, type: TypeCase.mot).categorie,
+        Categorie.petitMot,
+      );
+      final d = Donnees(accueilId: 'g', grilles: [pleine(1)]);
+      expect(d.copyWith(reglages: const Reglages(debit: 2)).reglages.debit, 2);
+      expect(d.versionFormat, 2);
+    },
+  );
 
   test('les listes sont immuables', () {
     expect(() => pleine(1).cases.add(pleine(1).cases.first), throwsA(anything));

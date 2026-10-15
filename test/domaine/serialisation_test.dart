@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyphe/domaine/modeles.dart';
@@ -29,7 +30,7 @@ Donnees exemple() => Donnees(
           libelle: 'WC',
           textePrononce: 'je veux aller aux toilettes',
           image: ImageArasaac(42),
-          couleur: 0xFF00FF00,
+          categorie: Categorie.action,
         ),
         Case(
           id: 'b',
@@ -134,10 +135,85 @@ void main() {
     expect(() => donneesDepuisJson(j), throwsA(isA<FormatInvalide>()));
   });
 
-  test('couleur non entiere -> FormatInvalide', () {
+  test('REQ032_AC4 categorie ecrite, couleur absente', () {
     final j = json();
-    caseJson(j, 0)['couleur'] = 'rouge';
+    expect(j['versionFormat'], 2);
+    expect(caseJson(j, 0)['categorie'], 'action');
+    expect(caseJson(j, 0).containsKey('couleur'), isFalse);
+  });
+
+  test('REQ032_AC4 toutes les categories font l\'aller-retour', () {
+    for (final cat in Categorie.values) {
+      final j = json();
+      caseJson(j, 0)['categorie'] = cat.name;
+      final d = donneesDepuisJson(j);
+      expect(d.grilles.first.cases.first.categorie, cat);
+    }
+  });
+
+  test('REQ032_AC4 categorie absente, inconnue ou non chaine en v2', () {
+    var j = json();
+    caseJson(j, 0).remove('categorie');
     expect(() => donneesDepuisJson(j), throwsA(isA<FormatInvalide>()));
+    j = json();
+    caseJson(j, 0)['categorie'] = 'rose';
+    expect(() => donneesDepuisJson(j), throwsA(isA<FormatInvalide>()));
+    j = json();
+    caseJson(j, 0)['categorie'] = 3;
+    expect(() => donneesDepuisJson(j), throwsA(isA<FormatInvalide>()));
+  });
+
+  test('REQ032_AC5 table de conversion des couleurs v1', () {
+    const attendu = {
+      0xFFFFF9C4: Categorie.personne,
+      0xFFC8E6C9: Categorie.action,
+      0xFFFFCCBC: Categorie.objet,
+      0xFFBBDEFB: Categorie.description,
+      0xFFB2EBF2: Categorie.description,
+      0xFFF8BBD0: Categorie.social,
+      0xFFE1BEE7: Categorie.question,
+      0xFFD7CCC8: Categorie.petitMot,
+      0xFFFFFFFF: Categorie.petitMot,
+      0xFF123456: Categorie.petitMot,
+    };
+    attendu.forEach((couleur, cat) {
+      expect(categorieDepuisCouleurV1(couleur), cat, reason: '$couleur');
+    });
+    expect(categorieDepuisCouleurV1(null), Categorie.petitMot);
+  });
+
+  test('REQ032_AC5 lecture v1 : couleurs converties, reste identique', () {
+    final v1 = jsonDecode(
+      File('test/fixtures/donnees_v1.json').readAsStringSync(),
+    );
+    final d = donneesDepuisJson(v1);
+    expect(d.versionFormat, 2);
+    final cases = d.grilles.single.cases;
+    expect(cases.map((c) => c.categorie).toList(), [
+      Categorie.personne,
+      Categorie.action,
+      Categorie.objet,
+      Categorie.description,
+      Categorie.description,
+      Categorie.social,
+      Categorie.question,
+      Categorie.petitMot,
+      Categorie.petitMot,
+    ]);
+    expect(cases[3].libelle, 'm3');
+    expect(cases[3].image, const ImageArasaac(2617));
+    expect(d.reglages.voixId, 'v1');
+    expect(d.reglages.delaiAntiRepetitionMs, 700);
+    final reecrit = donneesVersJson(d);
+    expect(reecrit['versionFormat'], 2);
+  });
+
+  test('v1 : couleur non entiere -> FormatInvalide', () {
+    final v1 = jsonDecode(
+      File('test/fixtures/donnees_v1.json').readAsStringSync(),
+    ) as Map<String, Object?>;
+    caseJson(v1, 0)['couleur'] = 'rouge';
+    expect(() => donneesDepuisJson(v1), throwsA(isA<FormatInvalide>()));
   });
 
   test('photo vide -> FormatInvalide', () {

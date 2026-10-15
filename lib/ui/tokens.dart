@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../domaine/modeles.dart';
+
 /// Tokens du design system (`design/glyphe-tokens.css`) : couleurs des thèmes
 /// clair et sombre, espacements, rayons, tailles et styles de texte (REQ-035).
 @immutable
@@ -121,6 +123,17 @@ class GlypheTokens extends ThemeExtension<GlypheTokens> {
       BoxShadow(color: Color(0x99000000), offset: Offset(0, 1), blurRadius: 3),
     ],
   );
+
+  /// Fond et contour d'une catégorie de case (REQ-032).
+  (Color fond, Color contour) categorie(Categorie c) => switch (c) {
+    Categorie.personne => (catPersonBg, catPersonEdge),
+    Categorie.action => (catActionBg, catActionEdge),
+    Categorie.objet => (catObjectBg, catObjectEdge),
+    Categorie.description => (catDescribeBg, catDescribeEdge),
+    Categorie.social => (catSocialBg, catSocialEdge),
+    Categorie.question => (catQuestionBg, catQuestionEdge),
+    Categorie.petitMot => (catLittleBg, catLittleEdge),
+  };
 
   /// Couleurs indexées par leur nom dans `glyphe-tokens.css` (sans `--`).
   Map<String, Color> get parNomCss => {

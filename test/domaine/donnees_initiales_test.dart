@@ -66,6 +66,61 @@ void main() {
     expect(pomme!.type, TypeCase.mot);
   });
 
+  test('REQ001_AC6 chaque case d\'exemple a la categorie attendue', () {
+    const attendu = {
+      'je': Categorie.personne,
+      'veux': Categorie.action,
+      'boire': Categorie.action,
+      'manger': Categorie.action,
+      'dormir': Categorie.action,
+      'jouer': Categorie.action,
+      'dessiner': Categorie.action,
+      'Besoins': Categorie.action,
+      'Jouer': Categorie.action,
+      'eau': Categorie.objet,
+      'pain': Categorie.objet,
+      'gâteau': Categorie.objet,
+      'pomme': Categorie.objet,
+      'banane': Categorie.objet,
+      'orange': Categorie.objet,
+      'fraise': Categorie.objet,
+      'poire': Categorie.objet,
+      'raisin': Categorie.objet,
+      'toilettes': Categorie.objet,
+      'jeu': Categorie.objet,
+      'ballon': Categorie.objet,
+      'musique': Categorie.objet,
+      'livre': Categorie.objet,
+      'puzzle': Categorie.objet,
+      'Manger': Categorie.objet,
+      'Fruits': Categorie.objet,
+      'content': Categorie.description,
+      'triste': Categorie.description,
+      'fatigué': Categorie.description,
+      'joyeux': Categorie.description,
+      'peur': Categorie.description,
+      'Émotions': Categorie.description,
+      'oui': Categorie.social,
+      'non': Categorie.social,
+      'encore': Categorie.social,
+      'fini': Categorie.social,
+      'aide': Categorie.social,
+    };
+    final vus = <String>{};
+    for (final g in exemples.grilles) {
+      for (final c in g.cases) {
+        expect(attendu[c.libelle], c.categorie, reason: c.libelle);
+        vus.add(c.libelle);
+      }
+    }
+    expect(vus, attendu.keys.toSet());
+  });
+
+  test('REQ025_AC4 exemples en version 2', () {
+    expect(jsonDecode(json)['versionFormat'], 2);
+    expect(json.contains('"couleur"'), isFalse);
+  });
+
   test('REQ001_AC3 accueil : mots de base', () {
     final accueil = exemples.grillePar(exemples.accueilId)!;
     for (final m in ['je', 'veux', 'oui', 'non', 'encore', 'fini', 'eau']) {

@@ -5,7 +5,7 @@ import '../domaine/modeles.dart';
 import 'etat_appli.dart';
 import 'selecteur_image.dart';
 import 'textes.dart';
-import 'theme.dart';
+import 'tokens.dart';
 import 'widgets/image_case.dart';
 
 const String _valeurNouvelleGrille = '__nouvelle_grille__';
@@ -41,7 +41,7 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
   late final TextEditingController _libelle;
   late final TextEditingController _texte;
   late TypeCase _type;
-  late int? _couleur;
+  late Categorie _categorie;
   late ImageCase _image;
   String? _cible;
   String? _erreur;
@@ -58,7 +58,7 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     _libelle = TextEditingController(text: c?.libelle ?? '');
     _texte = TextEditingController(text: c?.textePrononce ?? '');
     _type = c?.type ?? TypeCase.mot;
-    _couleur = c?.couleur;
+    _categorie = c?.categorie ?? Categorie.petitMot;
     _image = c?.image ?? const ImageAucune();
     final cible = c?.cibleId;
     _cible = cible != null && _proposees.any((g) => g.id == cible)
@@ -116,7 +116,7 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
       libelle: libelle,
       textePrononce: _texte.text.trim(),
       image: _image,
-      couleur: _couleur,
+      categorie: _categorie,
       cibleId: dossier && nouvelle == null && _cible != _valeurNouvelleGrille
           ? _cible
           : null,
@@ -254,46 +254,51 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     );
   }
 
-  Widget _couleurs() => Wrap(
-    spacing: 8,
-    runSpacing: 8,
-    children: [
-      _pastille(
-        const Key('couleur-defaut'),
-        PaletteCases.parDefaut,
-        null,
-        Textes.couleurDefaut,
-      ),
-      for (var i = 0; i < PaletteCases.couleurs.length; i++)
-        _pastille(
-          Key('couleur-$i'),
-          PaletteCases.couleurs[i],
-          PaletteCases.couleurs[i].toARGB32(),
-          '${Textes.couleur} ${i + 1}',
-        ),
-    ],
-  );
+  Widget _categories() {
+    final t = GlypheTokens.of(context);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [for (final c in Categorie.values) _optionCategorie(t, c)],
+    );
+  }
 
-  Widget _pastille(Key key, Color fond, int? valeur, String nom) {
-    final choisie = _couleur == valeur;
+  Widget _optionCategorie(GlypheTokens t, Categorie c) {
+    final choisie = _categorie == c;
+    final (fond, contour) = t.categorie(c);
+    final nom = Textes.nomCategorie(c);
     return Semantics(
       button: true,
       selected: choisie,
       label: nom,
       excludeSemantics: true,
       child: InkWell(
-        key: key,
-        onTap: () => setState(() => _couleur = valeur),
-        customBorder: const CircleBorder(),
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: fond,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.black, width: choisie ? 4 : 1),
+        key: Key('categorie-${c.name}'),
+        onTap: () => setState(() => _categorie = c),
+        borderRadius: BorderRadius.circular(GlypheTokens.rayonSm),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: GlypheTokens.toucheMin),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: fond,
+              borderRadius: BorderRadius.circular(GlypheTokens.rayonSm),
+              border: Border.all(
+                color: contour,
+                width: GlypheTokens.contourCase,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (choisie) ...[
+                  Icon(Icons.check, color: t.ink),
+                  const SizedBox(width: 4),
+                ],
+                Text(nom, style: TextStyle(color: t.ink)),
+              ],
+            ),
           ),
-          child: choisie ? const Icon(Icons.check, color: Colors.black) : null,
         ),
       ),
     );
@@ -332,88 +337,95 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
         ),
       ),
       body: SafeArea(
-        child: ListView(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          children: [
-            TextField(
-              key: const Key('champ-libelle'),
-              controller: _libelle,
-              decoration: const InputDecoration(labelText: Textes.libelle),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              key: const Key('champ-texte'),
-              controller: _texte,
-              decoration: const InputDecoration(
-                labelText: Textes.textePrononce,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                key: const Key('champ-libelle'),
+                controller: _libelle,
+                decoration: const InputDecoration(labelText: Textes.libelle),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                SizedBox(width: 56, height: 56, child: ImageCaseWidget(_image)),
-                const SizedBox(width: 12),
-                OutlinedButton(
-                  key: const Key('bouton-image'),
-                  onPressed: _choisirImage,
-                  child: const Text(Textes.image),
-                ),
-                const SizedBox(width: 12),
-                if (_image is ImageAucune) const Text(Textes.imageAucune),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Text(Textes.couleur),
-            const SizedBox(height: 8),
-            _couleurs(),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              children: [
-                ChoiceChip(
-                  key: const Key('type-mot'),
-                  label: const Text(Textes.typeMot),
-                  selected: !dossier,
-                  onSelected: (_) => setState(() => _type = TypeCase.mot),
-                ),
-                ChoiceChip(
-                  key: const Key('type-dossier'),
-                  label: const Text(Textes.typeDossier),
-                  selected: dossier,
-                  onSelected: (_) => setState(() => _type = TypeCase.dossier),
-                ),
-              ],
-            ),
-            if (dossier) ...[const SizedBox(height: 8), _selecteurCible()],
-            if (_erreur != null) ...[
               const SizedBox(height: 12),
-              Text(
-                _erreur!,
-                key: const Key('erreur-edition'),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _enregistrer,
-              child: const Text(Textes.enregistrer),
-            ),
-            if (existante != null) ...[
-              if (existante.type == TypeCase.dossier && cibleValide)
-                TextButton(
-                  onPressed: _ouvrir,
-                  child: const Text(Textes.ouvrir),
+              TextField(
+                key: const Key('champ-texte'),
+                controller: _texte,
+                decoration: const InputDecoration(
+                  labelText: Textes.textePrononce,
                 ),
-              TextButton(
-                onPressed: _echanger,
-                child: const Text(Textes.echanger),
               ),
-              TextButton(
-                onPressed: _supprimer,
-                child: const Text(Textes.supprimer),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  SizedBox(
+                    width: 56,
+                    height: 56,
+                    child: ImageCaseWidget(_image),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton(
+                    key: const Key('bouton-image'),
+                    onPressed: _choisirImage,
+                    child: const Text(Textes.image),
+                  ),
+                  const SizedBox(width: 12),
+                  if (_image is ImageAucune) const Text(Textes.imageAucune),
+                ],
               ),
+              const SizedBox(height: 16),
+              const Text(Textes.categorie),
+              const SizedBox(height: 8),
+              _categories(),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    key: const Key('type-mot'),
+                    label: const Text(Textes.typeMot),
+                    selected: !dossier,
+                    onSelected: (_) => setState(() => _type = TypeCase.mot),
+                  ),
+                  ChoiceChip(
+                    key: const Key('type-dossier'),
+                    label: const Text(Textes.typeDossier),
+                    selected: dossier,
+                    onSelected: (_) => setState(() => _type = TypeCase.dossier),
+                  ),
+                ],
+              ),
+              if (dossier) ...[const SizedBox(height: 8), _selecteurCible()],
+              if (_erreur != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _erreur!,
+                  key: const Key('erreur-edition'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _enregistrer,
+                child: const Text(Textes.enregistrer),
+              ),
+              if (existante != null) ...[
+                if (existante.type == TypeCase.dossier && cibleValide)
+                  TextButton(
+                    onPressed: _ouvrir,
+                    child: const Text(Textes.ouvrir),
+                  ),
+                TextButton(
+                  onPressed: _echanger,
+                  child: const Text(Textes.echanger),
+                ),
+                TextButton(
+                  onPressed: _supprimer,
+                  child: const Text(Textes.supprimer),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

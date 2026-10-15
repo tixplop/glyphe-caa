@@ -23,10 +23,12 @@ Donnees donneesDepuisJson(Object? json) {
   try {
     final m = _map(json, 'racine');
     final version = _int(m, 'versionFormat');
-    if (version != versionFormatCourant) {
+    if (version != 1 && version != versionFormatCourant) {
       throw FormatInvalide('version de format non gérée : $version');
     }
-    final grilles = [for (final g in _liste(m, 'grilles')) _grilleDepuis(g)];
+    final grilles = [
+      for (final g in _liste(m, 'grilles')) _grilleDepuis(g, version),
+    ];
     final accueilId = _str(m, 'accueilId');
     final ids = <String>{};
     for (final g in grilles) {
@@ -63,7 +65,7 @@ Map<String, Object?> _caseVersJson(Case c) => {
   'libelle': c.libelle,
   'textePrononce': c.textePrononce,
   'image': _imageVersChaine(c.image),
-  'couleur': c.couleur,
+  'categorie': c.categorie.name,
   'cibleId': c.cibleId,
 };
 
@@ -113,7 +115,7 @@ Reglages _reglagesDepuis(Object? json) {
   );
 }
 
-Grille _grilleDepuis(Object? json) {
+Grille _grilleDepuis(Object? json, int version) {
   final m = _map(json, 'grille');
   final lignes = _int(m, 'lignes');
   final colonnes = _int(m, 'colonnes');
@@ -124,7 +126,7 @@ Grille _grilleDepuis(Object? json) {
       colonnes > tailleMax) {
     throw FormatInvalide('taille hors bornes pour la grille $id');
   }
-  final cases = [for (final c in _liste(m, 'cases')) _caseDepuis(c)];
+  final cases = [for (final c in _liste(m, 'cases')) _caseDepuis(c, version)];
   final positions = <(int, int)>{};
   final ids = <String>{};
   for (final c in cases) {
@@ -144,7 +146,7 @@ Grille _grilleDepuis(Object? json) {
   );
 }
 
-Case _caseDepuis(Object? json) {
+Case _caseDepuis(Object? json, int version) {
   final m = _map(json, 'case');
   final nomType = _str(m, 'type');
   final type = TypeCase.values.where((t) => t.name == nomType).firstOrNull;
@@ -154,9 +156,22 @@ Case _caseDepuis(Object? json) {
   if (ligne < 0 || colonne < 0) {
     throw FormatInvalide('position négative');
   }
-  final couleur = m['couleur'];
-  if (couleur != null && couleur is! int) {
-    throw FormatInvalide('couleur doit être un entier');
+  final Categorie categorie;
+  if (version == 1) {
+    final couleur = m['couleur'];
+    if (couleur != null && couleur is! int) {
+      throw FormatInvalide('couleur doit être un entier');
+    }
+    categorie = categorieDepuisCouleurV1(couleur as int?);
+  } else {
+    final nomCategorie = _str(m, 'categorie');
+    final trouvee = Categorie.values
+        .where((c) => c.name == nomCategorie)
+        .firstOrNull;
+    if (trouvee == null) {
+      throw FormatInvalide('catégorie inconnue : $nomCategorie');
+    }
+    categorie = trouvee;
   }
   final cible = m['cibleId'];
   if (cible != null && cible is! String) {
@@ -170,7 +185,7 @@ Case _caseDepuis(Object? json) {
     libelle: _str(m, 'libelle'),
     textePrononce: _str(m, 'textePrononce'),
     image: _imageDepuisChaine(_str(m, 'image')),
-    couleur: couleur as int?,
+    categorie: categorie,
     cibleId: cible as String?,
   );
 }
@@ -204,3 +219,15 @@ double _num(Map<String, Object?> m, String cle) {
   if (v is num) return v.toDouble();
   throw FormatInvalide('nombre attendu : $cle');
 }
+
+/// Conversion d'une couleur de case de la version 1 (ARGB) en catégorie
+/// (AC-032-5). Toute valeur inconnue ou absente donne « petits mots ».
+Categorie categorieDepuisCouleurV1(int? couleur) => switch (couleur) {
+  0xFFFFF9C4 => Categorie.personne,
+  0xFFC8E6C9 => Categorie.action,
+  0xFFFFCCBC => Categorie.objet,
+  0xFFBBDEFB || 0xFFB2EBF2 => Categorie.description,
+  0xFFF8BBD0 => Categorie.social,
+  0xFFE1BEE7 => Categorie.question,
+  _ => Categorie.petitMot,
+};

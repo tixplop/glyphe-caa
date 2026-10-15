@@ -99,6 +99,21 @@ void main() {
       expect(t.s.barre.single.image, const ImageArasaac(1));
     });
 
+    test('REQ032_AC6 l\'élément de barre retient la catégorie', () async {
+      final t = cree();
+      await t.s.appuyerCase(
+        const Case(
+          id: 'x',
+          ligne: 0,
+          colonne: 0,
+          type: TypeCase.mot,
+          libelle: 'x',
+          categorie: Categorie.question,
+        ),
+      );
+      expect(t.s.barre.single.categorie, Categorie.question);
+    });
+
     test('REQ002_AC2 libellé prononcé si texte vide', () async {
       final t = cree();
       await t.s.appuyerCase(c(t.s, 'eau'));

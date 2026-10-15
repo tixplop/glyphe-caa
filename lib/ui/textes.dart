@@ -1,4 +1,8 @@
 /// Point unique des textes de l'interface (REQ-029).
+library;
+
+import '../domaine/modeles.dart';
+
 class Textes {
   const Textes._();
 
@@ -39,8 +43,25 @@ class Textes {
   static const String nouvelleCase = 'Nouvelle case';
   static const String libelle = 'Libellé';
   static const String textePrononce = 'Texte prononcé';
-  static const String couleur = 'Couleur';
-  static const String couleurDefaut = 'Couleur par défaut';
+  static const String categorie = 'Catégorie';
+  static const String categoriePersonne = 'Personnes';
+  static const String categorieAction = 'Actions';
+  static const String categorieObjet = 'Choses';
+  static const String categorieDescription = 'Description';
+  static const String categorieSocial = 'Social';
+  static const String categorieQuestion = 'Questions';
+  static const String categoriePetitMot = 'Petits mots';
+
+  /// Nom affiché d'une catégorie de case.
+  static String nomCategorie(Categorie c) => switch (c) {
+    Categorie.personne => categoriePersonne,
+    Categorie.action => categorieAction,
+    Categorie.objet => categorieObjet,
+    Categorie.description => categorieDescription,
+    Categorie.social => categorieSocial,
+    Categorie.question => categorieQuestion,
+    Categorie.petitMot => categoriePetitMot,
+  };
   static const String type = 'Type';
   static const String typeMot = 'Mot';
   static const String typeDossier = 'Dossier';

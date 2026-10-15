@@ -261,6 +261,18 @@ void main() {
       z[debut] ^= 0xFF;
       expectInvalide(analyserSauvegarde(z));
     });
+    test('REQ024_AC8 une sauvegarde v1 est importee, couleurs converties', () {
+      final v1 = jsonDecode(
+        File('test/fixtures/donnees_v1.json').readAsStringSync(),
+      );
+      final r = analyserSauvegarde(zip([jsonBrut(v1 as Object)]));
+      expect(r, isA<SauvegardeValide>());
+      final cases = (r as SauvegardeValide).donnees.grilles.single.cases;
+      expect(cases[0].categorie, Categorie.personne);
+      expect(cases[5].categorie, Categorie.social);
+      expect(cases[7].categorie, Categorie.petitMot);
+      expect(cases[2].libelle, 'm2');
+    });
     test('REQ024_AC5 version trop recente', () {
       final j = donneesVersJson(d)
         ..['versionFormat'] = versionFormatCourant + 1;

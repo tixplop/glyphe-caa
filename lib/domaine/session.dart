@@ -11,6 +11,7 @@ class ElementBarre {
     required this.image,
     required this.libelle,
     required this.textePrononce,
+    this.categorie = Categorie.petitMot,
   });
 
   final ImageCase image;
@@ -18,6 +19,9 @@ class ElementBarre {
 
   /// Texte effectivement dit (texte prononcé de la case, sinon libellé).
   final String textePrononce;
+
+  /// Catégorie de la case au moment de l'appui (AC-032-6).
+  final Categorie categorie;
 }
 
 /// État de la session de communication : grille courante, historique de
@@ -105,7 +109,12 @@ class Session extends ChangeNotifier {
 
     final texte = c.textePrononce.isNotEmpty ? c.textePrononce : c.libelle;
     _barre.add(
-      ElementBarre(image: c.image, libelle: c.libelle, textePrononce: texte),
+      ElementBarre(
+        image: c.image,
+        libelle: c.libelle,
+        textePrononce: texte,
+        categorie: c.categorie,
+      ),
     );
     if (_donnees.reglages.retourAccueilApresMot) {
       _grilleId = _donnees.accueilId;

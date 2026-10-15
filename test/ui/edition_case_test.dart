@@ -176,20 +176,70 @@ void main() {
     expect(find.byIcon(Icons.add), findsNothing);
   });
 
-  testWidgets('REQ015_AC1 modifier libellé, texte prononcé, couleur', (
+  testWidgets('REQ015_AC1 modifier libellé, texte prononcé, catégorie', (
     tester,
   ) async {
     final e = await lance(tester);
     await toucher(tester, find.byKey(const Key('case-je')));
     await saisir(tester, 'champ-libelle', 'moi');
     await saisir(tester, 'champ-texte', 'c\'est moi');
-    await toucher(tester, champ('couleur-2'));
+    await toucher(tester, champ('categorie-description'));
     await toucher(tester, find.text('Enregistrer'));
     final c = caseDe(e, 'acc', 'je');
     expect(c.libelle, 'moi');
     expect(c.textePrononce, 'c\'est moi');
-    expect(c.couleur, 0xFFBBDEFB);
+    expect(c.categorie, Categorie.description);
     expect(c.image, const ImageArasaac(2617));
+  });
+
+  testWidgets('REQ032_AC3 sept catégories proposées, avec leur nom', (
+    tester,
+  ) async {
+    await lance(tester);
+    await toucher(tester, find.byKey(const Key('case-je')));
+    await tester.ensureVisible(find.text('Catégorie'));
+    expect(find.text('Catégorie'), findsOneWidget);
+    for (final c in Categorie.values) {
+      expect(champ('categorie-${c.name}'), findsOneWidget, reason: c.name);
+    }
+    for (final nom in [
+      'Personnes',
+      'Actions',
+      'Choses',
+      'Description',
+      'Social',
+      'Questions',
+      'Petits mots',
+    ]) {
+      expect(find.text(nom), findsOneWidget, reason: nom);
+    }
+  });
+
+  testWidgets('REQ032_AC1 une nouvelle case est en Petits mots', (
+    tester,
+  ) async {
+    final e = await lance(tester);
+    await ajouterMot(tester, 'chat');
+    final g = e.etat.session.donnees.grillePar('acc')!;
+    expect(
+      g.cases.firstWhere((c) => c.libelle == 'chat').categorie,
+      Categorie.petitMot,
+    );
+  });
+
+  testWidgets('REQ032_AC3 la catégorie choisie est enregistrée', (
+    tester,
+  ) async {
+    final e = await lance(tester);
+    await toucher(tester, find.byKey(const Key('vide-1-1')));
+    await saisir(tester, 'champ-libelle', 'chat');
+    await toucher(tester, champ('categorie-question'));
+    await toucher(tester, find.text('Enregistrer'));
+    final c = e.stockage.donnees!
+        .grillePar('acc')!
+        .cases
+        .firstWhere((c) => c.libelle == 'chat');
+    expect(c.categorie, Categorie.question);
   });
 
   testWidgets('REQ015_AC1 l\'écran propose l\'image (provisoirement aucune)', (

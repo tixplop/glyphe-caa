@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -40,6 +41,31 @@ void main() {
 
   test('charger sans fichier -> null', () async {
     expect(await stockage.charger(), isNull);
+  });
+
+  test('REQ025_AC4 donnees v1 chargees sans perte, reecrites en v2', () async {
+    stockage.dossier.createSync(recursive: true);
+    File('${stockage.dossier.path}/glyphe.json').writeAsStringSync(
+      File('test/fixtures/donnees_v1.json').readAsStringSync(),
+    );
+    final d = await stockage.charger();
+    expect(d, isNotNull);
+    final cases = d!.grilles.single.cases;
+    expect(cases.length, 9);
+    expect(cases[1].categorie, Categorie.action);
+    expect(cases[6].categorie, Categorie.question);
+    expect(cases[0].libelle, 'm0');
+    expect(d.reglages.voixId, 'v1');
+    await stockage.enregistrer(d.copyWith(grilles: d.grilles));
+    final ecrit = jsonDecode(
+      File('${stockage.dossier.path}/glyphe.json').readAsStringSync(),
+    ) as Map<String, Object?>;
+    expect(ecrit['versionFormat'], 2);
+    final c0 =
+        (((ecrit['grilles']! as List).single as Map)['cases'] as List)[0]
+            as Map;
+    expect(c0['categorie'], 'personne');
+    expect(c0.containsKey('couleur'), isFalse);
   });
 
   test('REQ025_AC1 aller-retour via fichier, nouveau stockage', () async {

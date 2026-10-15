@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domaine/modeles.dart';
 import '../textes.dart';
-import '../theme.dart';
+import '../tokens.dart';
 import 'image_case.dart';
 
 /// Une case de la grille : image, libellé dessous, fond coloré.
@@ -28,9 +28,7 @@ class CaseWidget extends StatelessWidget {
     final nom = libelle.isEmpty ? Textes.caseSansNom : libelle;
     final base = _dossier ? Textes.dossier(nom) : nom;
     final etiquette = orphelin ? '$base, ${Textes.grilleIntrouvable}' : base;
-    final fond = caseData.couleur != null
-        ? Color(caseData.couleur!)
-        : PaletteCases.parDefaut;
+    final (fond, _) = GlypheTokens.of(context).categorie(caseData.categorie);
     return Padding(
       padding: const EdgeInsets.all(3),
       child: Semantics(

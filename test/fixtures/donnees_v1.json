@@ -1,0 +1,121 @@
+{
+ "versionFormat": 1,
+ "accueilId": "acc",
+ "grilles": [
+  {
+   "id": "acc",
+   "nom": "Accueil",
+   "lignes": 3,
+   "colonnes": 4,
+   "cases": [
+    {
+     "id": "c0",
+     "ligne": 0,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "m0",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "couleur": 4294965700,
+     "cibleId": null
+    },
+    {
+     "id": "c1",
+     "ligne": 0,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "m1",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "couleur": 4291356361,
+     "cibleId": null
+    },
+    {
+     "id": "c2",
+     "ligne": 0,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "m2",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "couleur": 4294954172,
+     "cibleId": null
+    },
+    {
+     "id": "c3",
+     "ligne": 0,
+     "colonne": 3,
+     "type": "mot",
+     "libelle": "m3",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "couleur": 4290502395,
+     "cibleId": null
+    },
+    {
+     "id": "c4",
+     "ligne": 1,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "m4",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "couleur": 4289915890,
+     "cibleId": null
+    },
+    {
+     "id": "c5",
+     "ligne": 1,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "m5",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "couleur": 4294491088,
+     "cibleId": null
+    },
+    {
+     "id": "c6",
+     "ligne": 1,
+     "colonne": 2,
+     "type": "mot",
+     "libelle": "m6",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "couleur": 4292984551,
+     "cibleId": null
+    },
+    {
+     "id": "c7",
+     "ligne": 1,
+     "colonne": 3,
+     "type": "mot",
+     "libelle": "m7",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "couleur": 4292332744,
+     "cibleId": null
+    },
+    {
+     "id": "cn",
+     "ligne": 2,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "sans",
+     "textePrononce": "",
+     "image": "aucune",
+     "couleur": null,
+     "cibleId": null
+    }
+   ]
+  }
+ ],
+ "reglages": {
+  "voixId": "v1",
+  "debit": 0.8,
+  "hauteur": 1.1,
+  "volume": 0.9,
+  "delaiAntiRepetitionMs": 700,
+  "retourAccueilApresMot": false
+ }
+}

@@ -84,14 +84,14 @@ void main() {
       mot('a', 0, 0).copyWith(
         libelle: 'bonjour',
         textePrononce: 'salut',
-        couleur: () => 0xFFC8E6C9,
+        categorie: Categorie.action,
         image: const ImageArasaac(5),
       ),
     );
     final c = d.grillePar('acc')!.cases.firstWhere((c) => c.id == 'a');
     expect(c.libelle, 'bonjour');
     expect(c.textePrononce, 'salut');
-    expect(c.couleur, 0xFFC8E6C9);
+    expect(c.categorie, Categorie.action);
     expect(c.image, const ImageArasaac(5));
     expect((c.ligne, c.colonne), (0, 0));
   });

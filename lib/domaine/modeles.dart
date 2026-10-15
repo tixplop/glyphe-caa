@@ -1,11 +1,22 @@
 /// Modèle de données immuable (DEC-008). Pur Dart.
 library;
 
-const int versionFormatCourant = 1;
+const int versionFormatCourant = 2;
 const int tailleMin = 1;
 const int tailleMax = 8;
 
 enum TypeCase { mot, dossier }
+
+/// Catégorie grammaticale d'une case (clé de Fitzgerald modifiée, REQ-032).
+enum Categorie {
+  personne,
+  action,
+  objet,
+  description,
+  social,
+  question,
+  petitMot,
+}
 
 /// Image d'une case : pictogramme ARASAAC, photo locale ou aucune.
 sealed class ImageCase {
@@ -54,7 +65,7 @@ class Case {
     this.libelle = '',
     this.textePrononce = '',
     this.image = const ImageAucune(),
-    this.couleur,
+    this.categorie = Categorie.petitMot,
     this.cibleId,
   });
 
@@ -66,8 +77,8 @@ class Case {
   final String textePrononce;
   final ImageCase image;
 
-  /// Couleur ARGB, ou null (couleur par défaut).
-  final int? couleur;
+  /// Catégorie grammaticale (détermine les couleurs de la case).
+  final Categorie categorie;
 
   /// Pour un dossier : identifiant de la grille cible.
   final String? cibleId;
@@ -80,7 +91,7 @@ class Case {
     String? libelle,
     String? textePrononce,
     ImageCase? image,
-    int? Function()? couleur,
+    Categorie? categorie,
     String? Function()? cibleId,
   }) => Case(
     id: id ?? this.id,
@@ -90,7 +101,7 @@ class Case {
     libelle: libelle ?? this.libelle,
     textePrononce: textePrononce ?? this.textePrononce,
     image: image ?? this.image,
-    couleur: couleur != null ? couleur() : this.couleur,
+    categorie: categorie ?? this.categorie,
     cibleId: cibleId != null ? cibleId() : this.cibleId,
   );
 
@@ -104,7 +115,7 @@ class Case {
       other.libelle == libelle &&
       other.textePrononce == textePrononce &&
       other.image == image &&
-      other.couleur == couleur &&
+      other.categorie == categorie &&
       other.cibleId == cibleId;
 
   @override
@@ -116,7 +127,7 @@ class Case {
     libelle,
     textePrononce,
     image,
-    couleur,
+    categorie,
     cibleId,
   );
 }

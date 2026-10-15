@@ -1,5 +1,5 @@
 {
- "versionFormat": 1,
+ "versionFormat": 2,
  "accueilId": "accueil",
  "grilles": [
   {
@@ -16,7 +16,7 @@
      "libelle": "je",
      "textePrononce": "",
      "image": "arasaac:2617",
-     "couleur": null,
+     "categorie": "personne",
      "cibleId": null
     },
     {
@@ -27,7 +27,7 @@
      "libelle": "veux",
      "textePrononce": "",
      "image": "arasaac:5441",
-     "couleur": null,
+     "categorie": "action",
      "cibleId": null
     },
     {
@@ -38,7 +38,7 @@
      "libelle": "oui",
      "textePrononce": "",
      "image": "arasaac:5583",
-     "couleur": null,
+     "categorie": "social",
      "cibleId": null
     },
     {
@@ -49,7 +49,7 @@
      "libelle": "non",
      "textePrononce": "",
      "image": "arasaac:5525",
-     "couleur": null,
+     "categorie": "social",
      "cibleId": null
     },
     {
@@ -60,7 +60,7 @@
      "libelle": "encore",
      "textePrononce": "",
      "image": "arasaac:37163",
-     "couleur": null,
+     "categorie": "social",
      "cibleId": null
     },
     {
@@ -71,7 +71,7 @@
      "libelle": "fini",
      "textePrononce": "",
      "image": "arasaac:5358",
-     "couleur": null,
+     "categorie": "social",
      "cibleId": null
     },
     {
@@ -82,7 +82,7 @@
      "libelle": "eau",
      "textePrononce": "",
      "image": "arasaac:2248",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -93,7 +93,7 @@
      "libelle": "Besoins",
      "textePrononce": "",
      "image": "arasaac:37160",
-     "couleur": 4290502395,
+     "categorie": "action",
      "cibleId": "besoins"
     },
     {
@@ -104,7 +104,7 @@
      "libelle": "Émotions",
      "textePrononce": "",
      "image": "arasaac:12359",
-     "couleur": 4290502395,
+     "categorie": "description",
      "cibleId": "emotions"
     },
     {
@@ -115,7 +115,7 @@
      "libelle": "Manger",
      "textePrononce": "",
      "image": "arasaac:2349",
-     "couleur": 4290502395,
+     "categorie": "objet",
      "cibleId": "manger"
     },
     {
@@ -126,7 +126,7 @@
      "libelle": "Jouer",
      "textePrononce": "",
      "image": "arasaac:2439",
-     "couleur": 4290502395,
+     "categorie": "action",
      "cibleId": "jouer"
     }
    ]
@@ -145,7 +145,7 @@
      "libelle": "Fruits",
      "textePrononce": "",
      "image": "arasaac:28339",
-     "couleur": 4290502395,
+     "categorie": "objet",
      "cibleId": "fruits"
     },
     {
@@ -156,7 +156,7 @@
      "libelle": "pain",
      "textePrononce": "",
      "image": "arasaac:2494",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -167,7 +167,7 @@
      "libelle": "gâteau",
      "textePrononce": "",
      "image": "arasaac:2502",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -178,7 +178,7 @@
      "libelle": "eau",
      "textePrononce": "",
      "image": "arasaac:2248",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -189,7 +189,7 @@
      "libelle": "boire",
      "textePrononce": "",
      "image": "arasaac:6061",
-     "couleur": null,
+     "categorie": "action",
      "cibleId": null
     },
     {
@@ -200,7 +200,7 @@
      "libelle": "manger",
      "textePrononce": "",
      "image": "arasaac:6456",
-     "couleur": null,
+     "categorie": "action",
      "cibleId": null
     }
    ]
@@ -219,7 +219,7 @@
      "libelle": "pomme",
      "textePrononce": "",
      "image": "arasaac:2462",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -230,7 +230,7 @@
      "libelle": "banane",
      "textePrononce": "",
      "image": "arasaac:2530",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -241,7 +241,7 @@
      "libelle": "orange",
      "textePrononce": "",
      "image": "arasaac:2483",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -252,7 +252,7 @@
      "libelle": "fraise",
      "textePrononce": "",
      "image": "arasaac:2400",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -263,7 +263,7 @@
      "libelle": "poire",
      "textePrononce": "",
      "image": "arasaac:2561",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -274,7 +274,7 @@
      "libelle": "raisin",
      "textePrononce": "",
      "image": "arasaac:3247",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     }
    ]
@@ -293,7 +293,7 @@
      "libelle": "toilettes",
      "textePrononce": "",
      "image": "arasaac:5921",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -304,7 +304,7 @@
      "libelle": "boire",
      "textePrononce": "",
      "image": "arasaac:6061",
-     "couleur": null,
+     "categorie": "action",
      "cibleId": null
     },
     {
@@ -315,7 +315,7 @@
      "libelle": "manger",
      "textePrononce": "",
      "image": "arasaac:6456",
-     "couleur": null,
+     "categorie": "action",
      "cibleId": null
     },
     {
@@ -326,7 +326,7 @@
      "libelle": "dormir",
      "textePrononce": "",
      "image": "arasaac:6479",
-     "couleur": null,
+     "categorie": "action",
      "cibleId": null
     },
     {
@@ -337,7 +337,7 @@
      "libelle": "aide",
      "textePrononce": "",
      "image": "arasaac:7171",
-     "couleur": null,
+     "categorie": "social",
      "cibleId": null
     },
     {
@@ -348,7 +348,7 @@
      "libelle": "fatigué",
      "textePrononce": "",
      "image": "arasaac:35537",
-     "couleur": null,
+     "categorie": "description",
      "cibleId": null
     }
    ]
@@ -367,7 +367,7 @@
      "libelle": "content",
      "textePrononce": "",
      "image": "arasaac:35547",
-     "couleur": null,
+     "categorie": "description",
      "cibleId": null
     },
     {
@@ -378,7 +378,7 @@
      "libelle": "triste",
      "textePrononce": "",
      "image": "arasaac:35545",
-     "couleur": null,
+     "categorie": "description",
      "cibleId": null
     },
     {
@@ -389,7 +389,7 @@
      "libelle": "fatigué",
      "textePrononce": "",
      "image": "arasaac:35537",
-     "couleur": null,
+     "categorie": "description",
      "cibleId": null
     },
     {
@@ -400,7 +400,7 @@
      "libelle": "joyeux",
      "textePrononce": "",
      "image": "arasaac:35533",
-     "couleur": null,
+     "categorie": "description",
      "cibleId": null
     },
     {
@@ -411,7 +411,7 @@
      "libelle": "peur",
      "textePrononce": "",
      "image": "arasaac:35571",
-     "couleur": null,
+     "categorie": "description",
      "cibleId": null
     }
    ]
@@ -430,7 +430,7 @@
      "libelle": "jouer",
      "textePrononce": "",
      "image": "arasaac:2439",
-     "couleur": null,
+     "categorie": "action",
      "cibleId": null
     },
     {
@@ -441,7 +441,7 @@
      "libelle": "jeu",
      "textePrononce": "",
      "image": "arasaac:9810",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -452,7 +452,7 @@
      "libelle": "ballon",
      "textePrononce": "",
      "image": "arasaac:2408",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -463,7 +463,7 @@
      "libelle": "musique",
      "textePrononce": "",
      "image": "arasaac:24791",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -474,7 +474,7 @@
      "libelle": "livre",
      "textePrononce": "",
      "image": "arasaac:25191",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     },
     {
@@ -485,7 +485,7 @@
      "libelle": "dessiner",
      "textePrononce": "",
      "image": "arasaac:8088",
-     "couleur": null,
+     "categorie": "action",
      "cibleId": null
     },
     {
@@ -496,7 +496,7 @@
      "libelle": "puzzle",
      "textePrononce": "",
      "image": "arasaac:2540",
-     "couleur": null,
+     "categorie": "objet",
      "cibleId": null
     }
    ]
