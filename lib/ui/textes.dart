@@ -16,7 +16,8 @@ class Textes {
   static const String retour = 'Retour';
   static const String accueil = 'Accueil';
   static const String verrouille = 'Verrouillé';
-  static const String phrase = 'Phrase. Appuyer pour lire';
+  static const String phrasePrefixe = 'Phrase : ';
+  static const String appuyerPourLire = 'Appuyer pour lire';
   static const String caseSansNom = 'case sans nom';
   static const String chargementErreur =
       'Impossible de charger les données de l\'appli.';

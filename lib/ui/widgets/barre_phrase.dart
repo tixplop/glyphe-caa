@@ -33,10 +33,6 @@ class BarrePhrase extends StatefulWidget {
 class _BarrePhraseState extends State<BarrePhrase> {
   static const double _hauteurBouton = 56;
 
-  /// Plafond du bouton Parler : le libellé rétrécit plutôt que de prendre la
-  /// place de la zone de mots.
-  static const double _largeurMaxParler = 116;
-
   final ScrollController _controleur = ScrollController();
   bool _appuiLong = false;
 
@@ -98,7 +94,14 @@ class _BarrePhraseState extends State<BarrePhrase> {
     final vide = widget.elements.isEmpty;
     return Semantics(
       button: true,
-      label: Textes.phrase,
+      label: vide
+          ? Textes.aidePhrase
+          : Textes.phrasePrefixe +
+                widget.elements
+                    .map((e) => e.libelle)
+                    .where((l) => l.isNotEmpty)
+                    .join(' '),
+      hint: vide ? null : Textes.appuyerPourLire,
       excludeSemantics: true,
       onTap: widget.onLire,
       child: InkWell(
@@ -138,33 +141,43 @@ class _BarrePhraseState extends State<BarrePhrase> {
     final fond = _appuiLong ? t.danger : t.surface000;
     final encre = _appuiLong ? t.onDanger : t.ink;
     final rayon = BorderRadius.circular(GlypheTokens.rayonMd);
+    final actif = widget.enLecture || widget.elements.isNotEmpty;
     return Semantics(
       button: true,
+      enabled: actif,
       label: Textes.effacerDernierMot,
       excludeSemantics: true,
-      onTap: widget.onEffacerDernier,
-      onLongPress: widget.onToutEffacer,
-      onLongPressHint: Textes.toutEffacer,
-      child: GestureDetector(
-        key: const Key('bouton-effacer'),
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onEffacerDernier,
-        onLongPressStart: (_) {
-          _definirAppuiLong(true);
-          widget.onToutEffacer();
-        },
-        onLongPressEnd: (_) => _definirAppuiLong(false),
-        onLongPressCancel: () => _definirAppuiLong(false),
-        child: Material(
-          color: fond,
-          shape: RoundedRectangleBorder(
-            borderRadius: rayon,
-            side: BorderSide(color: _appuiLong ? t.danger : t.border, width: 2),
-          ),
-          child: SizedBox(
-            width: _hauteurBouton,
-            height: _hauteurBouton,
-            child: Icon(Icons.backspace_outlined, color: encre, size: 28),
+      onTap: actif ? widget.onEffacerDernier : null,
+      onLongPress: actif ? widget.onToutEffacer : null,
+      onLongPressHint: actif ? Textes.toutEffacer : null,
+      child: Opacity(
+        opacity: (actif || _appuiLong) ? 1 : 0.4,
+        child: GestureDetector(
+          key: const Key('bouton-effacer'),
+          behavior: HitTestBehavior.opaque,
+          onTap: actif ? widget.onEffacerDernier : null,
+          onLongPressStart: actif
+              ? (_) {
+                  _definirAppuiLong(true);
+                  widget.onToutEffacer();
+                }
+              : null,
+          onLongPressEnd: (_) => _definirAppuiLong(false),
+          onLongPressCancel: () => _definirAppuiLong(false),
+          child: Material(
+            color: fond,
+            shape: RoundedRectangleBorder(
+              borderRadius: rayon,
+              side: BorderSide(
+                color: _appuiLong ? t.danger : t.border,
+                width: 2,
+              ),
+            ),
+            child: SizedBox(
+              width: _hauteurBouton,
+              height: _hauteurBouton,
+              child: Icon(Icons.backspace_outlined, color: encre, size: 28),
+            ),
           ),
         ),
       ),
@@ -192,39 +205,15 @@ class _BarrePhraseState extends State<BarrePhrase> {
           child: InkWell(
             borderRadius: BorderRadius.circular(GlypheTokens.rayonMd),
             onTap: actif ? action : null,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minWidth: _hauteurBouton,
-                minHeight: _hauteurBouton,
-                maxWidth: _largeurMaxParler,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      enLecture ? Icons.stop : Icons.volume_up,
-                      color: t.onPrimary,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          libelle,
-                          maxLines: 1,
-                          style: GlypheTokens.body.copyWith(
-                            color: t.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            child: SizedBox(
+              width: _hauteurBouton,
+              height: _hauteurBouton,
+              child: Icon(
+                enLecture
+                    ? Icons.stop_circle_outlined
+                    : Icons.volume_up_outlined,
+                color: t.onPrimary,
+                size: 28,
               ),
             ),
           ),
@@ -257,7 +246,7 @@ class _BarrePhraseState extends State<BarrePhrase> {
               Expanded(child: _zoneMots(t)),
               const SizedBox(width: 8),
               _boutonEffacer(t),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               _boutonParler(t),
             ],
           ),

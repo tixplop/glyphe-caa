@@ -450,12 +450,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('bouton-parler')));
       await tester.pump();
-      expect(find.text('Arrêter'), findsOneWidget);
+      expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
       e.voix.journal.clear();
       await tester.tap(find.byKey(const Key('bouton-parler')));
       await tester.pump();
       expect(e.voix.journal, ['stop']);
-      expect(find.text('Parler'), findsOneWidget);
+      expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
       e.voix.terminerParole();
       await tester.pumpAndSettle();
     });
@@ -471,16 +471,16 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('bouton-parler')));
         await tester.pump();
-        expect(find.text('Arrêter'), findsOneWidget);
+        expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
         e.voix.terminerParole();
         await tester.pumpAndSettle();
-        expect(find.text('Parler'), findsOneWidget);
+        expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
         await tester.tap(find.byKey(const Key('bouton-parler')));
         await tester.pump();
-        expect(find.text('Arrêter'), findsOneWidget);
+        expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
         await tester.tap(grille('veux'));
         await tester.pump();
-        expect(find.text('Parler'), findsOneWidget);
+        expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
         e.voix.terminerParole();
         await tester.pumpAndSettle();
       },

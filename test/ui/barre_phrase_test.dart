@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -28,8 +30,9 @@ Future<_Compteurs> _pose(
   List<ElementBarre> elements, {
   bool enLecture = false,
   Brightness lum = Brightness.light,
+  Size taille = const Size(640, 360),
 }) async {
-  tester.view.physicalSize = const Size(640, 360);
+  tester.view.physicalSize = taille;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
   final n = _Compteurs();
@@ -140,8 +143,123 @@ void main() {
     );
     final t = GlypheTokens.clair;
     expect(_fondBouton(tester, 'bouton-parler'), t.primary);
-    expect(find.text('Parler'), findsOneWidget);
-    expect(find.byIcon(Icons.volume_up), findsOneWidget);
+    expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
+  });
+
+  testWidgets('REQ034_AC7 géométrie 8/56/12/56/8, centrés, zone >= 180', (
+    tester,
+  ) async {
+    await _pose(tester, [_el('je')], taille: const Size(360, 640));
+    final barre = tester.getRect(find.byType(BarrePhrase));
+    final zone = tester.getRect(find.byKey(const Key('zone-barre')));
+    final eff = tester.getRect(find.byKey(const Key('bouton-effacer')));
+    final par = tester.getRect(find.byKey(const Key('bouton-parler')));
+    expect(eff.size, const Size(56, 56));
+    expect(par.size, const Size(56, 56));
+    expect(eff.left - zone.right, 8);
+    expect(par.left - eff.right, 12);
+    expect(barre.right - par.right, 8);
+    expect(eff.center.dy, barre.center.dy);
+    expect(par.center.dy, barre.center.dy);
+    expect(zone.width, greaterThanOrEqualTo(180));
+  });
+
+  testWidgets('REQ034_AC9 ni texte ni info-bulle dans les boutons', (
+    tester,
+  ) async {
+    await _pose(tester, [_el('je')]);
+    for (final k in ['bouton-effacer', 'bouton-parler']) {
+      expect(
+        find.descendant(of: find.byKey(Key(k)), matching: find.byType(Text)),
+        findsNothing,
+      );
+    }
+    expect(find.byType(Tooltip), findsNothing);
+  });
+
+  testWidgets('REQ034_AC9 icône Parler -> Arrêter au même rectangle', (
+    tester,
+  ) async {
+    await _pose(tester, [_el('je')]);
+    final avant = tester.getRect(find.byKey(const Key('bouton-parler')));
+    await _pose(tester, [_el('je')], enLecture: true);
+    expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.volume_up_outlined), findsNothing);
+    expect(tester.getRect(find.byKey(const Key('bouton-parler'))), avant);
+  });
+
+  testWidgets('REQ034_AC10 Effacer désactivé barre vide, actif ensuite', (
+    tester,
+  ) async {
+    final h = tester.ensureSemantics();
+    final n = await _pose(tester, []);
+    expect(
+      tester
+          .widget<Opacity>(
+            find.ancestor(
+              of: find.byKey(const Key('bouton-effacer')),
+              matching: find.byType(Opacity),
+            ),
+          )
+          .opacity,
+      0.4,
+    );
+    await tester.tap(find.byKey(const Key('bouton-effacer')));
+    await tester.longPress(find.byKey(const Key('bouton-effacer')));
+    await tester.pumpAndSettle();
+    expect((n.dernier, n.tout), (0, 0));
+    final d = tester
+        .getSemantics(find.byKey(const Key('bouton-effacer')))
+        .getSemanticsData();
+    expect(d.flagsCollection.isEnabled, ui.Tristate.isFalse);
+    await _pose(tester, [_el('je')]);
+    expect(
+      tester
+          .widget<Opacity>(
+            find.ancestor(
+              of: find.byKey(const Key('bouton-effacer')),
+              matching: find.byType(Opacity),
+            ),
+          )
+          .opacity,
+      1,
+    );
+    h.dispose();
+  });
+
+  testWidgets('REQ034_AC2 AC9 libellé sémantique Parler puis Arrêter', (
+    tester,
+  ) async {
+    final h = tester.ensureSemantics();
+    await _pose(tester, [_el('je')]);
+    expect(
+      tester.getSemantics(find.byKey(const Key('bouton-parler'))).label,
+      'Parler',
+    );
+    await _pose(tester, [_el('je')], enLecture: true);
+    expect(
+      tester.getSemantics(find.byKey(const Key('bouton-parler'))).label,
+      'Arrêter',
+    );
+    h.dispose();
+  });
+
+  testWidgets('REQ034_AC11 libellé sémantique de la zone de mots', (
+    tester,
+  ) async {
+    final h = tester.ensureSemantics();
+    await _pose(tester, [_el('je'), _el('veux'), _el('manger')]);
+    var d = tester
+        .getSemantics(find.byKey(const Key('zone-barre')))
+        .getSemanticsData();
+    expect(d.label, 'Phrase : je veux manger');
+    expect(d.hint, 'Appuyer pour lire');
+    await _pose(tester, []);
+    d = tester
+        .getSemantics(find.byKey(const Key('zone-barre')))
+        .getSemanticsData();
+    expect(d.label, 'Ta phrase apparaît ici');
+    h.dispose();
   });
 
   testWidgets('REQ034_AC3 barre vide : aide, Parler désactivé sans effet', (
@@ -169,9 +287,8 @@ void main() {
     tester,
   ) async {
     final n = await _pose(tester, [_el('je')], enLecture: true);
-    expect(find.text('Arrêter'), findsOneWidget);
-    expect(find.text('Parler'), findsNothing);
-    expect(find.byIcon(Icons.stop), findsOneWidget);
+    expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.volume_up_outlined), findsNothing);
     await tester.tap(find.byKey(const Key('bouton-parler')));
     expect(n.arreter, 1);
     expect(n.lire, 0);
@@ -224,6 +341,52 @@ void main() {
     await tester.pump();
     expect(_fondBouton(tester, 'bouton-effacer'), isNot(t.danger));
   });
+
+  testWidgets(
+    'REQ007_AC4 danger plein tant que le doigt reste posé après vidage',
+    (tester) async {
+      tester.view.physicalSize = const Size(640, 360);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      final elements = <ElementBarre>[_el('je')];
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: themeGlyphe(Brightness.light),
+          home: StatefulBuilder(
+            builder: (context, setState) => Scaffold(
+              body: Align(
+                alignment: Alignment.topCenter,
+                child: BarrePhrase(
+                  elements: List.of(elements),
+                  enLecture: false,
+                  onLire: () {},
+                  onArreter: () {},
+                  onEffacerDernier: () {},
+                  onToutEffacer: () => setState(elements.clear),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final cle = find.byKey(const Key('bouton-effacer'));
+      final g = await tester.startGesture(tester.getCenter(cle));
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 100));
+      await tester.pump();
+      expect(elements, isEmpty);
+      expect(_fondBouton(tester, 'bouton-effacer'), GlypheTokens.clair.danger);
+      final op = tester.widget<Opacity>(
+        find.ancestor(of: cle, matching: find.byType(Opacity)).first,
+      );
+      expect(op.opacity, 1);
+      await g.up();
+      await tester.pump();
+      expect(
+        _fondBouton(tester, 'bouton-effacer'),
+        isNot(GlypheTokens.clair.danger),
+      );
+    },
+  );
 
   testWidgets('REQ007_AC5 libellé et action d\'appui long exposés', (
     tester,
