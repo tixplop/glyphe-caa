@@ -1,8 +1,9 @@
 import 'package:glyphe/domaine/modeles.dart';
+import 'package:glyphe/domaine/sauvegarde.dart';
 import 'package:glyphe/domaine/stockage.dart';
 
 /// Stockage en mémoire : compte les écritures.
-class FauxStockage implements Stockage {
+class FauxStockage implements StockageRemplacable {
   FauxStockage([this.donnees]);
 
   Donnees? donnees;
@@ -15,6 +16,16 @@ class FauxStockage implements Stockage {
   @override
   Future<void> enregistrer(Donnees d) async {
     donnees = d;
+    ecritures++;
+  }
+
+  /// Si non null, [remplacerTout] échoue avec cette erreur sans rien changer.
+  Object? echecRemplacement;
+
+  @override
+  Future<void> remplacerTout(SauvegardeValide s) async {
+    if (echecRemplacement != null) throw echecRemplacement!;
+    donnees = s.donnees;
     ecritures++;
   }
 

@@ -14,7 +14,7 @@ typedef Renommer = Future<void> Function(String source, String cible);
 typedef EcrireFichier = Future<void> Function(String chemin, List<int> octets);
 
 /// Stockage dans un dossier local : `glyphe.json`, `code.txt`, `photos/`.
-class StockageFichier implements Stockage {
+class StockageFichier implements StockageRemplacable {
   StockageFichier(this.dossier, {Renommer? renommer, EcrireFichier? ecrire})
     : _renommer = renommer ?? _renommerFichier,
       _ecrireFichier = ecrire ?? _ecrireReel;
@@ -107,6 +107,7 @@ class StockageFichier implements Stockage {
   /// (AC-024-6). Écrit d'abord dans `import.tmp/`, puis bascule par
   /// renommages en gardant l'ancien état (`*.old`) jusqu'à la réussite ;
   /// en cas d'échec, l'ancien état est restauré et l'erreur propagée.
+  @override
   Future<void> remplacerTout(SauvegardeValide sauvegarde) =>
       _enFile(() => _remplacer(sauvegarde));
 

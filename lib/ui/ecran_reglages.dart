@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../domaine/choix_voix.dart';
 import '../domaine/modeles.dart';
+import '../domaine/sauvegarde.dart';
 import 'ecran_code.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
@@ -58,6 +59,71 @@ class _EcranReglagesState extends State<EcranReglages> {
         ..showSnackBar(
           const SnackBar(content: Text(Textes.erreurEnregistrement)),
         );
+    }
+  }
+
+  bool _occupe = false;
+
+  void _message(String texte) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(texte)));
+  }
+
+  Future<void> _exporter() async {
+    if (_occupe) return;
+    _occupe = true;
+    try {
+      await etat.exporterSauvegarde();
+    } on Object {
+      _message(Textes.exportImpossible);
+    } finally {
+      _occupe = false;
+    }
+  }
+
+  Future<void> _importer() async {
+    if (_occupe) return;
+    _occupe = true;
+    try {
+      final analyse = await etat.choisirSauvegarde();
+      if (analyse == null || !mounted) return;
+      switch (analyse) {
+        case ErreurSauvegarde(:final motif):
+          _message(
+            motif == MotifErreur.tropRecente
+                ? Textes.sauvegardeTropRecente
+                : Textes.sauvegardeInvalide,
+          );
+        case SauvegardeValide():
+          final ok = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              key: const Key('dialogue-import'),
+              title: const Text(Textes.importer),
+              content: const Text(Textes.confirmationImport),
+              actions: [
+                TextButton(
+                  key: const Key('annuler-import'),
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text(Textes.annuler),
+                ),
+                FilledButton(
+                  key: const Key('confirmer-import'),
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text(Textes.remplacer),
+                ),
+              ],
+            ),
+          );
+          if (ok != true) return;
+          await etat.appliquerSauvegarde(analyse);
+      }
+    } on Object {
+      _message(Textes.importImpossible);
+    } finally {
+      _occupe = false;
     }
   }
 
@@ -266,18 +332,17 @@ class _EcranReglagesState extends State<EcranReglages> {
                     onTap: _ouvrirCode,
                   ),
                   _titre(Textes.sectionSauvegarde),
-                  // Câblées par T-014 (partage et choix de fichier).
-                  const ListTile(
-                    key: Key('reglage-exporter'),
+                  ListTile(
+                    key: const Key('reglage-exporter'),
                     minTileHeight: 56,
-                    enabled: false,
-                    title: Text(Textes.exporter),
+                    title: const Text(Textes.exporter),
+                    onTap: _exporter,
                   ),
-                  const ListTile(
-                    key: Key('reglage-importer'),
+                  ListTile(
+                    key: const Key('reglage-importer'),
                     minTileHeight: 56,
-                    enabled: false,
-                    title: Text(Textes.importer),
+                    title: const Text(Textes.importer),
+                    onTap: _importer,
                   ),
                 ],
               ),

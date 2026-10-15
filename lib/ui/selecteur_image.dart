@@ -62,7 +62,9 @@ class _SelecteurImageState extends State<SelecteurImage> {
     String? message;
     String? nom;
     try {
-      final chemin = await obtenir(source);
+      final chemin = await widget.etat.pendantActiviteSysteme(
+        () => obtenir(source),
+      );
       if (chemin != null) nom = await photos.importer(chemin);
     } on PermissionRefusee catch (e) {
       message = e.origine == OrigineAcces.camera

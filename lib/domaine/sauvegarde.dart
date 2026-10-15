@@ -37,6 +37,10 @@ String nomFichierExport(DateTime date) {
   return 'glyphe-sauvegarde-$annee${deux(date.month)}${deux(date.day)}.zip';
 }
 
+/// Vrai si [nom] a la forme d'un nom produit par [nomFichierExport].
+bool estNomFichierExport(String nom) =>
+    RegExp(r'^glyphe-sauvegarde-\d{8}\.zip$').hasMatch(nom);
+
 /// Photos désignées par les cases de [donnees].
 Set<String> photosReferencees(Donnees donnees) => {
   for (final g in donnees.grilles)

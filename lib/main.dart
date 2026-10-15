@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'domaine/horloge.dart';
 import 'domaine/photos.dart';
+import 'plateforme/partage.dart';
 import 'plateforme/source_photo_image_picker.dart';
 import 'plateforme/stockage_fichier.dart';
 import 'plateforme/voix_flutter_tts.dart';
@@ -29,8 +30,12 @@ Future<void> main() async {
       banque: await EtatAppli.chargerBanque(),
       sourcePhoto: SourcePhotoImagePicker(),
       photos: Photos(stockage.dossierPhotos),
+      partage: const PartageSharePlus(),
+      choixFichier: const ChoixFichierPicker(),
+      dossierTemporaire: await getTemporaryDirectory(),
     );
     await etat.init();
+    await etat.supprimerArchivesExportees();
     runApp(GlypheApp(etat: etat));
   } catch (e, pile) {
     FlutterError.reportError(FlutterErrorDetails(exception: e, stack: pile));

@@ -241,6 +241,38 @@ void main() {
     expect(fichiers(e), hasLength(1));
   });
 
+  testWidgets('REQ020_AC1 photo : appli en arrière-plan pendant la prise', (
+    tester,
+  ) async {
+    final e = await lance(tester);
+    e.source.pendant = () async {
+      final b = tester.binding;
+      for (final s in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        b.handleAppLifecycleStateChanged(s);
+      }
+    };
+    await ouvrirSelecteur(tester, 'm1');
+    await tester.tap(find.text('Prendre une photo'));
+    await io(
+      tester,
+      jusqua: () =>
+          fichiers(e).isNotEmpty &&
+          find.byKey(const Key('ecran-edition-case')).evaluate().isNotEmpty,
+    );
+    expect(e.etat.verrouille, isFalse);
+    await toucher(tester, find.text('Enregistrer'));
+    await io(tester);
+    expect(e.cas('m1').image, isA<ImagePhoto>());
+    expect(fichiers(e), hasLength(1));
+  });
+
   testWidgets('REQ020_AC3 caméra refusée : message, recherche utilisable', (
     tester,
   ) async {

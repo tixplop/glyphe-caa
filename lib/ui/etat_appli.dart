@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 
 import '../domaine/banque_pictos.dart';
@@ -11,11 +12,13 @@ import '../domaine/donnees_initiales.dart';
 import '../domaine/horloge.dart';
 import '../domaine/modeles.dart';
 import '../domaine/photos.dart';
+import '../domaine/sauvegarde.dart';
 import '../domaine/session.dart';
 import '../domaine/source_photo.dart';
 import '../domaine/stockage.dart';
 import '../domaine/verrou.dart';
 import '../domaine/voix.dart';
+import '../plateforme/partage.dart';
 
 /// Chemin du fichier embarqué des grilles d'exemple.
 const String cheminExemples = 'assets/exemples/grilles_exemple.json';
@@ -40,8 +43,12 @@ class EtatAppli extends ChangeNotifier {
     this.banque,
     this.sourcePhoto,
     this.photos,
+    this.partage,
+    this.choixFichier,
+    Directory? dossierTemporaire,
     Random? aleatoire,
-  }) : aleatoire = aleatoire ?? Random();
+  }) : aleatoire = aleatoire ?? Random(),
+       dossierTemporaire = dossierTemporaire ?? Directory.systemTemp;
 
   /// Charge les exemples depuis les assets embarqués.
   static Future<String> chargerExemples() =>
@@ -64,6 +71,15 @@ class EtatAppli extends ChangeNotifier {
 
   /// Dossier des photos personnelles ; null : photos indisponibles.
   final Photos? photos;
+
+  /// Menu de partage ; null : export indisponible.
+  final Partage? partage;
+
+  /// Choix du fichier à importer ; null : import indisponible.
+  final ChoixFichier? choixFichier;
+
+  /// Dossier où l'archive d'export est écrite avant partage.
+  final Directory dossierTemporaire;
 
   /// Charge l'index de la banque ARASAAC depuis les assets embarqués.
   static Future<BanquePictos> chargerBanque() async =>
@@ -108,6 +124,61 @@ class EtatAppli extends ChangeNotifier {
     if (_verrouille) return;
     _verrouille = true;
     notifyListeners();
+  }
+
+  int _activitesSysteme = 0;
+
+  /// Une activité du système (sélecteur de fichier, partage, photo) est en
+  /// cours : l'appli passe alors en arrière-plan sans que l'utilisateur la
+  /// quitte.
+  bool get activiteSystemeEnCours => _activitesSysteme > 0;
+
+  /// Exécute [action] (activité du système au-dessus de l'appli) en
+  /// ignorant le reverrouillage par cycle de vie pendant ce temps.
+  Future<T> pendantActiviteSysteme<T>(Future<T> Function() action) async {
+    _activitesSysteme++;
+    try {
+      return await action();
+    } finally {
+      _activitesSysteme--;
+      if (_activitesSysteme == 0) verrouillerSiAbsenceLongue();
+    }
+  }
+
+  /// Durée d'absence (appli en arrière-plan pendant une activité du système)
+  /// au-delà de laquelle l'appli se reverrouille (DEC-010, hypothèse).
+  static const Duration absenceMaximale = Duration(seconds: 60);
+
+  DateTime? _pauseIgnoreeA;
+
+  /// Contrôle l'absence mémorisée : chaque absence est mesurée séparément
+  /// (la pause est oubliée dès qu'elle est contrôlée) et l'appli se
+  /// reverrouille seulement si cette absence dépasse [absenceMaximale]
+  /// (AC-014-2).
+  void verrouillerSiAbsenceLongue() {
+    final debut = _pauseIgnoreeA;
+    if (debut == null) return;
+    _pauseIgnoreeA = null;
+    if (horloge.maintenant().difference(debut) > absenceMaximale) {
+      verrouiller();
+    }
+  }
+
+  /// Retour au premier plan : contrôle de l'absence puis revérification de
+  /// la voix (AC-022-1).
+  Future<void> surRetourPremierPlan() {
+    verrouillerSiAbsenceLongue();
+    return verifierVoix();
+  }
+
+  /// Reverrouillage déclenché par le cycle de vie (arrière-plan, fermeture,
+  /// AC-014-2) ; ignoré pendant une activité du système.
+  void verrouillerSurCycleDeVie() {
+    if (activiteSystemeEnCours) {
+      _pauseIgnoreeA ??= horloge.maintenant();
+      return;
+    }
+    verrouiller();
   }
 
   /// Charge les données (ou crée les exemples) et ouvre une session neuve.
@@ -193,6 +264,75 @@ class EtatAppli extends ChangeNotifier {
       await photos?.nettoyerPhotosInutilisees(session.donnees);
     } on FileSystemException {
       // Les fichiers restants seront supprimés au prochain nettoyage.
+    }
+  }
+
+  /// Écrit l'archive de sauvegarde dans le dossier temporaire puis ouvre le
+  /// menu de partage (AC-023-1). Lève une exception si l'export échoue.
+  Future<void> exporterSauvegarde() async {
+    final p = partage;
+    if (p == null) throw StateError('Partage indisponible');
+    final dossierPhotos =
+        photos?.dossier ?? Directory('${dossierTemporaire.path}/sans-photos');
+    final octets = exporter(session.donnees, dossierPhotos);
+    await dossierTemporaire.create(recursive: true);
+    await supprimerArchivesExportees();
+    final fichier = File(
+      '${dossierTemporaire.path}/${nomFichierExport(horloge.maintenant())}',
+    );
+    await fichier.writeAsBytes(octets, flush: true);
+    await pendantActiviteSysteme(() => p.partagerFichier(fichier.path));
+  }
+
+  /// Supprime les archives d'export restées dans le dossier temporaire
+  /// (appelé au démarrage par `main` et avant chaque export). Meilleur effort.
+  Future<void> supprimerArchivesExportees() async {
+    try {
+      if (!await dossierTemporaire.exists()) return;
+      await for (final f in dossierTemporaire.list()) {
+        if (f is File && estNomFichierExport(f.uri.pathSegments.last)) {
+          await f.delete();
+        }
+      }
+    } on FileSystemException {
+      // Elles seront supprimées à un prochain passage.
+    }
+  }
+
+  /// Demande un fichier de sauvegarde et l'analyse sans rien modifier.
+  /// Null : l'utilisateur a annulé le choix.
+  Future<ResultatAnalyse?> choisirSauvegarde() async {
+    final choix = choixFichier;
+    if (choix == null) throw StateError('Choix de fichier indisponible');
+    final Uint8List? octets;
+    try {
+      octets = await pendantActiviteSysteme(choix.choisir);
+    } on FichierTropVolumineux {
+      return const ErreurSauvegarde(MotifErreur.invalide, 'fichier trop gros');
+    }
+    if (octets == null) return null;
+    return analyserSauvegarde(octets);
+  }
+
+  /// Remplace toutes les données par [sauvegarde] (atomique, AC-024-7) puis
+  /// remet la session à l'accueil et revérifie la voix. Le code n'est pas
+  /// touché (AC-024-6). En cas d'échec, l'état d'avant est conservé.
+  Future<void> appliquerSauvegarde(SauvegardeValide sauvegarde) async {
+    final s = stockage;
+    if (s is! StockageRemplacable) {
+      throw StateError('Ce stockage ne sait pas importer');
+    }
+    await s.remplacerTout(sauvegarde);
+    session.donnees = sauvegarde.donnees;
+    session.toutEffacer();
+    session.accueil();
+    // Un nom de photo peut désigner un autre contenu qu'avant.
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    try {
+      await verifierVoix();
+    } catch (_) {
+      // Les données sont déjà remplacées : l'import a réussi.
     }
   }
 }

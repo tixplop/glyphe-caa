@@ -10,10 +10,12 @@ class FausseSourcePhoto implements SourcePhoto {
   bool refusGalerie = false;
   int appelsCamera = 0;
   int appelsGalerie = 0;
+  Future<void> Function()? pendant;
 
   @override
   Future<String?> prendre() async {
     appelsCamera++;
+    await pendant?.call();
     if (refusCamera) throw const PermissionRefusee(OrigineAcces.camera);
     return cheminCamera;
   }
@@ -21,6 +23,7 @@ class FausseSourcePhoto implements SourcePhoto {
   @override
   Future<String?> choisirGalerie() async {
     appelsGalerie++;
+    await pendant?.call();
     if (refusGalerie) throw const PermissionRefusee(OrigineAcces.galerie);
     return cheminGalerie;
   }

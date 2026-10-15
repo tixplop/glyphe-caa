@@ -37,11 +37,11 @@ class _EcranCommunicationState extends State<EcranCommunication> {
     _etaitVerrouille = etat.verrouille;
     etat.addListener(_surChangement);
     _cycleDeVie = AppLifecycleListener(
-      onPause: etat.verrouiller,
-      onHide: etat.verrouiller,
-      onDetach: etat.verrouiller,
+      onPause: etat.verrouillerSurCycleDeVie,
+      onHide: etat.verrouillerSurCycleDeVie,
+      onDetach: etat.verrouillerSurCycleDeVie,
       // Retour au premier plan : la voix a pu être (dés)installée (AC-022-1).
-      onResume: etat.verifierVoix,
+      onResume: etat.surRetourPremierPlan,
     );
   }
 

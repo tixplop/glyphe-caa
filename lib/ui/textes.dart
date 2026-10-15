@@ -132,4 +132,12 @@ class Textes {
   static const String sectionSauvegarde = 'Sauvegarde';
   static const String exporter = 'Exporter';
   static const String importer = 'Importer';
+  static const String confirmationImport =
+      'Toutes les données actuelles seront remplacées';
+  static const String remplacer = 'Remplacer';
+  static const String sauvegardeInvalide = 'Fichier de sauvegarde invalide';
+  static const String sauvegardeTropRecente =
+      'Sauvegarde créée par une version plus récente de Glyphe';
+  static const String exportImpossible = 'Export impossible';
+  static const String importImpossible = 'Import impossible';
 }
