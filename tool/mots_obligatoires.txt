@@ -1,0 +1,16 @@
+# Vocabulaire des grilles d'exemple (un mot par ligne).
+je
+veux
+oui
+non
+encore
+fini
+eau
+besoins
+émotions
+manger
+jouer
+fruits
+pomme
+chien
+école

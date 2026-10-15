@@ -1,0 +1,10 @@
+[
+  {"_id": 1, "aac": true, "violence": false, "sex": false, "downloads": 10, "keywords": [{"keyword": "chien"}, {"keyword": "toutou"}]},
+  {"_id": 2, "aac": true, "violence": true, "sex": false, "downloads": 99, "keywords": [{"keyword": "bagarre"}]},
+  {"_id": 3, "aac": true, "violence": false, "sex": true, "downloads": 99, "keywords": [{"keyword": "nu"}]},
+  {"_id": 4, "aac": false, "violence": false, "sex": false, "downloads": 5, "keywords": [{"keyword": "école"}]},
+  {"_id": 5, "aac": false, "violence": false, "sex": false, "downloads": 5, "keywords": [{"keyword": "table"}]},
+  {"_id": 6, "aac": true, "violence": false, "sex": false, "downloads": 50, "keywords": [{"keyword": "bateau"}]},
+  {"_id": 7, "aac": true, "violence": false, "sex": false, "downloads": 1, "keywords": [{"keyword": "lune"}]},
+  {"_id": 8, "aac": false, "violence": true, "sex": false, "downloads": 1, "keywords": [{"keyword": "chien"}]}
+]
