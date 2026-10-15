@@ -35,6 +35,57 @@ void main() {
     expect(o.skip(1).any((x) => x.estAccueil), isFalse);
   });
 
+  test('REQ031_AC2 l\'image de l\'onglet est celle de la case-dossier', () {
+    final d = exemples();
+    final acc = d.grillePar(d.accueilId)!;
+    final o = ongletsDe(d);
+    expect(o.first.image, const ImageAucune());
+    for (final x in o.skip(1)) {
+      final c = acc.cases.firstWhere((c) => c.cibleId == x.grilleId);
+      expect(c.image, isA<ImageArasaac>(), reason: x.libelle);
+      expect(x.image, c.image, reason: x.libelle);
+    }
+  });
+
+  test(
+    'REQ031_AC2 case-dossier sans image : ImageAucune, libellé de repli',
+    () {
+      final d = Donnees(
+        accueilId: 'a',
+        grilles: [
+          grille('a', 'Acc', [dossier('d', 'Week-end', 0, 0, 'b')]),
+          grille('b', 'Boire'),
+        ],
+      );
+      expect(ongletsDe(d)[1].image, const ImageAucune());
+      expect(ongletsDe(d)[1].libelle, 'Week-end');
+    },
+  );
+
+  test('REQ031_AC2 l\'image compte dans l\'égalité des onglets', () {
+    const a = Onglet(
+      grilleId: 'g',
+      libelle: 'G',
+      estAccueil: false,
+      image: ImageArasaac(1),
+    );
+    const b = Onglet(
+      grilleId: 'g',
+      libelle: 'G',
+      estAccueil: false,
+      image: ImageArasaac(2),
+    );
+    const c = Onglet(
+      grilleId: 'g',
+      libelle: 'G',
+      estAccueil: false,
+      image: ImageArasaac(1),
+    );
+    expect(a, c);
+    expect(a.hashCode, c.hashCode);
+    expect(a, isNot(b));
+  });
+
   test('REQ031_AC2 ordre ligne puis colonne, sans doublon, cibles valides', () {
     final d = Donnees(
       accueilId: 'a',

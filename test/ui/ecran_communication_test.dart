@@ -282,13 +282,17 @@ void main() {
       await lance(tester);
       final anneau = find.byKey(const Key('anneau-focus'));
       // Les commandes de l'écran précèdent la grille dans l'ordre de focus.
+      final surJe = find.descendant(
+        of: find.byKey(const Key('case-je')),
+        matching: anneau,
+      );
       var essais = 0;
-      while (anneau.evaluate().isEmpty && essais++ < 30) {
+      while (surJe.evaluate().isEmpty && essais++ < 30) {
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
       }
       for (final id in ['je', 'veux', 'manger', 'eau', 'wc']) {
-        expect(anneau, findsOneWidget);
+        expect(anneau, findsOneWidget, reason: id);
         expect(
           find.descendant(of: find.byKey(Key('case-$id')), matching: anneau),
           findsOneWidget,
@@ -341,10 +345,10 @@ void main() {
       await tester.tap(grille('Fruits'));
       await tester.pumpAndSettle();
       expect(grille('poire'), findsOneWidget);
-      await tester.tap(find.byTooltip('Retour'));
+      await tester.tap(find.byKey(const Key('bouton-retour')));
       await tester.pumpAndSettle();
       expect(grille('pomme'), findsOneWidget);
-      await tester.tap(find.byTooltip('Retour'));
+      await tester.tap(find.byKey(const Key('bouton-retour')));
       await tester.pumpAndSettle();
       expect(grille('eau'), findsOneWidget);
       expect(e.etat.session.barre, isEmpty);
@@ -359,14 +363,14 @@ void main() {
       await tester.tap(find.byKey(const Key('onglet-acc')));
       await tester.pumpAndSettle();
       expect(grille('eau'), findsOneWidget);
-      await tester.tap(find.byTooltip('Retour'));
+      await tester.tap(find.byKey(const Key('bouton-retour')));
       await tester.pumpAndSettle();
       expect(grille('eau'), findsOneWidget);
     });
 
     testWidgets('REQ009_AC3 Retour à l\'accueil sans effet', (tester) async {
       await lance(tester);
-      await tester.tap(find.byTooltip('Retour'));
+      await tester.tap(find.byKey(const Key('bouton-retour')));
       await tester.pumpAndSettle();
       expect(grille('eau'), findsOneWidget);
     });
@@ -620,8 +624,12 @@ void main() {
       ),
     );
 
-    Color? fondOnglet(WidgetTester tester, String id) =>
-        tester.widget<Material>(find.byKey(Key('onglet-$id'))).color;
+    // Couleur du contour de l'onglet : `primary` quand il est actif.
+    Color? contourOnglet(WidgetTester tester, String id) =>
+        ((tester.widget<Material>(find.byKey(Key('onglet-$id'))).shape!)
+                as OutlinedBorder)
+            .side
+            .color;
 
     testWidgets('REQ031_AC1/AC2 onglets des grilles d\'exemple', (
       tester,
@@ -639,11 +647,14 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const Key('onglet-accueil')),
-          matching: find.byIcon(Icons.home),
+          matching: find.byIcon(Icons.home_outlined),
         ),
         findsOneWidget,
       );
-      expect(tester.getSize(find.byKey(const Key('onglet-manger'))).height, 48);
+      expect(
+        tester.getSize(find.byKey(const Key('onglet-manger'))),
+        Size(48, 48),
+      );
     });
 
     testWidgets('REQ031_AC1 les onglets défilent horizontalement', (
@@ -664,15 +675,15 @@ void main() {
     ) async {
       final e = await exemples(tester, taille: const Size(1280, 800));
       final t = GlypheTokens.clair;
-      expect(fondOnglet(tester, 'accueil'), t.primary);
-      expect(fondOnglet(tester, 'manger'), t.surface000);
+      expect(contourOnglet(tester, 'accueil'), t.primary);
+      expect(contourOnglet(tester, 'manger'), t.border);
       e.etat.session.ouvrirGrille('manger');
       await tester.pumpAndSettle();
       await tester.tap(grille('Fruits'));
       await tester.pumpAndSettle();
       expect(e.etat.session.grilleCourante.id, 'fruits');
-      expect(fondOnglet(tester, 'manger'), t.primary);
-      expect(fondOnglet(tester, 'accueil'), t.surface000);
+      expect(contourOnglet(tester, 'manger'), t.primary);
+      expect(contourOnglet(tester, 'accueil'), t.border);
     });
 
     testWidgets('REQ031_AC4 onglet actif exposé comme sélectionné', (
@@ -704,7 +715,7 @@ void main() {
       expect(e.etat.session.chemin, ['accueil', 'manger']);
       expect(e.voix.journal.length, dits);
       expect([for (final x in e.etat.session.barre) x.libelle], avant);
-      await tester.tap(find.byTooltip('Retour'));
+      await tester.tap(find.byKey(const Key('bouton-retour')));
       await tester.pumpAndSettle();
       expect(e.etat.session.grilleCourante.id, 'accueil');
       await tester.tap(find.byKey(const Key('onglet-jouer')));
@@ -794,7 +805,7 @@ void main() {
     testWidgets('REQ009_AC5 plus de bouton Accueil séparé', (tester) async {
       await lance(tester);
       expect(find.byTooltip('Accueil'), findsNothing);
-      expect(find.byIcon(Icons.home), findsOneWidget); // dans l'onglet
+      expect(find.byIcon(Icons.home_outlined), findsOneWidget); // dans l'onglet
     });
 
     testWidgets('REQ030_AC1 portrait : barre 72, navigation 56, marges', (

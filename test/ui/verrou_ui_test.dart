@@ -309,7 +309,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(etat.verrouille, isTrue);
     expect(find.byKey(const Key('champ-nouveau')), findsNothing);
-    expect(find.byIcon(Icons.lock), findsWidgets);
+    expect(find.byIcon(Icons.lock_outline), findsWidgets);
   });
 
   testWidgets('REQ014_AC2 menu Plus ouvert puis paused : reverrouillé', (

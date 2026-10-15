@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../textes.dart';
+import '../tokens.dart';
 
 /// Durée de l'appui long de déverrouillage (AC-011-2).
 const Duration dureeAppuiLong = Duration(seconds: 3);
@@ -80,7 +81,11 @@ class _CadenasState extends State<Cadenas> with SingleTickerProviderStateMixin {
                       strokeWidth: 4,
                     ),
                   ),
-                const Icon(Icons.lock),
+                Icon(
+                  Icons.lock_outline,
+                  size: 24,
+                  color: GlypheTokens.of(context).ink,
+                ),
               ],
             ),
           ),

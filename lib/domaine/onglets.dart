@@ -7,21 +7,26 @@ class Onglet {
     required this.grilleId,
     required this.libelle,
     required this.estAccueil,
+    this.image = const ImageAucune(),
   });
 
   final String grilleId;
   final String libelle;
   final bool estAccueil;
 
+  /// Image de la case-dossier (AC-031-2) ; [ImageAucune] pour l'accueil.
+  final ImageCase image;
+
   @override
   bool operator ==(Object other) =>
       other is Onglet &&
       other.grilleId == grilleId &&
       other.libelle == libelle &&
-      other.estAccueil == estAccueil;
+      other.estAccueil == estAccueil &&
+      other.image == image;
 
   @override
-  int get hashCode => Object.hash(grilleId, libelle, estAccueil);
+  int get hashCode => Object.hash(grilleId, libelle, estAccueil, image);
 }
 
 /// Onglets : l'accueil, puis un onglet par grille cible existante des
@@ -48,6 +53,7 @@ List<Onglet> ongletsDe(Donnees donnees) {
         grilleId: cible.id,
         libelle: c.libelle.isEmpty ? cible.nom : c.libelle,
         estAccueil: false,
+        image: c.image,
       ),
     );
   }
