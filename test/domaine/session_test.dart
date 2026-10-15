@@ -263,6 +263,97 @@ void main() {
     });
   });
 
+  group('REQ-034 état de lecture', () {
+    Future<({Session s, FauxVoix v})> pilotee() async {
+      final v = FauxVoix(parolePilotee: true);
+      final s = Session(donnees(), v, FausseHorloge());
+      for (final id in ['je', 'veux']) {
+        final f = s.appuyerCase(c(s, id));
+        await Future<void>.delayed(Duration.zero);
+        v.terminerParole();
+        await f;
+      }
+      v.journal.clear();
+      return (s: s, v: v);
+    }
+
+    test('REQ034_AC4 enLecture pendant la lecture, faux à la fin', () async {
+      final t = await pilotee();
+      expect(t.s.enLecture, isFalse);
+      final f = t.s.lireBarre();
+      await Future<void>.delayed(Duration.zero);
+      expect(t.s.enLecture, isTrue);
+      t.v.terminerParole();
+      await f;
+      expect(t.s.enLecture, isFalse);
+    });
+
+    test('REQ034_AC4 arreterLecture : stop émis, enLecture faux', () async {
+      final t = await pilotee();
+      final f = t.s.lireBarre();
+      await Future<void>.delayed(Duration.zero);
+      t.v.journal.clear();
+      await t.s.arreterLecture();
+      expect(t.v.journal, ['stop']);
+      expect(t.s.enLecture, isFalse);
+      t.v.terminerParole();
+      await f;
+      expect(t.s.enLecture, isFalse);
+    });
+
+    test(
+      'REQ034_AC4 la fin d\'une lecture arrêtée ne coupe pas la suivante',
+      () async {
+        final t = await pilotee();
+        final f1 = t.s.lireBarre();
+        await Future<void>.delayed(Duration.zero);
+        await t.s.arreterLecture();
+        final f2 = t.s.lireBarre();
+        await Future<void>.delayed(Duration.zero);
+        expect(t.s.enLecture, isTrue);
+        final anciennes = t.v.journal.length;
+        expect(anciennes, greaterThan(0));
+        t.v.terminerPremiereParole();
+        await f1;
+        await Future<void>.delayed(Duration.zero);
+        expect(t.s.enLecture, isTrue);
+        t.v.terminerParole();
+        await f2;
+        expect(t.s.enLecture, isFalse);
+      },
+    );
+
+    test(
+      'REQ034_AC4 appui de case pendant la lecture : enLecture faux',
+      () async {
+        final t = await pilotee();
+        final f = t.s.lireBarre();
+        await Future<void>.delayed(Duration.zero);
+        final g = t.s.appuyerCase(c(t.s, 'eau'));
+        expect(t.s.enLecture, isFalse);
+        expect(t.v.journal, contains('stop'));
+        await Future<void>.delayed(Duration.zero);
+        t.v.terminerParole();
+        await g;
+        await f;
+        expect(t.s.enLecture, isFalse);
+      },
+    );
+
+    test('REQ034_AC3 barre vide : pas de lecture', () async {
+      final t = cree();
+      await t.s.lireBarre();
+      expect(t.s.enLecture, isFalse);
+      expect(t.v.journal, isEmpty);
+    });
+
+    test('REQ034_AC4 arreterLecture sans lecture : sans erreur', () async {
+      final t = cree();
+      await t.s.arreterLecture();
+      expect(t.s.enLecture, isFalse);
+    });
+  });
+
   group('REQ-007 effacement', () {
     test('REQ007_AC1 effacer le dernier', () async {
       final t = cree();

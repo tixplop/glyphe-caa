@@ -38,6 +38,13 @@ class Session extends ChangeNotifier {
   final List<ElementBarre> _barre = [];
   String? _derniereCaseId;
   DateTime? _derniereCaseHeure;
+  bool _enLecture = false;
+  int _jetonLecture = 0;
+
+  /// Vrai pendant la lecture de la barre (REQ-034). Remis à faux à la fin de
+  /// la prononciation, à l'arrêt et à l'appui d'une case, même si le moteur
+  /// ne signale pas la fin.
+  bool get enLecture => _enLecture;
 
   Donnees get donnees => _donnees;
 
@@ -105,6 +112,7 @@ class Session extends ChangeNotifier {
     }
     if (_repetition(c)) return;
     _derniereCaseId = c.id;
+    _interrompreLecture();
     _derniereCaseHeure = _horloge.maintenant();
 
     final texte = c.textePrononce.isNotEmpty ? c.textePrononce : c.libelle;
@@ -125,7 +133,17 @@ class Session extends ChangeNotifier {
   }
 
   /// Prononce [texte] avec les réglages courants (essai de la voix).
-  Future<void> essayerVoix(String texte) => _dire(texte);
+  Future<void> essayerVoix(String texte) {
+    _interrompreLecture();
+    notifyListeners();
+    return _dire(texte);
+  }
+
+  /// Invalide la lecture en cours (sa fin éventuelle sera ignorée).
+  void _interrompreLecture() {
+    _jetonLecture++;
+    _enLecture = false;
+  }
 
   Future<void> _dire(String texte) async {
     try {
@@ -143,7 +161,25 @@ class Session extends ChangeNotifier {
         .where((t) => t.isNotEmpty)
         .join(' ');
     if (texte.isEmpty) return;
+    final jeton = ++_jetonLecture;
+    _enLecture = true;
+    notifyListeners();
     await _dire(texte);
+    if (jeton == _jetonLecture) {
+      _enLecture = false;
+      notifyListeners();
+    }
+  }
+
+  /// Arrête la parole en cours (bouton « Arrêter »).
+  Future<void> arreterLecture() async {
+    _interrompreLecture();
+    notifyListeners();
+    try {
+      await _voix.arreter();
+    } catch (_) {
+      // La voix ne doit jamais empêcher la communication (REQ-005).
+    }
   }
 
   void effacerDernier() {

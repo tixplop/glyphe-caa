@@ -34,6 +34,15 @@ void main() {
     expect(noms.last, 'speak');
   });
 
+  test('REQ034_AC4 parler attend la fin de la prononciation', () async {
+    await VoixFlutterTts().parler('eau', const ParametresVoix());
+    final noms = appels.map((c) => c.method).toList();
+    final i = noms.indexOf('awaitSpeakCompletion');
+    expect(i, greaterThanOrEqualTo(0));
+    expect(appels[i].arguments, true);
+    expect(i, lessThan(noms.indexOf('speak')));
+  });
+
   test('REQ021_AC4 débit 0,5x plus lent que 1x', () async {
     final v = VoixFlutterTts();
     await v.parler('eau', const ParametresVoix(debit: 0.5));

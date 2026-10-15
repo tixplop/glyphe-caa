@@ -389,20 +389,20 @@ void main() {
       expect(e.etat.session.barre, hasLength(3));
     });
 
-    testWidgets('REQ006_AC1 bouton Lire', (tester) async {
+    testWidgets('REQ006_AC1 bouton Parler', (tester) async {
       final e = await lance(tester);
       await tester.tap(grille('je'));
       await tester.tap(grille('veux'));
       await tester.pumpAndSettle();
       e.voix.journal.clear();
-      await tester.tap(find.byTooltip('Lire'));
+      await tester.tap(find.byKey(const Key('bouton-parler')));
       await tester.pumpAndSettle();
       expect(e.voix.textesPrononces, ['je veux']);
     });
 
     testWidgets('REQ006_AC3 barre vide : rien n\'est prononcé', (tester) async {
       final e = await lance(tester);
-      await tester.tap(find.byTooltip('Lire'));
+      await tester.tap(find.byKey(const Key('bouton-parler')));
       await tester.tap(find.byKey(const Key('zone-barre')));
       await tester.pumpAndSettle();
       expect(e.voix.journal, isEmpty);
@@ -420,7 +420,61 @@ void main() {
       final dernier = tester.getRect(find.byKey(const Key('element-barre-29')));
       expect(dernier.right, lessThanOrEqualTo(zone.right + 0.5));
       expect(dernier.left, greaterThanOrEqualTo(zone.left));
+      final defilement = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byKey(const Key('zone-barre')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(defilement.position.pixels, defilement.position.maxScrollExtent);
     });
+
+    testWidgets('REQ034_AC4 Arrêter : stop émis, retour à Parler', (
+      tester,
+    ) async {
+      final e = await lance(tester);
+      e.voix.parolePilotee = true;
+      await tester.tap(grille('je'));
+      await tester.pump();
+      e.voix.terminerParole();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('bouton-parler')));
+      await tester.pump();
+      expect(find.text('Arrêter'), findsOneWidget);
+      e.voix.journal.clear();
+      await tester.tap(find.byKey(const Key('bouton-parler')));
+      await tester.pump();
+      expect(e.voix.journal, ['stop']);
+      expect(find.text('Parler'), findsOneWidget);
+      e.voix.terminerParole();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets(
+      'REQ034_AC4 retour à Parler à la fin et à l\'appui d\'une case',
+      (tester) async {
+        final e = await lance(tester);
+        e.voix.parolePilotee = true;
+        await tester.tap(grille('je'));
+        await tester.pump();
+        e.voix.terminerParole();
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('bouton-parler')));
+        await tester.pump();
+        expect(find.text('Arrêter'), findsOneWidget);
+        e.voix.terminerParole();
+        await tester.pumpAndSettle();
+        expect(find.text('Parler'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('bouton-parler')));
+        await tester.pump();
+        expect(find.text('Arrêter'), findsOneWidget);
+        await tester.tap(grille('veux'));
+        await tester.pump();
+        expect(find.text('Parler'), findsOneWidget);
+        e.voix.terminerParole();
+        await tester.pumpAndSettle();
+      },
+    );
 
     testWidgets('REQ007_AC1 effacer le dernier', (tester) async {
       final e = await lance(tester);
@@ -428,7 +482,7 @@ void main() {
         await tester.tap(grille(l));
       }
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Effacer le dernier'));
+      await tester.tap(find.byKey(const Key('bouton-effacer')));
       await tester.pumpAndSettle();
       expect([for (final x in e.etat.session.barre) x.libelle], ['je', 'veux']);
       expect(dansBarre(find.text('manger')), findsNothing);
@@ -436,14 +490,14 @@ void main() {
 
     testWidgets('REQ007_AC2 tout effacer, AC3 sur barre vide', (tester) async {
       final e = await lance(tester);
-      await tester.tap(find.byTooltip('Tout effacer'));
-      await tester.tap(find.byTooltip('Effacer le dernier'));
+      await tester.longPress(find.byKey(const Key('bouton-effacer')));
+      await tester.tap(find.byKey(const Key('bouton-effacer')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.tap(grille('je'));
       await tester.tap(grille('veux'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Tout effacer'));
+      await tester.longPress(find.byKey(const Key('bouton-effacer')));
       await tester.pumpAndSettle();
       expect(e.etat.session.barre, isEmpty);
     });
@@ -491,16 +545,15 @@ void main() {
       tester,
     ) async {
       await lance(tester);
-      for (final t in [
-        'Lire',
-        'Effacer le dernier',
-        'Tout effacer',
-        'Retour',
-        'Accueil',
+      for (final f in [
+        find.byKey(const Key('bouton-parler')),
+        find.byKey(const Key('bouton-effacer')),
+        find.byTooltip('Retour'),
+        find.byTooltip('Accueil'),
       ]) {
-        final r = tester.getSize(find.byTooltip(t));
-        expect(r.width, greaterThanOrEqualTo(56), reason: t);
-        expect(r.height, greaterThanOrEqualTo(56), reason: t);
+        final r = tester.getSize(f);
+        expect(r.width, greaterThanOrEqualTo(56), reason: '$f');
+        expect(r.height, greaterThanOrEqualTo(56), reason: '$f');
       }
     });
 

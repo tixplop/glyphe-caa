@@ -17,6 +17,18 @@ class VoixFlutterTts implements Voix {
   VoixFlutterTts([FlutterTts? tts]) : _tts = tts ?? FlutterTts();
 
   final FlutterTts _tts;
+  bool _initialise = false;
+
+  /// `speak` ne se termine alors qu'à la fin de la prononciation.
+  Future<void> _initialiser() async {
+    if (_initialise) return;
+    _initialise = true;
+    try {
+      await _tts.awaitSpeakCompletion(true);
+    } catch (e) {
+      debugPrint('Voix : fin de prononciation non suivie ($e)');
+    }
+  }
 
   static double debitPlateforme(double debit) =>
       (borneDebit(debit) / 2).clamp(0.0, 1.0).toDouble();
@@ -53,6 +65,7 @@ class VoixFlutterTts implements Voix {
   @override
   Future<void> parler(String texte, ParametresVoix parametres) async {
     try {
+      await _initialiser();
       await _tts.stop();
       final voix = parametres.voixId == null
           ? null

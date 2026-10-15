@@ -147,29 +147,35 @@ class _EcranCommunicationState extends State<EcranCommunication> {
                   builder: (context, c) {
                     final barre = BarrePhrase(
                       elements: session.barre,
+                      enLecture: session.enLecture,
                       onLire: session.lireBarre,
+                      onArreter: session.arreterLecture,
+                      onEffacerDernier: session.effacerDernier,
+                      onToutEffacer: session.toutEffacer,
                     );
-                    final commandes = _Commandes(
-                      session: session,
-                      modeEdition: etat.modeEdition,
-                      onDeverrouille: _deverrouiller,
-                      onTerminer: etat.verrouiller,
-                      onCode: _ouvrirEcranCode,
-                      onAjouter: _ajouter,
-                      onGrilles: _ouvrirGrilles,
-                      onTaille: _regler,
-                      onReglages: _ouvrirReglages,
-                      aPropos: IconButton(
-                        key: const Key('bouton-a-propos'),
-                        tooltip: Textes.aPropos,
-                        onPressed: _ouvrirAPropos,
-                        icon: const Icon(Icons.info_outline),
-                        iconSize: 28,
-                        style: IconButton.styleFrom(
-                          minimumSize: const Size(56, 56),
-                        ),
-                      ),
-                    );
+                    _Commandes commandes([_Partie partie = _Partie.tout]) =>
+                        _Commandes(
+                          partie: partie,
+                          session: session,
+                          modeEdition: etat.modeEdition,
+                          onDeverrouille: _deverrouiller,
+                          onTerminer: etat.verrouiller,
+                          onCode: _ouvrirEcranCode,
+                          onAjouter: _ajouter,
+                          onGrilles: _ouvrirGrilles,
+                          onTaille: _regler,
+                          onReglages: _ouvrirReglages,
+                          aPropos: IconButton(
+                            key: const Key('bouton-a-propos'),
+                            tooltip: Textes.aPropos,
+                            onPressed: _ouvrirAPropos,
+                            icon: const Icon(Icons.info_outline),
+                            iconSize: 28,
+                            style: IconButton.styleFrom(
+                              minimumSize: const Size(56, 56),
+                            ),
+                          ),
+                        );
                     final aPropos = Align(
                       alignment: Alignment.centerRight,
                       child: _boutonAPropos(),
@@ -180,30 +186,33 @@ class _EcranCommunicationState extends State<EcranCommunication> {
                         c.maxHeight < 480 && c.maxWidth > c.maxHeight;
                     return Column(
                       children: [
-                        if (compact)
+                        if (compact && etat.modeEdition) ...[
                           Row(
                             children: [
                               Expanded(child: barre),
                               const SizedBox(width: 6),
-                              if (etat.modeEdition)
-                                SizedBox(
-                                  width: c.maxWidth * 0.78,
-                                  child: commandes,
-                                )
-                              else
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [commandes, aPropos],
-                                ),
+                              commandes(_Partie.navigation),
+                            ],
+                          ),
+                          commandes(_Partie.edition),
+                        ] else if (compact)
+                          Row(
+                            children: [
+                              Expanded(child: barre),
+                              const SizedBox(width: 6),
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [commandes(), aPropos],
+                              ),
                             ],
                           )
                         else ...[
                           barre,
                           const SizedBox(height: 6),
-                          commandes,
+                          commandes(),
                           if (!etat.modeEdition) aPropos,
                         ],
-                        const SizedBox(height: 6),
+                        SizedBox(height: compact && etat.modeEdition ? 2 : 6),
                         Expanded(
                           child: _GrilleWidget(
                             session: session,
@@ -224,6 +233,10 @@ class _EcranCommunicationState extends State<EcranCommunication> {
   }
 }
 
+/// Partie des commandes rendue (paysage compact en édition : navigation à
+/// côté de la barre, actions d'édition en dessous).
+enum _Partie { tout, navigation, edition }
+
 class _Commandes extends StatelessWidget {
   const _Commandes({
     required this.session,
@@ -236,6 +249,7 @@ class _Commandes extends StatelessWidget {
     required this.onTaille,
     required this.onReglages,
     required this.aPropos,
+    this.partie = _Partie.tout,
   });
 
   final Session session;
@@ -248,6 +262,7 @@ class _Commandes extends StatelessWidget {
   final VoidCallback onTaille;
   final VoidCallback onReglages;
   final Widget aPropos;
+  final _Partie partie;
 
   static final ButtonStyle _styleTexte = TextButton.styleFrom(
     minimumSize: const Size(56, 56),
@@ -273,24 +288,17 @@ class _Commandes extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _bouton(Textes.lire, Icons.volume_up, session.lireBarre),
-        _bouton(
-          Textes.effacerDernier,
-          Icons.backspace_outlined,
-          session.effacerDernier,
-        ),
-        _bouton(Textes.toutEffacer, Icons.delete_outline, session.toutEffacer),
         _bouton(Textes.retour, Icons.arrow_back, session.retour),
         _bouton(Textes.accueil, Icons.home, session.accueil),
         if (!modeEdition) Cadenas(onDeverrouille: onDeverrouille),
       ],
     );
     // Actions d'édition : rendues uniquement en mode édition (AC-011-4).
-    if (!modeEdition) return principale;
+    if (!modeEdition || partie == _Partie.navigation) return principale;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        principale,
+        if (partie == _Partie.tout) principale,
         Wrap(
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,

@@ -8,8 +8,10 @@ class Textes {
 
   static const String titreAppli = 'Glyphe';
 
-  static const String lire = 'Lire';
-  static const String effacerDernier = 'Effacer le dernier';
+  static const String parler = 'Parler';
+  static const String arreter = 'Arrêter';
+  static const String effacerDernierMot = 'Effacer le dernier mot';
+  static const String aidePhrase = 'Ta phrase apparaît ici';
   static const String toutEffacer = 'Tout effacer';
   static const String retour = 'Retour';
   static const String accueil = 'Accueil';
