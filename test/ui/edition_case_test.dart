@@ -160,14 +160,20 @@ void main() {
   ) async {
     final e = await lance(tester);
     expect(find.byKey(const Key('vide-1-1')), findsOneWidget);
-    expect(find.byIcon(Icons.add), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('vide-1-1')),
+        matching: find.byIcon(Icons.add),
+      ),
+      findsOneWidget,
+    );
     await ajouterMot(tester, 'chat');
     expect(find.byKey(const Key('ecran-edition-case')), findsNothing);
     final g = e.etat.session.donnees.grillePar('acc')!;
     final c = g.cases.firstWhere((c) => c.libelle == 'chat');
     expect((c.ligne, c.colonne), (1, 1));
     expect(find.text('chat'), findsOneWidget);
-    expect(find.byIcon(Icons.add), findsNothing);
+    expect(find.byKey(const Key('vide-1-1')), findsNothing);
   });
 
   testWidgets('REQ015_AC1 pas de « + » en communication', (tester) async {
@@ -321,7 +327,7 @@ void main() {
     final e = await lance(tester, d: donnees(lignes: 1, colonnes: 2));
     expect(find.byKey(const Key('vide-0-0')), findsNothing);
     final avant = e.etat.session.donnees.grillePar('acc')!.cases.length;
-    await toucher(tester, find.text('Ajouter une case'));
+    await toucher(tester, find.byKey(const Key('ajouter-case')));
     expect(find.text('Agrandissez la grille'), findsOneWidget);
     expect(find.byKey(const Key('ecran-edition-case')), findsNothing);
     expect(e.etat.session.donnees.grillePar('acc')!.cases.length, avant);
@@ -331,7 +337,7 @@ void main() {
     tester,
   ) async {
     await lance(tester);
-    await toucher(tester, find.text('Ajouter une case'));
+    await toucher(tester, find.byKey(const Key('ajouter-case')));
     expect(find.byKey(const Key('ecran-edition-case')), findsOneWidget);
   });
 

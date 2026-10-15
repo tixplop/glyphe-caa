@@ -78,7 +78,7 @@ void main() {
     await appui(tester, const Duration(milliseconds: 2900));
     await tester.pumpAndSettle();
     expect(etat.verrouille, isTrue);
-    expect(find.text('Terminer'), findsNothing);
+    expect(find.byKey(const Key('bouton-terminer')), findsNothing);
   });
 
   testWidgets('REQ011_AC1 simple tap : rien ne se passe', (tester) async {
@@ -97,7 +97,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(etat.verrouille, isFalse);
     expect(etat.modeEdition, isTrue);
-    expect(find.text('Terminer'), findsOneWidget);
+    expect(find.byKey(const Key('bouton-terminer')), findsOneWidget);
   });
 
   testWidgets('REQ011_AC3 progression visible, annulée au relâchement', (
@@ -118,14 +118,14 @@ void main() {
     // Un nouvel appui court ne cumule pas avec le précédent.
     await appui(tester, const Duration(milliseconds: 2000));
     await tester.pumpAndSettle();
-    expect(find.text('Terminer'), findsNothing);
+    expect(find.byKey(const Key('bouton-terminer')), findsNothing);
   });
 
   testWidgets('REQ011_AC4 mode communication : aucune action d\'édition', (
     tester,
   ) async {
     await lance(tester);
-    expect(find.text('Terminer'), findsNothing);
+    expect(find.byKey(const Key('bouton-terminer')), findsNothing);
     expect(find.byTooltip('Code de verrouillage'), findsNothing);
     expect(find.byIcon(Icons.settings), findsNothing);
     expect(find.byIcon(Icons.add), findsNothing);
@@ -210,7 +210,7 @@ void main() {
     expect(etat.verrou.aCode, isFalse);
     expect(etat.session.donnees.grilles.length, 1);
     // Ensuite, l'appui long seul déverrouille.
-    await tester.tap(find.text('Terminer'));
+    await tester.tap(find.byKey(const Key('bouton-terminer')));
     await tester.pumpAndSettle();
     expect(etat.verrouille, isTrue);
     await appui(tester, const Duration(seconds: 3));
@@ -243,10 +243,10 @@ void main() {
     final etat = await lance(tester);
     await appui(tester, const Duration(seconds: 3));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Terminer'));
+    await tester.tap(find.byKey(const Key('bouton-terminer')));
     await tester.pumpAndSettle();
     expect(etat.verrouille, isTrue);
-    expect(find.text('Terminer'), findsNothing);
+    expect(find.byKey(const Key('bouton-terminer')), findsNothing);
   });
 
   for (final etatCycle in [
@@ -266,7 +266,7 @@ void main() {
         // Les frames sont suspendues en arrière-plan : on vérifie au retour.
         reprendre(tester, etatCycle);
         await tester.pumpAndSettle();
-        expect(find.text('Terminer'), findsNothing);
+        expect(find.byKey(const Key('bouton-terminer')), findsNothing);
         expect(cadenas, findsOneWidget);
       }
     });
@@ -327,7 +327,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('bouton-code')), findsNothing);
     expect(etat.verrouille, isTrue);
-    expect(find.text('Terminer'), findsNothing);
+    expect(find.byKey(const Key('bouton-terminer')), findsNothing);
   });
 
   testWidgets('REQ012_AC1 écran code : définir, refus, supprimer', (

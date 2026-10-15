@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../textes.dart';
 import '../tokens.dart';
@@ -27,6 +28,7 @@ class _CadenasState extends State<Cadenas> with SingleTickerProviderStateMixin {
     duration: dureeAppuiLong,
   );
   Timer? _minuteur;
+  bool _focus = false;
 
   @override
   void dispose() {
@@ -64,29 +66,69 @@ class _CadenasState extends State<Cadenas> with SingleTickerProviderStateMixin {
         onPointerDown: (_) => _commencer(),
         onPointerUp: (_) => _annuler(),
         onPointerCancel: (_) => _annuler(),
-        child: SizedBox(
-          width: 48,
-          height: 48,
-          child: AnimatedBuilder(
-            animation: _controleur,
-            builder: (context, _) => Stack(
-              alignment: Alignment.center,
-              children: [
-                if (_controleur.isAnimating)
-                  SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: CircularProgressIndicator(
-                      value: _controleur.value,
-                      strokeWidth: 4,
+        child: Focus(
+          onFocusChange: (v) {
+            if (!v) _annuler();
+            setState(() => _focus = v);
+          },
+          onKeyEvent: (_, e) {
+            const touches = [
+              LogicalKeyboardKey.enter,
+              LogicalKeyboardKey.numpadEnter,
+              LogicalKeyboardKey.space,
+            ];
+            if (!touches.contains(e.logicalKey)) return KeyEventResult.ignored;
+            if (e is KeyDownEvent) {
+              _commencer();
+            } else if (e is KeyUpEvent) {
+              _annuler();
+            }
+            return KeyEventResult.handled;
+          },
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: AnimatedBuilder(
+              animation: _controleur,
+              builder: (context, _) => Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  if (_controleur.isAnimating)
+                    SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: CircularProgressIndicator(
+                        value: _controleur.value,
+                        strokeWidth: 4,
+                      ),
                     ),
+                  Icon(
+                    Icons.lock_outline,
+                    size: 24,
+                    color: GlypheTokens.of(context).ink,
                   ),
-                Icon(
-                  Icons.lock_outline,
-                  size: 24,
-                  color: GlypheTokens.of(context).ink,
-                ),
-              ],
+                  if (_focus)
+                    Positioned(
+                      left: -2,
+                      top: -2,
+                      right: -2,
+                      bottom: -2,
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          key: const Key('anneau-focus'),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: GlypheTokens.of(context).focus,
+                              width: GlypheTokens.anneauFocus,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

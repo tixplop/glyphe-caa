@@ -158,6 +158,7 @@ class _EcranCommunicationState extends State<EcranCommunication> {
     final session = etat.session;
     final haut = etat.modeEdition
         ? BarreEdition(
+            nomGrille: session.grilleCourante.nom,
             onTerminer: etat.verrouiller,
             onAjouter: _ajouter,
             onCode: _ouvrirEcranCode,

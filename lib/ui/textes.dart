@@ -104,6 +104,8 @@ class Textes {
 
   // Gestion des grilles et taille (REQ-017, REQ-018).
   static const String plus = 'Plus';
+  static const String modeEdition = 'Mode édition';
+  static String titreEdition(String nom) => 'Mode édition, grille $nom';
   static const String grilles = 'Grilles';
   static const String tailleGrille = 'Taille de la grille';
   static const String renommer = 'Renommer';

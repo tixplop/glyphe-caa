@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../domaine/session.dart';
 import '../textes.dart';
@@ -35,6 +36,7 @@ class _BarrePhraseState extends State<BarrePhrase> {
 
   final ScrollController _controleur = ScrollController();
   bool _appuiLong = false;
+  bool _focusEffacer = false;
 
   @override
   void didUpdateWidget(BarrePhrase ancien) {
@@ -164,19 +166,65 @@ class _BarrePhraseState extends State<BarrePhrase> {
               : null,
           onLongPressEnd: (_) => _definirAppuiLong(false),
           onLongPressCancel: () => _definirAppuiLong(false),
-          child: Material(
-            color: fond,
-            shape: RoundedRectangleBorder(
-              borderRadius: rayon,
-              side: BorderSide(
-                color: _appuiLong ? t.danger : t.border,
-                width: 2,
-              ),
-            ),
-            child: SizedBox(
-              width: _hauteurBouton,
-              height: _hauteurBouton,
-              child: Icon(Icons.backspace_outlined, color: encre, size: 28),
+          child: Focus(
+            canRequestFocus: actif,
+            onFocusChange: (v) => setState(() => _focusEffacer = v),
+            onKeyEvent: (_, e) {
+              if (e is KeyDownEvent &&
+                  const [
+                    LogicalKeyboardKey.enter,
+                    LogicalKeyboardKey.numpadEnter,
+                    LogicalKeyboardKey.space,
+                  ].contains(e.logicalKey)) {
+                widget.onEffacerDernier();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Material(
+                  color: fond,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: rayon,
+                    side: BorderSide(
+                      color: _appuiLong ? t.danger : t.border,
+                      width: 2,
+                    ),
+                  ),
+                  child: SizedBox(
+                    width: _hauteurBouton,
+                    height: _hauteurBouton,
+                    child: Icon(
+                      Icons.backspace_outlined,
+                      color: encre,
+                      size: 28,
+                    ),
+                  ),
+                ),
+                if (_focusEffacer)
+                  Positioned(
+                    left: -5,
+                    top: -5,
+                    right: -5,
+                    bottom: -5,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        key: const Key('anneau-focus'),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            GlypheTokens.rayonMd + 5,
+                          ),
+                          border: Border.all(
+                            color: t.focus,
+                            width: GlypheTokens.anneauFocus,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

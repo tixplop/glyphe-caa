@@ -910,7 +910,7 @@ void main() {
           expect(find.byKey(const Key('espace-cadenas')), findsOneWidget);
           expect(find.byKey(const Key('onglet-acc')), findsOneWidget);
           for (final f in [
-            find.widgetWithText(FilledButton, 'Terminer'),
+            find.byKey(const Key('bouton-terminer')),
             find.byKey(const Key('ajouter-case')),
             find.byKey(const Key('bouton-plus')),
           ]) {
@@ -977,7 +977,7 @@ void main() {
       await lance(tester);
       expect(find.byKey(const Key('bouton-a-propos')), findsNothing);
       expect(find.text('À propos'), findsNothing);
-      expect(find.text('Terminer'), findsNothing);
+      expect(find.byKey(const Key('bouton-terminer')), findsNothing);
       expect(find.byKey(const Key('bouton-plus')), findsNothing);
     });
 

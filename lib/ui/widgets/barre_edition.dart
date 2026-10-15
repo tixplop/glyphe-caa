@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import '../textes.dart';
 import '../tokens.dart';
 
-/// Barre d'édition (AC-030-4) : prend la place et la hauteur de la barre de
-/// phrase en mode édition.
-class BarreEdition extends StatelessWidget {
+/// Barre d'édition (AC-030-4, AC-030-7) : prend la place et la hauteur de la
+/// barre de phrase en mode édition. Titre, Ajouter une case, Plus, Terminer.
+class BarreEdition extends StatefulWidget {
   const BarreEdition({
     super.key,
+    required this.nomGrille,
     required this.onTerminer,
     required this.onAjouter,
     required this.onCode,
@@ -17,6 +18,7 @@ class BarreEdition extends StatelessWidget {
     required this.onAPropos,
   });
 
+  final String nomGrille;
   final VoidCallback onTerminer;
   final VoidCallback onAjouter;
   final VoidCallback onCode;
@@ -25,22 +27,136 @@ class BarreEdition extends StatelessWidget {
   final VoidCallback onReglages;
   final VoidCallback onAPropos;
 
-  static const double _touche = GlypheTokens.toucheMin;
+  static const double _carre = 56;
+  static const double _icone = 28;
 
-  Widget _libelle(String texte) => FittedBox(
-    fit: BoxFit.scaleDown,
-    child: Text(texte, maxLines: 1, textScaler: TextScaler.noScaling),
+  @override
+  State<BarreEdition> createState() => _BarreEditionState();
+}
+
+class _BarreEditionState extends State<BarreEdition> {
+  final GlobalKey<PopupMenuButtonState<VoidCallback>> _menu = GlobalKey();
+
+  Widget _titre(GlypheTokens t) => Semantics(
+    key: const Key('titre-edition'),
+    container: true,
+    header: true,
+    label: Textes.titreEdition(widget.nomGrille),
+    excludeSemantics: true,
+    child: MediaQuery.withNoTextScaling(
+      child: Padding(
+        padding: const EdgeInsets.only(left: GlypheTokens.espace2),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              Textes.modeEdition,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textScaler: TextScaler.noScaling,
+              style: GlypheTokens.caption.copyWith(color: t.inkMuted),
+            ),
+            Text(
+              widget.nomGrille,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textScaler: TextScaler.noScaling,
+              style: GlypheTokens.body.copyWith(
+                color: t.ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  PopupMenuItem<VoidCallback> _entree(
+    GlypheTokens t,
+    String cle,
+    IconData icone,
+    String nom,
+    VoidCallback action,
+  ) => PopupMenuItem<VoidCallback>(
+    key: Key(cle),
+    value: action,
+    height: GlypheTokens.toucheMin,
+    child: Row(
+      children: [
+        Icon(icone, size: 24, color: t.ink),
+        const SizedBox(width: GlypheTokens.espace4),
+        Flexible(child: Text(nom, style: GlypheTokens.body)),
+      ],
+    ),
+  );
+
+  Widget _plus(GlypheTokens t) => Semantics(
+    key: const Key('bouton-plus'),
+    button: true,
+    label: Textes.plus,
+    excludeSemantics: true,
+    onTap: () => _menu.currentState?.showButtonMenu(),
+    child: _AnneauFocus(
+      tokens: t,
+      disque: true,
+      child: PopupMenuButton<VoidCallback>(
+        key: _menu,
+        tooltip: Textes.plus,
+        icon: Icon(Icons.more_vert, size: BarreEdition._icone, color: t.ink),
+        style: IconButton.styleFrom(
+          minimumSize: const Size.square(GlypheTokens.toucheMin),
+          fixedSize: const Size.square(GlypheTokens.toucheMin),
+          splashFactory: NoSplash.splashFactory,
+          highlightColor: t.ink.withValues(alpha: 0.12),
+          overlayColor: t.ink.withValues(alpha: 0.12),
+        ),
+        onSelected: (action) => action(),
+        itemBuilder: (_) => [
+          _entree(
+            t,
+            'bouton-taille',
+            Icons.aspect_ratio_outlined,
+            Textes.tailleGrille,
+            widget.onTaille,
+          ),
+          _entree(
+            t,
+            'bouton-grilles',
+            Icons.grid_view_outlined,
+            Textes.grilles,
+            widget.onGrilles,
+          ),
+          _entree(
+            t,
+            'bouton-reglages',
+            Icons.settings_outlined,
+            Textes.reglages,
+            widget.onReglages,
+          ),
+          _entree(
+            t,
+            'bouton-code',
+            Icons.pin_outlined,
+            Textes.codeVerrouillage,
+            widget.onCode,
+          ),
+          _entree(
+            t,
+            'bouton-a-propos',
+            Icons.info_outline,
+            Textes.aPropos,
+            widget.onAPropos,
+          ),
+        ],
+      ),
+    ),
   );
 
   @override
   Widget build(BuildContext context) {
     final t = GlypheTokens.of(context);
-    final taille = Size.fromHeight(_touche);
-    final style = TextStyle(
-      fontFamily: GlypheTokens.famille,
-      fontSize: 17,
-      fontWeight: FontWeight.w700,
-    );
     return DecoratedBox(
       decoration: BoxDecoration(
         color: t.surface200,
@@ -54,77 +170,155 @@ class BarreEdition extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             children: [
-              Flexible(
-                child: FilledButton(
-                  onPressed: onTerminer,
-                  style: FilledButton.styleFrom(
-                    minimumSize: taille,
-                    textStyle: style,
-                    backgroundColor: t.primary,
-                    foregroundColor: t.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                  child: _libelle(Textes.terminer),
-                ),
+              Expanded(child: _titre(t)),
+              const SizedBox(width: 8),
+              _BoutonCarre(
+                boutonKey: const Key('ajouter-case'),
+                tokens: t,
+                libelle: Textes.ajouterCase,
+                icone: Icons.add,
+                plein: false,
+                onTap: widget.onAjouter,
               ),
               const SizedBox(width: 8),
-              Flexible(
-                flex: 2,
-                child: OutlinedButton(
-                  key: const Key('ajouter-case'),
-                  onPressed: onAjouter,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: taille,
-                    textStyle: style,
-                    foregroundColor: t.ink,
-                    backgroundColor: t.surface000,
-                    side: BorderSide(color: t.border, width: 2),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                  child: _libelle(Textes.ajouterCase),
-                ),
-              ),
-              const SizedBox(width: 8),
-              PopupMenuButton<VoidCallback>(
-                key: const Key('bouton-plus'),
-                tooltip: Textes.plus,
-                icon: const Icon(Icons.more_vert),
-                iconSize: 28,
-                style: IconButton.styleFrom(
-                  minimumSize: Size(_touche, _touche),
-                ),
-                onSelected: (action) => action(),
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    key: const Key('bouton-code'),
-                    value: onCode,
-                    child: const Text(Textes.codeVerrouillage),
-                  ),
-                  PopupMenuItem(
-                    key: const Key('bouton-grilles'),
-                    value: onGrilles,
-                    child: const Text(Textes.grilles),
-                  ),
-                  PopupMenuItem(
-                    key: const Key('bouton-taille'),
-                    value: onTaille,
-                    child: const Text(Textes.tailleGrille),
-                  ),
-                  PopupMenuItem(
-                    key: const Key('bouton-reglages'),
-                    value: onReglages,
-                    child: const Text(Textes.reglages),
-                  ),
-                  PopupMenuItem(
-                    key: const Key('bouton-a-propos'),
-                    value: onAPropos,
-                    child: const Text(Textes.aPropos),
-                  ),
-                ],
+              _plus(t),
+              const SizedBox(width: 12),
+              _BoutonCarre(
+                boutonKey: const Key('bouton-terminer'),
+                tokens: t,
+                libelle: Textes.terminer,
+                icone: Icons.lock_outline,
+                plein: true,
+                onTap: widget.onTerminer,
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Carré de 56 (BoutonBarre) : icône seule, info-bulle et libellé
+/// d'accessibilité, voile `ink` 12 % sans ondulation.
+class _BoutonCarre extends StatelessWidget {
+  const _BoutonCarre({
+    required this.boutonKey,
+    required this.tokens,
+    required this.libelle,
+    required this.icone,
+    required this.plein,
+    required this.onTap,
+  });
+
+  final Key boutonKey;
+  final GlypheTokens tokens;
+  final String libelle;
+  final IconData icone;
+  final bool plein;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = tokens;
+    final forme = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(GlypheTokens.rayonMd),
+      side: plein ? BorderSide.none : BorderSide(color: t.border, width: 2),
+    );
+    return Semantics(
+      key: boutonKey,
+      button: true,
+      label: libelle,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: Tooltip(
+        message: libelle,
+        excludeFromSemantics: true,
+        child: _AnneauFocus(
+          tokens: t,
+          disque: false,
+          child: Material(
+            color: plein ? t.primary : t.surface000,
+            shape: forme,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              customBorder: forme,
+              onTap: onTap,
+              splashFactory: NoSplash.splashFactory,
+              splashColor: Colors.transparent,
+              highlightColor: t.ink.withValues(alpha: 0.12),
+              hoverColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              child: SizedBox.square(
+                dimension: BarreEdition._carre,
+                child: Icon(
+                  icone,
+                  size: BarreEdition._icone,
+                  color: plein ? t.onPrimary : t.ink,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Anneau `focus` de 3, décalé de 2, autour de l'enfant dès qu'il (ou un de
+/// ses descendants) a le focus.
+class _AnneauFocus extends StatefulWidget {
+  const _AnneauFocus({
+    required this.tokens,
+    required this.disque,
+    required this.child,
+  });
+
+  final GlypheTokens tokens;
+  final bool disque;
+  final Widget child;
+
+  @override
+  State<_AnneauFocus> createState() => _AnneauFocusState();
+}
+
+class _AnneauFocusState extends State<_AnneauFocus> {
+  bool _focus = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.tokens;
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onFocusChange: (v) => setState(() => _focus = v),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          widget.child,
+          if (_focus)
+            Positioned(
+              left: -5,
+              top: -5,
+              right: -5,
+              bottom: -5,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  key: const Key('anneau-focus'),
+                  decoration: BoxDecoration(
+                    shape: widget.disque ? BoxShape.circle : BoxShape.rectangle,
+                    borderRadius: widget.disque
+                        ? null
+                        : BorderRadius.circular(GlypheTokens.rayonMd + 5),
+                    border: Border.all(
+                      color: t.focus,
+                      width: GlypheTokens.anneauFocus,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
