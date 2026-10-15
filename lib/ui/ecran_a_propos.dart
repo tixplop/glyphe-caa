@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../version.dart';
 import 'textes.dart';
+import 'widgets/bouton_retour.dart';
 
 /// Écran « À propos » en lecture seule : attribution ARASAAC, gratuité,
 /// version (REQ-027).
@@ -12,7 +13,10 @@ class EcranAPropos extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.bodyLarge;
     return Scaffold(
-      appBar: AppBar(title: const Text(Textes.aPropos)),
+      appBar: AppBar(
+        leading: const BoutonRetour(),
+        title: const Text(Textes.aPropos),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),

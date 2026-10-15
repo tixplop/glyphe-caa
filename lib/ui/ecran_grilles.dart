@@ -4,6 +4,7 @@ import '../domaine/edition.dart';
 import '../domaine/modeles.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
+import 'widgets/bouton_retour.dart';
 
 /// Liste de toutes les grilles : renommer, ouvrir, supprimer (REQ-017).
 class EcranGrilles extends StatelessWidget {
@@ -83,11 +84,7 @@ class EcranGrilles extends StatelessWidget {
       key: const Key('ecran-grilles'),
       appBar: AppBar(
         title: const Text(Textes.grilles),
-        leading: IconButton(
-          tooltip: Textes.retour,
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: const BoutonRetour(),
       ),
       body: ListenableBuilder(
         listenable: etat.session,

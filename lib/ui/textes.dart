@@ -72,7 +72,6 @@ class Textes {
   static const String nouvelleGrille = 'Nouvelle grille';
   static const String nomNouvelleGrille = 'Nouvelle grille';
   static const String image = 'Image';
-  static const String imageAucune = 'aucune';
   static const String choisirImage = 'Choisir une image';
   static const String rechercherPicto = 'Rechercher un pictogramme';
   static const String indiceRecherche =

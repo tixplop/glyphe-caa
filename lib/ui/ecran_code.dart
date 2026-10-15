@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../domaine/verrou.dart';
 import 'textes.dart';
+import 'widgets/bouton_retour.dart';
 
 /// Définir, modifier ou supprimer le code de 4 chiffres (REQ-012).
 class EcranCode extends StatefulWidget {
@@ -61,7 +62,10 @@ class _EcranCodeState extends State<EcranCode> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(Textes.codeVerrouillage)),
+      appBar: AppBar(
+        leading: const BoutonRetour(),
+        title: const Text(Textes.codeVerrouillage),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(

@@ -184,7 +184,7 @@ void main() {
           .text,
       'chien',
     );
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     expect(e.cas('vide').image, const ImageArasaac(2517));
     expect(e.cas('vide').libelle, 'chien');
   });
@@ -195,7 +195,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('champ-recherche')), 'chien');
     await tester.pumpAndSettle();
     await toucher(tester, find.byKey(const Key('picto-2517')));
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     expect(e.cas('m1').libelle, 'maman');
     expect(e.cas('m1').image, const ImageArasaac(2517));
   });
@@ -214,7 +214,7 @@ void main() {
     );
     expect(e.source.appelsCamera, 1);
     expect(find.byKey(const Key('ecran-edition-case')), findsOneWidget);
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     await io(tester);
     final img = e.cas('m1').image;
     expect(img, isA<ImagePhoto>());
@@ -235,7 +235,7 @@ void main() {
           find.byKey(const Key('ecran-edition-case')).evaluate().isNotEmpty,
     );
     expect(e.source.appelsGalerie, 1);
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     await io(tester);
     expect(e.cas('m1').image, isA<ImagePhoto>());
     expect(fichiers(e), hasLength(1));
@@ -267,7 +267,7 @@ void main() {
           find.byKey(const Key('ecran-edition-case')).evaluate().isNotEmpty,
     );
     expect(e.etat.verrouille, isFalse);
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     await io(tester);
     expect(e.cas('m1').image, isA<ImagePhoto>());
     expect(fichiers(e), hasLength(1));
@@ -289,7 +289,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('champ-recherche')), 'chien');
     await tester.pumpAndSettle();
     await toucher(tester, find.byKey(const Key('picto-2517')));
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     expect(e.cas('m1').image, const ImageArasaac(2517));
   });
 
@@ -324,7 +324,7 @@ void main() {
     await tester.enterText(find.byKey(const Key('champ-recherche')), 'chien');
     await tester.pumpAndSettle();
     await toucher(tester, find.byKey(const Key('picto-2517')));
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     await io(tester);
     expect(e.cas('m1').image, const ImageArasaac(2517));
     expect(fichiers(e), isEmpty);
@@ -333,7 +333,7 @@ void main() {
   testWidgets('REQ020_AC4 supprimer la case supprime sa photo', (tester) async {
     final e = await lance(tester, photo: 'ancienne.jpg');
     await toucher(tester, find.byKey(const Key('case-m1')));
-    await toucher(tester, find.text('Supprimer'));
+    await toucher(tester, find.byKey(const Key('bouton-supprimer')));
     await toucher(tester, find.byKey(const Key('confirmer-suppression')));
     await io(tester);
     expect(fichiers(e), isEmpty);
@@ -352,7 +352,7 @@ void main() {
           find.byKey(const Key('ecran-edition-case')).evaluate().isNotEmpty,
     );
     expect(fichiers(e).length, 2);
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Retour'));
     await io(tester, jusqua: () => fichiers(e).length == 1);
     expect(fichiers(e), ['ancienne.jpg']);
   });

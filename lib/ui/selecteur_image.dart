@@ -9,6 +9,7 @@ import 'etat_appli.dart';
 import 'textes.dart';
 import 'tokens.dart';
 import 'widgets/image_case.dart';
+import 'widgets/bouton_retour.dart';
 
 /// Image choisie ; [motCle] propose un libellé pour un pictogramme (REQ-015).
 class ResultatImage {
@@ -177,7 +178,10 @@ class _SelecteurImageState extends State<SelecteurImage> {
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const Text(Textes.choisirImage)),
+      appBar: AppBar(
+        leading: const BoutonRetour(),
+        title: const Text(Textes.choisirImage),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),

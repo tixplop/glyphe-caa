@@ -6,6 +6,7 @@ import '../domaine/sauvegarde.dart';
 import 'ecran_code.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
+import 'widgets/bouton_retour.dart';
 
 /// Délais anti-répétition proposés, en millisecondes (REQ-004).
 const List<int> delaisProposes = [0, 500, 1000, 2000, 3000, 5000];
@@ -212,7 +213,10 @@ class _EcranReglagesState extends State<EcranReglages> {
         final r = _reglages;
         return Scaffold(
           key: const Key('ecran-reglages'),
-          appBar: AppBar(title: const Text(Textes.reglages)),
+          appBar: AppBar(
+            leading: const BoutonRetour(),
+            title: const Text(Textes.reglages),
+          ),
           body: SafeArea(
             child: SingleChildScrollView(
               child: Column(

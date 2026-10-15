@@ -6,6 +6,7 @@ import 'etat_appli.dart';
 import 'selecteur_image.dart';
 import 'textes.dart';
 import 'tokens.dart';
+import 'widgets/bouton_retour.dart';
 import 'widgets/image_case.dart';
 
 const String _valeurNouvelleGrille = '__nouvelle_grille__';
@@ -45,6 +46,8 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
   late ImageCase _image;
   String? _cible;
   String? _erreur;
+  final FocusNode _focusLibelle = FocusNode();
+  final FocusNode _focusCible = FocusNode();
 
   /// Une photo a été importée pendant l'édition : à nettoyer si non retenue.
   bool _photoImportee = false;
@@ -70,6 +73,8 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
   void dispose() {
     _libelle.dispose();
     _texte.dispose();
+    _focusLibelle.dispose();
+    _focusCible.dispose();
     if (_photoImportee) widget.etat.nettoyerPhotos();
     super.dispose();
   }
@@ -139,6 +144,7 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
             );
       await _appliquer(d);
     } on ErreurEdition catch (e) {
+      _focaliser(e.code);
       // Grille remplie pendant l'édition : même consigne que grille pleine.
       final pleine =
           e.code == CodeErreurEdition.emplacementInvalide &&
@@ -147,6 +153,17 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
       setState(
         () => _erreur = pleine ? Textes.erreurGrillePleine : _message(e.code),
       );
+    }
+  }
+
+  /// Place le focus sur le champ concerné par l'erreur (V-003).
+  void _focaliser(CodeErreurEdition code) {
+    switch (code) {
+      case CodeErreurEdition.contenuVide:
+        _focusLibelle.requestFocus();
+      case CodeErreurEdition.cibleManquante:
+        _focusCible.requestFocus();
+      default:
     }
   }
 
@@ -308,6 +325,7 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     final proposees = _proposees;
     return DropdownButton<String>(
       key: const Key('champ-cible'),
+      focusNode: _focusCible,
       isExpanded: true,
       hint: const Text(Textes.grilleCible),
       value: _cible,
@@ -323,6 +341,62 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     );
   }
 
+  Widget _action(
+    Key cle,
+    IconData icone,
+    String libelle,
+    Color couleur,
+    VoidCallback f,
+  ) => IconButton(
+    key: cle,
+    tooltip: libelle,
+    icon: Icon(icone, size: 24, color: couleur),
+    constraints: const BoxConstraints.tightFor(
+      width: GlypheTokens.toucheMin,
+      height: GlypheTokens.toucheMin,
+    ),
+    onPressed: f,
+  );
+
+  /// Aperçu de l'image (AC-036-4, AC-036-10) : ouvre le sélecteur.
+  Widget _apercu(GlypheTokens t) => Tooltip(
+    message: Textes.image,
+    excludeFromSemantics: true,
+    child: Semantics(
+      button: true,
+      label: Textes.image,
+      onTap: _choisirImage,
+      excludeSemantics: true,
+      child: Material(
+        color: t.surface000,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GlypheTokens.rayonMd),
+          side: BorderSide(color: t.border, width: 2),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: const Key('bouton-image'),
+          onTap: _choisirImage,
+          child: SizedBox.square(
+            dimension: 72,
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Center(
+                child: _image is ImageAucune
+                    ? Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: 32,
+                        color: t.ink,
+                      )
+                    : ImageCaseWidget(_image),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final existante = _existante;
@@ -330,11 +404,59 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     final cibleValide =
         existante?.cibleId != null &&
         _donnees.grillePar(existante!.cibleId!) != null;
+    final t = GlypheTokens.of(context);
     return Scaffold(
       appBar: AppBar(
+        leading: const BoutonRetour(),
         title: Text(
           existante == null ? Textes.nouvelleCase : Textes.editionCase,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
         ),
+        actions: [
+          if (existante != null)
+            _action(
+              const Key('bouton-supprimer'),
+              Icons.delete_outline,
+              Textes.supprimer,
+              t.danger,
+              _supprimer,
+            ),
+          if (existante != null)
+            _action(
+              const Key('bouton-echanger'),
+              Icons.swap_horiz,
+              Textes.echanger,
+              t.ink,
+              _echanger,
+            ),
+          if (existante != null &&
+              existante.type == TypeCase.dossier &&
+              cibleValide)
+            _action(
+              const Key('bouton-ouvrir'),
+              Icons.folder_open_outlined,
+              Textes.ouvrir,
+              t.ink,
+              _ouvrir,
+            ),
+          IconButton(
+            key: const Key('bouton-enregistrer'),
+            tooltip: Textes.enregistrer,
+            icon: Icon(Icons.check, size: 24, color: t.onPrimary),
+            style: IconButton.styleFrom(
+              backgroundColor: t.primary,
+              minimumSize: const Size.square(GlypheTokens.toucheMin),
+              fixedSize: const Size.square(GlypheTokens.toucheMin),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(GlypheTokens.rayonMd),
+              ),
+            ),
+            onPressed: _enregistrer,
+          ),
+          const SizedBox(width: GlypheTokens.espace2),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -342,10 +464,22 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
-                key: const Key('champ-libelle'),
-                controller: _libelle,
-                decoration: const InputDecoration(labelText: Textes.libelle),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _apercu(t),
+                  const SizedBox(width: GlypheTokens.espace3),
+                  Expanded(
+                    child: TextField(
+                      key: const Key('champ-libelle'),
+                      focusNode: _focusLibelle,
+                      controller: _libelle,
+                      decoration: const InputDecoration(
+                        labelText: Textes.libelle,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               TextField(
@@ -354,24 +488,6 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
                 decoration: const InputDecoration(
                   labelText: Textes.textePrononce,
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 56,
-                    height: 56,
-                    child: ImageCaseWidget(_image),
-                  ),
-                  const SizedBox(width: 12),
-                  OutlinedButton(
-                    key: const Key('bouton-image'),
-                    onPressed: _choisirImage,
-                    child: const Text(Textes.image),
-                  ),
-                  const SizedBox(width: 12),
-                  if (_image is ImageAucune) const Text(Textes.imageAucune),
-                ],
               ),
               const SizedBox(height: 16),
               const Text(Textes.categorie),
@@ -401,27 +517,7 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
                 Text(
                   _erreur!,
                   key: const Key('erreur-edition'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ],
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _enregistrer,
-                child: const Text(Textes.enregistrer),
-              ),
-              if (existante != null) ...[
-                if (existante.type == TypeCase.dossier && cibleValide)
-                  TextButton(
-                    onPressed: _ouvrir,
-                    child: const Text(Textes.ouvrir),
-                  ),
-                TextButton(
-                  onPressed: _echanger,
-                  child: const Text(Textes.echanger),
-                ),
-                TextButton(
-                  onPressed: _supprimer,
-                  child: const Text(Textes.supprimer),
+                  style: TextStyle(color: t.danger),
                 ),
               ],
             ],

@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:glyphe/domaine/banque_pictos.dart';
 import 'package:glyphe/domaine/modeles.dart';
 import 'package:glyphe/ui/app.dart';
+import 'package:glyphe/ui/ecran_a_propos.dart';
+import 'package:glyphe/ui/ecran_code.dart';
+import 'package:glyphe/ui/ecran_grilles.dart';
+import 'package:glyphe/ui/ecran_reglages.dart';
 import 'package:glyphe/ui/etat_appli.dart';
+import 'package:glyphe/ui/selecteur_image.dart';
+import 'package:glyphe/ui/tokens.dart';
 
 import '../faux/faux_stockage.dart';
 import '../faux/faux_voix.dart';
@@ -96,6 +104,8 @@ Future<Env> lance(
 
 Finder champ(String nom) => find.byKey(Key(nom));
 
+Finder cle(String k) => find.byKey(Key(k));
+
 Future<void> saisir(WidgetTester tester, String nom, String texte) async {
   await tester.ensureVisible(champ(nom));
   await tester.enterText(champ(nom), texte);
@@ -117,7 +127,7 @@ Case caseDe(Env e, String grille, String id) => e.etat.session.donnees
 Future<void> ajouterMot(WidgetTester tester, String lib) async {
   await toucher(tester, find.byKey(const Key('vide-1-1')));
   await saisir(tester, 'champ-libelle', lib);
-  await toucher(tester, find.text('Enregistrer'));
+  await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
 }
 
 void main() {
@@ -143,7 +153,7 @@ void main() {
   ) async {
     final e = await lance(tester);
     await toucher(tester, find.byKey(const Key('case-d-man')));
-    await toucher(tester, find.text('Ouvrir'));
+    await toucher(tester, find.byKey(const Key('bouton-ouvrir')));
     expect(find.byKey(const Key('ecran-edition-case')), findsNothing);
     expect(e.etat.session.grilleCourante.id, 'man');
     expect(find.byKey(const Key('case-pomme')), findsOneWidget);
@@ -152,7 +162,7 @@ void main() {
   testWidgets('REQ015_AC5 pas d\'« Ouvrir » pour un mot', (tester) async {
     await lance(tester);
     await toucher(tester, find.byKey(const Key('case-je')));
-    expect(find.text('Ouvrir'), findsNothing);
+    expect(find.byKey(const Key('bouton-ouvrir')), findsNothing);
   });
 
   testWidgets('REQ015_AC1 emplacement vide : « + », ajout d\'une case', (
@@ -190,7 +200,7 @@ void main() {
     await saisir(tester, 'champ-libelle', 'moi');
     await saisir(tester, 'champ-texte', 'c\'est moi');
     await toucher(tester, champ('categorie-description'));
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     final c = caseDe(e, 'acc', 'je');
     expect(c.libelle, 'moi');
     expect(c.textePrononce, 'c\'est moi');
@@ -240,7 +250,7 @@ void main() {
     await toucher(tester, find.byKey(const Key('vide-1-1')));
     await saisir(tester, 'champ-libelle', 'chat');
     await toucher(tester, champ('categorie-question'));
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     final c = e.stockage.donnees!
         .grillePar('acc')!
         .cases
@@ -248,13 +258,13 @@ void main() {
     expect(c.categorie, Categorie.question);
   });
 
-  testWidgets('REQ015_AC1 l\'écran propose l\'image (provisoirement aucune)', (
+  testWidgets('REQ015_AC1 l\'écran propose l\'image (icône d\'ajout)', (
     tester,
   ) async {
     await lance(tester);
     await toucher(tester, find.byKey(const Key('vide-1-1')));
     expect(champ('bouton-image'), findsOneWidget);
-    expect(find.text('aucune'), findsOneWidget);
+    expect(find.byIcon(Icons.add_photo_alternate_outlined), findsOneWidget);
   });
 
   testWidgets('REQ015_AC2 sans image ni libellé : message, rien enregistré', (
@@ -263,7 +273,7 @@ void main() {
     final e = await lance(tester);
     final avant = e.stockage.ecritures;
     await toucher(tester, find.byKey(const Key('vide-1-1')));
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     expect(find.text('Ajoutez une image ou un libellé'), findsOneWidget);
     expect(find.byKey(const Key('ecran-edition-case')), findsOneWidget);
     expect(e.stockage.ecritures, avant);
@@ -274,7 +284,7 @@ void main() {
   ) async {
     final e = await lance(tester);
     await toucher(tester, find.byKey(const Key('case-je')));
-    await toucher(tester, find.text('Supprimer'));
+    await toucher(tester, find.byKey(const Key('bouton-supprimer')));
     expect(find.byKey(const Key('confirmation-suppression')), findsOneWidget);
     await toucher(tester, find.text('Annuler'));
     expect(find.byKey(const Key('confirmation-suppression')), findsNothing);
@@ -285,7 +295,7 @@ void main() {
   testWidgets('REQ015_AC3 suppression : confirmer supprime', (tester) async {
     final e = await lance(tester);
     await toucher(tester, find.byKey(const Key('case-je')));
-    await toucher(tester, find.text('Supprimer'));
+    await toucher(tester, find.byKey(const Key('bouton-supprimer')));
     await toucher(tester, find.byKey(const Key('confirmer-suppression')));
     expect(find.byKey(const Key('ecran-edition-case')), findsNothing);
     expect(e.etat.session.donnees.grillePar('acc')!.cases.length, 2);
@@ -299,7 +309,7 @@ void main() {
     final e = await lance(tester);
     await toucher(tester, find.byKey(const Key('case-je')));
     await saisir(tester, 'champ-libelle', 'moi');
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     await ajouterMot(tester, 'chat');
     final apres = creerEtat(e.stockage, FauxVoix());
     await apres.init();
@@ -311,7 +321,7 @@ void main() {
   testWidgets('REQ015_AC4 suppression persistée', (tester) async {
     final e = await lance(tester);
     await toucher(tester, find.byKey(const Key('case-je')));
-    await toucher(tester, find.text('Supprimer'));
+    await toucher(tester, find.byKey(const Key('bouton-supprimer')));
     await toucher(tester, find.byKey(const Key('confirmer-suppression')));
     final apres = creerEtat(e.stockage, FauxVoix());
     await apres.init();
@@ -369,7 +379,7 @@ void main() {
       ),
     );
     await saisir(tester, 'champ-libelle', 'chat');
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     expect(find.text('Agrandissez la grille'), findsOneWidget);
     expect(find.text('Modification impossible'), findsNothing);
   });
@@ -377,7 +387,7 @@ void main() {
   testWidgets('REQ015_AC6 échanger avec un emplacement', (tester) async {
     final e = await lance(tester);
     await toucher(tester, find.byKey(const Key('case-je')));
-    await toucher(tester, find.text('Échanger avec l\'emplacement…'));
+    await toucher(tester, find.byKey(const Key('bouton-echanger')));
     await toucher(tester, find.byKey(const Key('emplacement-1-1')));
     expect(find.byKey(const Key('ecran-edition-case')), findsNothing);
     final c = caseDe(e, 'acc', 'je');
@@ -388,7 +398,7 @@ void main() {
   testWidgets('REQ015_AC6 échanger avec une case occupée', (tester) async {
     final e = await lance(tester);
     await toucher(tester, find.byKey(const Key('case-je')));
-    await toucher(tester, find.text('Échanger avec l\'emplacement…'));
+    await toucher(tester, find.byKey(const Key('bouton-echanger')));
     await toucher(tester, find.byKey(const Key('emplacement-0-1')));
     expect(caseDe(e, 'acc', 'je').colonne, 1);
     expect(caseDe(e, 'acc', 'd-man').colonne, 0);
@@ -403,7 +413,7 @@ void main() {
     // La grille courante n'est pas proposée.
     expect(find.text('Accueil'), findsNothing);
     await toucher(tester, find.text('Manger').last);
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     final c = caseDe(
       e,
       'acc',
@@ -426,7 +436,7 @@ void main() {
     await toucher(tester, champ('type-dossier'));
     await toucher(tester, champ('champ-cible'));
     await toucher(tester, find.text('Nouvelle grille').last);
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     final d = e.etat.session.donnees;
     final nouvelle = d.grilles.firstWhere((g) => g.nom == 'Animaux');
     expect((nouvelle.lignes, nouvelle.colonnes), (4, 4));
@@ -446,7 +456,7 @@ void main() {
     await toucher(tester, find.byKey(const Key('vide-1-1')));
     await saisir(tester, 'champ-libelle', 'Animaux');
     await toucher(tester, champ('type-dossier'));
-    await toucher(tester, find.text('Enregistrer'));
+    await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     expect(find.text('Choisissez une grille pour ce dossier'), findsOneWidget);
     expect(find.byKey(const Key('ecran-edition-case')), findsOneWidget);
     expect(e.stockage.ecritures, avant);
@@ -476,7 +486,7 @@ void main() {
   ) async {
     final e = await lance(tester);
     await toucher(tester, find.byKey(const Key('case-d-man')));
-    await toucher(tester, find.text('Supprimer'));
+    await toucher(tester, find.byKey(const Key('bouton-supprimer')));
     await toucher(tester, find.byKey(const Key('confirmer-suppression')));
     expect(
       e.etat.session.donnees
@@ -524,5 +534,271 @@ void main() {
     e.etat.notifyListeners();
     await tester.pumpAndSettle();
     expect(find.text('autre-route'), findsOneWidget);
+  });
+
+  group('REQ036 actions en icônes', () {
+    Finder cle(String k) => find.byKey(Key(k));
+    double gauche(WidgetTester t, String k) => t.getTopLeft(cle(k)).dx;
+
+    testWidgets('REQ036_AC3 nouvelle case : seulement Enregistrer', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      expect(cle('bouton-enregistrer'), findsOneWidget);
+      expect(cle('bouton-supprimer'), findsNothing);
+      expect(cle('bouton-echanger'), findsNothing);
+      expect(cle('bouton-ouvrir'), findsNothing);
+      expect(find.text('Nouvelle case'), findsOneWidget);
+    });
+
+    testWidgets('REQ036_AC3 mot : Supprimer, Échanger, pas Ouvrir', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('case-je'));
+      expect(cle('bouton-supprimer'), findsOneWidget);
+      expect(cle('bouton-echanger'), findsOneWidget);
+      expect(cle('bouton-ouvrir'), findsNothing);
+    });
+
+    testWidgets('REQ036_AC3 dossier orphelin : pas d\'Ouvrir', (tester) async {
+      await lance(tester);
+      await toucher(tester, cle('case-d-orph'));
+      expect(cle('bouton-ouvrir'), findsNothing);
+      expect(cle('bouton-supprimer'), findsOneWidget);
+    });
+
+    testWidgets('REQ036_AC3 AC9 dossier existant : ordre, icônes, sans texte', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('case-d-man'));
+      final ordre = [
+        'bouton-supprimer',
+        'bouton-echanger',
+        'bouton-ouvrir',
+        'bouton-enregistrer',
+      ];
+      for (var i = 0; i < ordre.length - 1; i++) {
+        expect(
+          gauche(tester, ordre[i]),
+          lessThan(gauche(tester, ordre[i + 1])),
+        );
+      }
+      expect(tester.getSize(cle('bouton-enregistrer')), const Size(48, 48));
+      expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+      expect(find.byIcon(Icons.swap_horiz), findsOneWidget);
+      expect(find.byIcon(Icons.folder_open_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.check), findsWidgets);
+      final suppr = tester.widget<IconButton>(cle('bouton-supprimer'));
+      expect(suppr.tooltip, 'Supprimer');
+      expect((suppr.icon as Icon).color, GlypheTokens.clair.danger);
+      // Aucune action sous le formulaire.
+      final bas = tester.getBottomLeft(find.text('Dossier')).dy;
+      for (final k in ordre) {
+        expect(tester.getTopLeft(cle(k)).dy, lessThan(bas));
+      }
+      expect(find.byType(FilledButton), findsNothing);
+      expect(find.byType(TextButton), findsNothing);
+      // Retour en français.
+      expect(find.byTooltip('Retour'), findsOneWidget);
+      expect(find.byTooltip('Back'), findsNothing);
+    });
+
+    for (final taille in [const Size(360, 640), const Size(640, 360)]) {
+      testWidgets('REQ036_AC5 $taille dossier existant : sans débordement', (
+        tester,
+      ) async {
+        await lance(tester);
+        tester.view.physicalSize = taille;
+        await tester.pumpAndSettle();
+        await tester.tap(cle('case-d-man'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        for (final k in [
+          'bouton-supprimer',
+          'bouton-echanger',
+          'bouton-ouvrir',
+          'bouton-enregistrer',
+        ]) {
+          final r = tester.getRect(cle(k));
+          expect(r.right, lessThanOrEqualTo(taille.width), reason: k);
+          expect(r.top, greaterThanOrEqualTo(0), reason: k);
+          expect(r.bottom, lessThanOrEqualTo(taille.height), reason: k);
+        }
+      });
+    }
+
+    testWidgets('REQ036_AC4 aperçu 72 : icône vide, focus avant Libellé', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      expect(
+        tester.getSize(
+          find
+              .ancestor(
+                of: cle('bouton-image'),
+                matching: find.byType(Material),
+              )
+              .first,
+        ),
+        const Size(72, 72),
+      );
+      expect(find.byIcon(Icons.add_photo_alternate_outlined), findsOneWidget);
+      expect(find.byTooltip('Image'), findsOneWidget);
+      expect(
+        tester.getTopLeft(cle('bouton-image')).dx,
+        lessThan(tester.getTopLeft(cle('champ-libelle')).dx),
+      );
+      expect(find.text('Image'), findsNothing);
+      final h = tester.ensureSemantics();
+      expect(
+        tester.getSemantics(cle('bouton-image')),
+        matchesSemantics(label: 'Image', isButton: true, hasTapAction: true),
+      );
+      h.dispose();
+      // Le focus clavier part de l'aperçu, avant le libellé.
+      bool dans(Key k) =>
+          FocusManager.instance.primaryFocus!.context!
+                  .findAncestorWidgetOfExactType<InkWell>()
+                  ?.key ==
+              k ||
+          FocusManager.instance.primaryFocus!.context!
+                  .findAncestorWidgetOfExactType<TextField>()
+                  ?.key ==
+              k;
+      Key? atteint;
+      for (var i = 0; i < 10 && atteint == null; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        for (final k in const [Key('bouton-image'), Key('champ-libelle')]) {
+          if (dans(k)) atteint = k;
+        }
+      }
+      expect(atteint, const Key('bouton-image'));
+    });
+
+    testWidgets('REQ036_AC4 aperçu avec image existante, sans icône vide', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('case-je'));
+      expect(find.byIcon(Icons.add_photo_alternate_outlined), findsNothing);
+      expect(
+        find.descendant(of: cle('bouton-image'), matching: find.byType(Image)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('REQ036_AC4 toucher l\'aperçu ouvre le sélecteur', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      await toucher(tester, cle('bouton-image'));
+      expect(find.byKey(const Key('ecran-selecteur-image')), findsOneWidget);
+    });
+
+    testWidgets('REQ036 erreur : focus sur le libellé', (tester) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      await toucher(tester, cle('bouton-enregistrer'));
+      expect(find.byKey(const Key('erreur-edition')), findsOneWidget);
+      final f = FocusManager.instance.primaryFocus!;
+      expect(
+        f.context!.findAncestorWidgetOfExactType<TextField>()?.key,
+        const Key('champ-libelle'),
+      );
+    });
+
+    testWidgets('REQ036 erreur : focus sur la grille cible', (tester) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      await saisir(tester, 'champ-libelle', 'x');
+      await toucher(tester, cle('type-dossier'));
+      await toucher(tester, cle('bouton-enregistrer'));
+      expect(find.byKey(const Key('erreur-edition')), findsOneWidget);
+      expect(
+        FocusManager.instance.primaryFocus!.context!
+            .findAncestorWidgetOfExactType<DropdownButton<String>>()
+            ?.key,
+        const Key('champ-cible'),
+      );
+    });
+  });
+
+  testWidgets('REQ036_AC4 nouvelle case : l\'image choisie remplace l\'icône', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final etat = EtatAppli(
+      stockage: FauxStockage(donnees()),
+      voix: FauxVoix(),
+      horloge: FausseHorloge(),
+      jsonExemples: '{}',
+      banque: BanquePictos.depuisJson('[{"id":2517,"motsCles":["chien"]}]'),
+    );
+    await etat.init();
+    etat.ouvrirEdition();
+    await tester.pumpWidget(GlypheApp(etat: etat));
+    await tester.pumpAndSettle();
+    await toucher(tester, cle('vide-1-1'));
+    expect(
+      find.descendant(
+        of: cle('bouton-image'),
+        matching: find.byIcon(Icons.add_photo_alternate_outlined),
+      ),
+      findsOneWidget,
+    );
+    await toucher(tester, cle('bouton-image'));
+    await tester.enterText(cle('champ-recherche'), 'chien');
+    await tester.pumpAndSettle();
+    await toucher(tester, cle('picto-2517'));
+    expect(cle('ecran-edition-case'), findsOneWidget);
+    expect(
+      find.descendant(of: cle('bouton-image'), matching: find.byType(Image)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: cle('bouton-image'),
+        matching: find.byIcon(Icons.add_photo_alternate_outlined),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('REQ029_AC1 aucune info-bulle « Back » sur les 6 écrans', (
+    tester,
+  ) async {
+    final e = await lance(tester, edition: false);
+    void verifie(String ecran) {
+      expect(find.byTooltip('Back'), findsNothing, reason: ecran);
+      expect(find.byTooltip('Retour'), findsOneWidget, reason: ecran);
+    }
+
+    Future<void> affiche(String nom, Widget w) async {
+      await tester.pumpWidget(MaterialApp(home: w));
+      await tester.pumpAndSettle();
+      verifie(nom);
+    }
+
+    await affiche('grilles', EcranGrilles(etat: e.etat));
+    await affiche('sélecteur', SelecteurImage(etat: e.etat));
+    await affiche('à propos', const EcranAPropos());
+    await affiche('réglages', EcranReglages(etat: e.etat));
+    await affiche('code', EcranCode(verrou: e.etat.verrou));
+
+    await tester.pumpWidget(GlypheApp(etat: e.etat));
+    await tester.pumpAndSettle();
+    e.etat.ouvrirEdition();
+    await tester.pumpAndSettle();
+    await toucher(tester, cle('case-je'));
+    expect(cle('ecran-edition-case'), findsOneWidget);
+    verifie('édition de case');
   });
 }
