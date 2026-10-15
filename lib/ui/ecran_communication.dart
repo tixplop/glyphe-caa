@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../domaine/modeles.dart';
 import '../domaine/session.dart';
 import 'dialogue_code.dart';
+import 'ecran_a_propos.dart';
 import 'ecran_code.dart';
 import 'dialogue_taille.dart';
 import 'ecran_edition_case.dart';
@@ -97,6 +98,18 @@ class _EcranCommunicationState extends State<EcranCommunication> {
   Future<void> _ouvrirReglages() => Navigator.of(context)
       .push(MaterialPageRoute<void>(builder: (_) => EcranReglages(etat: etat)));
 
+  Future<void> _ouvrirAPropos() =>
+      Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => const EcranAPropos()));
+
+  Widget _boutonAPropos() => TextButton.icon(
+    key: const Key('bouton-a-propos'),
+    onPressed: _ouvrirAPropos,
+    style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+    icon: const Icon(Icons.info_outline),
+    label: const Text(Textes.aPropos),
+  );
+
   Future<void> _regler() => reglerTaille(context, etat);
 
   Future<void> _deverrouiller() async {
@@ -145,6 +158,20 @@ class _EcranCommunicationState extends State<EcranCommunication> {
                       onGrilles: _ouvrirGrilles,
                       onTaille: _regler,
                       onReglages: _ouvrirReglages,
+                      aPropos: IconButton(
+                        key: const Key('bouton-a-propos'),
+                        tooltip: Textes.aPropos,
+                        onPressed: _ouvrirAPropos,
+                        icon: const Icon(Icons.info_outline),
+                        iconSize: 28,
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(56, 56),
+                        ),
+                      ),
+                    );
+                    final aPropos = Align(
+                      alignment: Alignment.centerRight,
+                      child: _boutonAPropos(),
                     );
                     // Paysage peu haut : barre et commandes côte à côte pour
                     // laisser assez de hauteur aux cases (>= 48 dp).
@@ -159,17 +186,21 @@ class _EcranCommunicationState extends State<EcranCommunication> {
                               const SizedBox(width: 6),
                               if (etat.modeEdition)
                                 SizedBox(
-                                  width: c.maxWidth * 0.7,
+                                  width: c.maxWidth * 0.78,
                                   child: commandes,
                                 )
                               else
-                                commandes,
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [commandes, aPropos],
+                                ),
                             ],
                           )
                         else ...[
                           barre,
                           const SizedBox(height: 6),
                           commandes,
+                          if (!etat.modeEdition) aPropos,
                         ],
                         const SizedBox(height: 6),
                         Expanded(
@@ -203,6 +234,7 @@ class _Commandes extends StatelessWidget {
     required this.onGrilles,
     required this.onTaille,
     required this.onReglages,
+    required this.aPropos,
   });
 
   final Session session;
@@ -214,6 +246,7 @@ class _Commandes extends StatelessWidget {
   final VoidCallback onGrilles;
   final VoidCallback onTaille;
   final VoidCallback onReglages;
+  final Widget aPropos;
 
   static final ButtonStyle _styleTexte = TextButton.styleFrom(
     minimumSize: const Size(56, 56),
@@ -272,6 +305,7 @@ class _Commandes extends StatelessWidget {
               style: _styleTexte,
               child: const Text(Textes.ajouterCase),
             ),
+            aPropos,
             PopupMenuButton<VoidCallback>(
               key: const Key('bouton-plus'),
               tooltip: Textes.plus,

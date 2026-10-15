@@ -140,4 +140,15 @@ class Textes {
       'Sauvegarde créée par une version plus récente de Glyphe';
   static const String exportImpossible = 'Export impossible';
   static const String importImpossible = 'Import impossible';
+
+  // À propos (REQ-027).
+  static const String aPropos = 'À propos';
+  static const String attributionArasaac =
+      'Les symboles pictographiques utilisés sont la propriété du '
+      'Gouvernement d\'Aragon et ont été créés par Sergio Palao pour '
+      'ARASAAC (http://www.arasaac.org), qui les distribue sous licence '
+      'Creative Commons BY-NC-SA.';
+  static const String gratuitNonCommercial =
+      'Glyphe est gratuit et non commercial.';
+  static const String versionLabel = 'Version';
 }
