@@ -142,6 +142,16 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Ouvre la grille [id] (édition) : l'accueil devient le point de retour.
+  /// Sans effet si la grille n'existe pas.
+  void ouvrirGrille(String id) {
+    if (_donnees.grillePar(id) == null) return;
+    _historique.clear();
+    if (id != _donnees.accueilId) _historique.add(_donnees.accueilId);
+    _grilleId = id;
+    notifyListeners();
+  }
+
   void accueil() {
     if (_grilleId == _donnees.accueilId && _historique.isEmpty) return;
     _grilleId = _donnees.accueilId;

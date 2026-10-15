@@ -24,6 +24,15 @@ enum CodeErreurEdition {
   grilleIntrouvable,
   caseIntrouvable,
   idDejaUtilise,
+
+  /// Nom de grille vide (REQ-017).
+  nomInvalide,
+
+  /// La grille d'accueil ne se supprime pas (AC-017-3).
+  accueilNonSupprimable,
+
+  /// Lignes ou colonnes hors de 1..8 (AC-018-1).
+  tailleInvalide,
 }
 
 class ErreurEdition implements Exception {
@@ -183,4 +192,50 @@ Donnees echangerEmplacements(
       else
         x,
   ]);
+}
+
+/// Renomme la grille (AC-017-1) ; le nom est rogné et ne peut être vide.
+Donnees renommerGrille(Donnees d, String grilleId, String nom) {
+  final g = _grille(d, grilleId);
+  final propre = nom.trim();
+  if (propre.isEmpty) throw const ErreurEdition(CodeErreurEdition.nomInvalide);
+  return d.copyWith(
+    grilles: [
+      for (final x in d.grilles) x.id == g.id ? x.copyWith(nom: propre) : x,
+    ],
+  );
+}
+
+/// Supprime la grille (AC-017-2). Les dossiers qui y pointaient gardent leur
+/// cible et deviennent orphelins (REQ-008). L'accueil est refusé (AC-017-3).
+Donnees supprimerGrille(Donnees d, String grilleId) {
+  _grille(d, grilleId);
+  if (grilleId == d.accueilId) {
+    throw const ErreurEdition(CodeErreurEdition.accueilNonSupprimable);
+  }
+  return d.copyWith(
+    grilles: [
+      for (final x in d.grilles)
+        if (x.id != grilleId) x,
+    ],
+  );
+}
+
+/// Règle la taille (1..8 chacune) sans supprimer de case : les cases hors
+/// taille sont masquées, pas perdues (AC-018-1 à AC-018-3).
+Donnees redimensionnerGrille(
+  Donnees d,
+  String grilleId,
+  int lignes,
+  int colonnes,
+) {
+  final g = _grille(d, grilleId);
+  if (lignes < tailleMin ||
+      lignes > tailleMax ||
+      colonnes < tailleMin ||
+      colonnes > tailleMax) {
+    throw const ErreurEdition(CodeErreurEdition.tailleInvalide);
+  }
+  final r = g.redimensionner(lignes, colonnes);
+  return d.copyWith(grilles: [for (final x in d.grilles) x.id == g.id ? r : x]);
 }

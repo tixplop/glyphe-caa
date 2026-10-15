@@ -399,6 +399,17 @@ void main() {
       h.dispose();
     });
 
+    testWidgets('REQ028_AC1 barre de phrase large en communication 640x360', (
+      tester,
+    ) async {
+      await lance(tester, taille: const Size(640, 360));
+      // 640 - marges - 6 commandes de 56 dp : au moins ~280 dp.
+      expect(
+        tester.getSize(find.byType(BarrePhrase)).width,
+        greaterThanOrEqualTo(280),
+      );
+    });
+
     for (final taille in const [
       Size(360, 640),
       Size(640, 360),

@@ -4,7 +4,9 @@ import '../domaine/modeles.dart';
 import '../domaine/session.dart';
 import 'dialogue_code.dart';
 import 'ecran_code.dart';
+import 'dialogue_taille.dart';
 import 'ecran_edition_case.dart';
+import 'ecran_grilles.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
 import 'widgets/barre_phrase.dart';
@@ -86,6 +88,11 @@ class _EcranCommunicationState extends State<EcranCommunication> {
     await _editer(grille, ligne: libre.ligne, colonne: libre.colonne);
   }
 
+  Future<void> _ouvrirGrilles() => Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => EcranGrilles(etat: etat)));
+
+  Future<void> _regler() => reglerTaille(context, etat);
+
   Future<void> _deverrouiller() async {
     if (!etat.verrou.aCode) {
       etat.ouvrirEdition();
@@ -129,6 +136,8 @@ class _EcranCommunicationState extends State<EcranCommunication> {
                       onTerminer: etat.verrouiller,
                       onCode: _ouvrirEcranCode,
                       onAjouter: _ajouter,
+                      onGrilles: _ouvrirGrilles,
+                      onTaille: _regler,
                     );
                     // Paysage peu haut : barre et commandes côte à côte pour
                     // laisser assez de hauteur aux cases (>= 48 dp).
@@ -141,7 +150,13 @@ class _EcranCommunicationState extends State<EcranCommunication> {
                             children: [
                               Expanded(child: barre),
                               const SizedBox(width: 6),
-                              commandes,
+                              if (etat.modeEdition)
+                                SizedBox(
+                                  width: c.maxWidth * 0.7,
+                                  child: commandes,
+                                )
+                              else
+                                commandes,
                             ],
                           )
                         else ...[
@@ -178,6 +193,8 @@ class _Commandes extends StatelessWidget {
     required this.onTerminer,
     required this.onCode,
     required this.onAjouter,
+    required this.onGrilles,
+    required this.onTaille,
   });
 
   final Session session;
@@ -186,6 +203,13 @@ class _Commandes extends StatelessWidget {
   final VoidCallback onTerminer;
   final VoidCallback onCode;
   final VoidCallback onAjouter;
+  final VoidCallback onGrilles;
+  final VoidCallback onTaille;
+
+  static final ButtonStyle _styleTexte = TextButton.styleFrom(
+    minimumSize: const Size(56, 56),
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+  );
 
   Widget _bouton(String nom, IconData icone, VoidCallback onPressed) =>
       IconButton.filledTonal(
@@ -225,19 +249,44 @@ class _Commandes extends StatelessWidget {
       children: [
         principale,
         Wrap(
+          alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            _bouton(Textes.codeVerrouillage, Icons.pin, onCode),
+            TextButton(
+              onPressed: onTerminer,
+              style: _styleTexte,
+              child: const Text(Textes.terminer),
+            ),
             TextButton(
               key: const Key('ajouter-case'),
               onPressed: onAjouter,
-              style: TextButton.styleFrom(minimumSize: const Size(56, 56)),
+              style: _styleTexte,
               child: const Text(Textes.ajouterCase),
             ),
-            TextButton(
-              onPressed: onTerminer,
-              style: TextButton.styleFrom(minimumSize: const Size(56, 56)),
-              child: const Text(Textes.terminer),
+            PopupMenuButton<VoidCallback>(
+              key: const Key('bouton-plus'),
+              tooltip: Textes.plus,
+              icon: const Icon(Icons.more_vert),
+              iconSize: 28,
+              style: IconButton.styleFrom(minimumSize: const Size(56, 56)),
+              onSelected: (action) => action(),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  key: const Key('bouton-code'),
+                  value: onCode,
+                  child: const Text(Textes.codeVerrouillage),
+                ),
+                PopupMenuItem(
+                  key: const Key('bouton-grilles'),
+                  value: onGrilles,
+                  child: const Text(Textes.grilles),
+                ),
+                PopupMenuItem(
+                  key: const Key('bouton-taille'),
+                  value: onTaille,
+                  child: const Text(Textes.tailleGrille),
+                ),
+              ],
             ),
           ],
         ),

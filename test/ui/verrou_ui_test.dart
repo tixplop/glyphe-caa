@@ -298,7 +298,9 @@ void main() {
     final etat = await lance(tester);
     await appui(tester, const Duration(seconds: 3));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Code de verrouillage'));
+    await tester.tap(find.byKey(const Key('bouton-plus')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bouton-code')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('champ-nouveau')), findsOneWidget);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -310,13 +312,33 @@ void main() {
     expect(find.byIcon(Icons.lock), findsWidgets);
   });
 
+  testWidgets('REQ014_AC2 menu Plus ouvert puis paused : reverrouillé', (
+    tester,
+  ) async {
+    final etat = await lance(tester);
+    await appui(tester, const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bouton-plus')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('bouton-code')), findsOneWidget);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pumpAndSettle();
+    reprendre(tester, AppLifecycleState.paused);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('bouton-code')), findsNothing);
+    expect(etat.verrouille, isTrue);
+    expect(find.text('Terminer'), findsNothing);
+  });
+
   testWidgets('REQ012_AC1 écran code : définir, refus, supprimer', (
     tester,
   ) async {
     final etat = await lance(tester);
     await appui(tester, const Duration(seconds: 3));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Code de verrouillage'));
+    await tester.tap(find.byKey(const Key('bouton-plus')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bouton-code')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('champ-nouveau')), '12');
     await tester.enterText(find.byKey(const Key('champ-confirmation')), '12');
@@ -333,7 +355,9 @@ void main() {
     await tester.tap(find.text('Enregistrer'));
     await tester.pumpAndSettle();
     expect(etat.verrou.aCode, isTrue);
-    await tester.tap(find.byTooltip('Code de verrouillage'));
+    await tester.tap(find.byKey(const Key('bouton-plus')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('bouton-code')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Supprimer le code'));
     await tester.pumpAndSettle();

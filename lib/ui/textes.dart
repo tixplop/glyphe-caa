@@ -78,6 +78,27 @@ class Textes {
   static const String erreurEnregistrement =
       'Impossible d\'enregistrer les modifications';
 
+  // Gestion des grilles et taille (REQ-017, REQ-018).
+  static const String plus = 'Plus';
+  static const String grilles = 'Grilles';
+  static const String tailleGrille = 'Taille de la grille';
+  static const String renommer = 'Renommer';
+  static const String nomGrille = 'Nom de la grille';
+  static const String erreurNomGrille = 'Le nom ne peut pas être vide';
+  static const String supprimerGrille = 'Supprimer cette grille ?';
+  static const String lignes = 'Lignes';
+  static const String colonnes = 'Colonnes';
+  static const String moinsLignes = 'Moins de lignes';
+  static const String plusLignes = 'Plus de lignes';
+  static const String moinsColonnes = 'Moins de colonnes';
+  static const String plusColonnes = 'Plus de colonnes';
+  static String ouvrirGrille(String nom) => 'Ouvrir la grille $nom';
+  static String renommerGrille(String nom) => 'Renommer la grille $nom';
+  static String supprimerLaGrille(String nom) => 'Supprimer la grille $nom';
+  static String confirmationSuppressionGrille(String nom) =>
+      'La grille « $nom » sera supprimée. Les dossiers qui y mènent '
+      'deviendront orphelins.';
+
   static String emplacement(int ligne, int colonne) =>
       'Ligne ${ligne + 1}, colonne ${colonne + 1}';
 
