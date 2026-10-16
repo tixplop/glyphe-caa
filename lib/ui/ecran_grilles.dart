@@ -4,7 +4,9 @@ import '../domaine/edition.dart';
 import '../domaine/modeles.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
+import 'tokens.dart';
 import 'widgets/bouton_retour.dart';
+import 'widgets/titre_barre.dart';
 
 /// Liste de toutes les grilles : renommer, ouvrir, supprimer (REQ-017).
 class EcranGrilles extends StatelessWidget {
@@ -43,6 +45,11 @@ class EcranGrilles extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        scrollable: true,
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: GlypheTokens.espace5,
+          vertical: GlypheTokens.espace3,
+        ),
         key: const Key('dialogue-suppression-grille'),
         title: const Text(Textes.supprimerGrille),
         content: Text(Textes.confirmationSuppressionGrille(g.nom)),
@@ -83,7 +90,7 @@ class EcranGrilles extends StatelessWidget {
     return Scaffold(
       key: const Key('ecran-grilles'),
       appBar: AppBar(
-        title: const Text(Textes.grilles),
+        title: const TitreBarre(Textes.grilles),
         leading: const BoutonRetour(),
       ),
       body: ListenableBuilder(
@@ -164,6 +171,11 @@ class _DialogueNomState extends State<_DialogueNom> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: GlypheTokens.espace5,
+        vertical: GlypheTokens.espace3,
+      ),
       title: const Text(Textes.renommer),
       content: TextField(
         key: const Key('champ-nom-grille'),

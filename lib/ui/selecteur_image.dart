@@ -10,6 +10,7 @@ import 'textes.dart';
 import 'tokens.dart';
 import 'widgets/image_case.dart';
 import 'widgets/bouton_retour.dart';
+import 'widgets/titre_barre.dart';
 
 /// Image choisie ; [motCle] propose un libellé pour un pictogramme (REQ-015).
 class ResultatImage {
@@ -151,64 +152,88 @@ class _SelecteurImageState extends State<SelecteurImage> {
   Widget build(BuildContext context) {
     final terme = _recherche.text.trim();
     final vide = terme.isNotEmpty && _resultats.isEmpty;
-    final Widget corps;
+    final List<Widget> corps;
     if (vide) {
-      corps = Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(Textes.aucunPicto, key: Key('aucun-picto')),
-              const SizedBox(height: 12),
-              _boutons(),
-            ],
+      corps = [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Column(
+              children: [
+                const Text(Textes.aucunPicto, key: Key('aucun-picto')),
+              ],
+            ),
           ),
         ),
-      );
+      ];
     } else if (terme.isEmpty) {
-      corps = const Center(child: Text(Textes.indiceRecherche));
-    } else {
-      corps = GridView.builder(
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 112,
-          mainAxisExtent: 112,
+      corps = [
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text(Textes.indiceRecherche)),
+          ),
         ),
-        itemCount: _resultats.length,
-        itemBuilder: (_, i) => _cellule(_resultats[i]),
-      );
+      ];
+    } else {
+      corps = [
+        SliverGrid.builder(
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 112,
+            mainAxisExtent: 112,
+          ),
+          itemCount: _resultats.length,
+          itemBuilder: (_, i) => _cellule(_resultats[i]),
+        ),
+      ];
     }
     return Scaffold(
       appBar: AppBar(
         leading: const BoutonRetour(),
-        title: const Text(Textes.choisirImage),
+        title: const TitreBarre(Textes.choisirImage),
       ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
             children: [
-              TextField(
-                key: const Key('champ-recherche'),
-                controller: _recherche,
-                autofocus: false,
-                textInputAction: TextInputAction.search,
-                decoration: const InputDecoration(
-                  labelText: Textes.rechercherPicto,
-                  prefixIcon: Icon(Icons.search),
+              Expanded(
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: TextField(
+                        key: const Key('champ-recherche'),
+                        controller: _recherche,
+                        autofocus: false,
+                        textInputAction: TextInputAction.search,
+                        decoration: const InputDecoration(
+                          labelText: Textes.rechercherPicto,
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                        onChanged: _chercher,
+                      ),
+                    ),
+                    if (_erreur != null)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            _erreur!,
+                            key: const Key('erreur-photo'),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ...corps,
+                  ],
                 ),
-                onChanged: _chercher,
               ),
-              if (_erreur != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _erreur!,
-                  key: const Key('erreur-photo'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ],
-              const SizedBox(height: 8),
-              Expanded(child: corps),
-              if (!vide) ...[const SizedBox(height: 8), _boutons()],
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: _boutons(),
+              ),
             ],
           ),
         ),

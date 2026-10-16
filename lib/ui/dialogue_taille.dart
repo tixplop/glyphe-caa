@@ -4,6 +4,7 @@ import '../domaine/edition.dart';
 import '../domaine/modeles.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
+import 'tokens.dart';
 
 /// Ouvre le dialogue de taille de la grille courante et enregistre le choix
 /// (REQ-018). Les cases hors taille sont masquées, jamais supprimées.
@@ -92,29 +93,32 @@ class _DialogueTailleState extends State<DialogueTaille> {
   Widget build(BuildContext context) {
     return AlertDialog(
       key: const Key('dialogue-taille'),
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: GlypheTokens.espace5,
+        vertical: GlypheTokens.espace3,
+      ),
       title: const Text(Textes.tailleGrille),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _reglage(
-              nom: Textes.lignes,
-              prefixe: 'lignes',
-              valeur: _lignes,
-              moins: Textes.moinsLignes,
-              plus: Textes.plusLignes,
-              onChange: (v) => setState(() => _lignes = v),
-            ),
-            _reglage(
-              nom: Textes.colonnes,
-              prefixe: 'colonnes',
-              valeur: _colonnes,
-              moins: Textes.moinsColonnes,
-              plus: Textes.plusColonnes,
-              onChange: (v) => setState(() => _colonnes = v),
-            ),
-          ],
-        ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _reglage(
+            nom: Textes.lignes,
+            prefixe: 'lignes',
+            valeur: _lignes,
+            moins: Textes.moinsLignes,
+            plus: Textes.plusLignes,
+            onChange: (v) => setState(() => _lignes = v),
+          ),
+          _reglage(
+            nom: Textes.colonnes,
+            prefixe: 'colonnes',
+            valeur: _colonnes,
+            moins: Textes.moinsColonnes,
+            plus: Textes.plusColonnes,
+            onChange: (v) => setState(() => _colonnes = v),
+          ),
+        ],
       ),
       actions: [
         TextButton(

@@ -6,7 +6,9 @@ import '../domaine/sauvegarde.dart';
 import 'ecran_code.dart';
 import 'etat_appli.dart';
 import 'textes.dart';
+import 'tokens.dart';
 import 'widgets/bouton_retour.dart';
+import 'widgets/titre_barre.dart';
 
 /// Délais anti-répétition proposés, en millisecondes (REQ-004).
 const List<int> delaisProposes = [0, 500, 1000, 2000, 3000, 5000];
@@ -101,6 +103,11 @@ class _EcranReglagesState extends State<EcranReglages> {
           final ok = await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
+              scrollable: true,
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: GlypheTokens.espace5,
+                vertical: GlypheTokens.espace3,
+              ),
               key: const Key('dialogue-import'),
               title: const Text(Textes.importer),
               content: const Text(Textes.confirmationImport),
@@ -215,7 +222,7 @@ class _EcranReglagesState extends State<EcranReglages> {
           key: const Key('ecran-reglages'),
           appBar: AppBar(
             leading: const BoutonRetour(),
-            title: const Text(Textes.reglages),
+            title: const TitreBarre(Textes.reglages),
           ),
           body: SafeArea(
             child: SingleChildScrollView(

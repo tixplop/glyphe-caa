@@ -159,12 +159,38 @@ void main() {
       await tester.ensureVisible(find.byKey(const Key('bouton-echanger')));
       await tester.tap(find.byKey(const Key('bouton-echanger')));
       await tester.pumpAndSettle();
-      expect(find.byType(SimpleDialog), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.byType(OutlinedButton), findsWidgets);
       verifier('choix d\'emplacement');
       await fermerPopup();
     });
   }
+
+  test('REQ028_AC5 tout AppBar de lib/ui a un titre TitreBarre', () {
+    for (final f in Directory('lib/ui').listSync(recursive: true)) {
+      if (f is! File || !f.path.endsWith('.dart')) continue;
+      final src = f.readAsStringSync().replaceAll(RegExp(r'//[^\n]*'), '');
+      final n = 'AppBar('.allMatches(src).length;
+      final t = RegExp(r'title:\s*(const\s+)?TitreBarre\(').allMatches(src);
+      expect(t.length, n, reason: f.path);
+    }
+  });
+
+  test('REQ038_AC5 tout AlertDialog de lib/ui défile avec marges réduites', () {
+    for (final f in Directory('lib/ui').listSync(recursive: true)) {
+      if (f is! File || !f.path.endsWith('.dart')) continue;
+      final src = f.readAsStringSync();
+      final n = RegExp(r'(Alert|Simple)Dialog\(').allMatches(src).length;
+      final ins = 'insetPadding'.allMatches(src).length;
+      expect(ins, n, reason: f.path);
+      final alertes = 'AlertDialog('.allMatches(src).length;
+      expect(
+        'scrollable: true'.allMatches(src).length,
+        alertes,
+        reason: f.path,
+      );
+    }
+  });
 
   test('REQ031 REQ037 plus de barre de navigation ni d\'onglets dans lib/', () {
     final noms = Directory('lib')

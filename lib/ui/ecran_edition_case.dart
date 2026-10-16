@@ -8,6 +8,7 @@ import 'textes.dart';
 import 'tokens.dart';
 import 'widgets/bouton_retour.dart';
 import 'widgets/image_case.dart';
+import 'widgets/titre_barre.dart';
 
 const String _valeurNouvelleGrille = '__nouvelle_grille__';
 
@@ -186,6 +187,11 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        scrollable: true,
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: GlypheTokens.espace5,
+          vertical: GlypheTokens.espace3,
+        ),
         key: const Key('confirmation-suppression'),
         title: const Text(Textes.confirmerSuppression),
         actions: [
@@ -222,18 +228,26 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     final c = _existante!;
     final choix = await showDialog<(int, int)>(
       context: context,
-      builder: (ctx) => SimpleDialog(
+      builder: (ctx) => AlertDialog(
+        scrollable: true,
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: GlypheTokens.espace5,
+          vertical: GlypheTokens.espace3,
+        ),
         title: const Text(Textes.choisirEmplacement),
-        children: [
-          for (var l = 0; l < grille.lignes; l++)
-            Wrap(
-              children: [
-                for (var col = 0; col < grille.colonnes; col++)
-                  if (l != c.ligne || col != c.colonne)
-                    _boutonEmplacement(ctx, grille, l, col),
-              ],
-            ),
-        ],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var l = 0; l < grille.lignes; l++)
+              Wrap(
+                children: [
+                  for (var col = 0; col < grille.colonnes; col++)
+                    if (l != c.ligne || col != c.colonne)
+                      _boutonEmplacement(ctx, grille, l, col),
+                ],
+              ),
+          ],
+        ),
       ),
     );
     if (choix == null || !mounted) return;
@@ -438,11 +452,8 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     return Scaffold(
       appBar: AppBar(
         leading: const BoutonRetour(),
-        title: Text(
+        title: TitreBarre(
           existante == null ? Textes.nouvelleCase : Textes.editionCase,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          softWrap: false,
         ),
         actions: [
           if (existante != null)

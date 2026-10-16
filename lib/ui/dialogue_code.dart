@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../domaine/verrou.dart';
 import 'textes.dart';
+import 'tokens.dart';
 
 /// Demande le code (avec procédure « Code oublié »). Renvoie true si
 /// l'édition doit être ouverte : bon code, ou recopie de secours correcte.
@@ -71,6 +72,11 @@ class _DialogueCodeState extends State<_DialogueCode> {
   Widget build(BuildContext context) {
     final phrase = _phrase;
     return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: GlypheTokens.espace5,
+        vertical: GlypheTokens.espace3,
+      ),
       title: Text(phrase == null ? Textes.saisirCode : Textes.recopierPhrase),
       content: Column(
         mainAxisSize: MainAxisSize.min,
