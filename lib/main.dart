@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'domaine/horloge.dart';
 import 'domaine/photos.dart';
+import 'plateforme/orientation.dart';
 import 'plateforme/partage.dart';
 import 'plateforme/source_photo_image_picker.dart';
 import 'plateforme/stockage_fichier.dart';
@@ -15,6 +16,7 @@ import 'ui/textes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await fixerOrientation();
   try {
     final dossier = Directory(
       '${(await getApplicationSupportDirectory()).path}/glyphe',

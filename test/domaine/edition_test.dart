@@ -205,9 +205,9 @@ void main() {
     );
   });
 
-  test('REQ016_AC2 nouvelle grille nommée comme la case, 4x4, vide', () {
+  test('REQ016_AC2 nouvelle grille nommée comme la case, 3 lignes x 4 colonnes, vide', () {
     final g = nouvelleGrillePourDossier('Animaux', 'gn', 'cr', 'Retour');
-    expect((g.id, g.nom, g.lignes, g.colonnes), ('gn', 'Animaux', 4, 4));
+    expect((g.id, g.nom, g.lignes, g.colonnes), ('gn', 'Animaux', 3, 4));
     expect(g.cases, hasLength(1));
     final r = g.cases.single;
     expect((r.id, r.type, r.ligne, r.colonne), ('cr', TypeCase.retour, 0, 0));

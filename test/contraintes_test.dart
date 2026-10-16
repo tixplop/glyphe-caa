@@ -185,4 +185,33 @@ void main() {
       expect(src.contains(interdit), isFalse, reason: interdit);
     }
   });
+
+  test('REQ038_AC1 main appelle fixerOrientation avant le premier runApp', () {
+    final src = File('lib/main.dart').readAsStringSync();
+    final a = src.indexOf('fixerOrientation()');
+    expect(a, isNonNegative);
+    expect(a, lessThan(src.indexOf('runApp(')));
+  });
+
+  test('REQ038_AC2 activité principale en sensorLandscape', () {
+    final m = File('android/app/src/main/AndroidManifest.xml')
+        .readAsStringSync();
+    expect(
+      m,
+      matches(
+        RegExp(
+          r'<activity[^>]*android:name="\.MainActivity"[^>]*'
+          r'android:screenOrientation="sensorLandscape"',
+        ),
+      ),
+    );
+  });
+
+  test('REQ038_AC3 Info.plist paysage seulement, plein écran requis', () {
+    final p = File('ios/Runner/Info.plist').readAsStringSync();
+    expect(p, isNot(contains('Portrait')));
+    expect(p, contains('LandscapeLeft'));
+    expect(p, contains('LandscapeRight'));
+    expect(p, matches(RegExp(r'<key>UIRequiresFullScreen</key>\s*<true/>')));
+  });
 }

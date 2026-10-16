@@ -5,7 +5,7 @@
   {
    "id": "accueil",
    "nom": "Accueil",
-   "lignes": 4,
+   "lignes": 3,
    "colonnes": 4,
    "cases": [
     {
@@ -134,7 +134,7 @@
   {
    "id": "manger",
    "nom": "Manger",
-   "lignes": 4,
+   "lignes": 3,
    "colonnes": 4,
    "cases": [
     {
@@ -218,7 +218,7 @@
   {
    "id": "fruits",
    "nom": "Fruits",
-   "lignes": 4,
+   "lignes": 3,
    "colonnes": 4,
    "cases": [
     {
@@ -302,7 +302,7 @@
   {
    "id": "besoins",
    "nom": "Besoins",
-   "lignes": 4,
+   "lignes": 3,
    "colonnes": 4,
    "cases": [
     {
@@ -386,7 +386,7 @@
   {
    "id": "emotions",
    "nom": "Émotions",
-   "lignes": 4,
+   "lignes": 3,
    "colonnes": 4,
    "cases": [
     {
@@ -459,7 +459,7 @@
   {
    "id": "jouer",
    "nom": "Jouer",
-   "lignes": 4,
+   "lignes": 3,
    "colonnes": 4,
    "cases": [
     {

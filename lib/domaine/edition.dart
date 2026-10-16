@@ -6,8 +6,9 @@ library;
 
 import 'modeles.dart';
 
-/// Taille d'une grille créée pour un dossier (REQ-016).
-const int tailleNouvelleGrille = 4;
+/// Taille d'une grille créée pour un dossier : 4×3, 4 en largeur (REQ-016).
+const int lignesNouvelleGrille = 3;
+const int colonnesNouvelleGrille = 4;
 
 enum CodeErreurEdition {
   /// Ni image ni libellé (AC-015-2).
@@ -54,8 +55,8 @@ Grille nouvelleGrillePourDossier(
 ) => Grille(
   id: id,
   nom: nom.trim(),
-  lignes: tailleNouvelleGrille,
-  colonnes: tailleNouvelleGrille,
+  lignes: lignesNouvelleGrille,
+  colonnes: colonnesNouvelleGrille,
   cases: [
     Case(
       id: idRetour,

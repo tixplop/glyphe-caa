@@ -440,7 +440,7 @@ void main() {
     await toucher(tester, find.byKey(const Key('bouton-enregistrer')));
     final d = e.etat.session.donnees;
     final nouvelle = d.grilles.firstWhere((g) => g.nom == 'Animaux');
-    expect((nouvelle.lignes, nouvelle.colonnes), (4, 4));
+    expect((nouvelle.lignes, nouvelle.colonnes), (3, 4));
     final r = nouvelle.cases.single;
     expect((r.type, r.ligne, r.colonne), (TypeCase.retour, 0, 0));
     expect(r.libelle, 'Retour');
@@ -1005,7 +1005,7 @@ void main() {
           final k = w.key;
           return k is ValueKey<String> && k.value.startsWith('vide-');
         }),
-        findsNWidgets(15),
+        findsNWidgets(11),
       );
       expect(cle('vide-0-0'), findsNothing);
     });

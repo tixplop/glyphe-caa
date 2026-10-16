@@ -194,6 +194,25 @@ void main() {
     },
   );
 
+  test('REQ001_AC9 grilles d\'exemple en 3 x 4, rien de masqué, accueil', () {
+    for (final g in exemples.grilles) {
+      expect((g.lignes, g.colonnes), (3, 4), reason: g.nom);
+      for (final c in g.cases) {
+        expect(c.ligne, lessThan(3), reason: '${g.id}/${c.id}');
+        expect(c.colonne, lessThan(4), reason: '${g.id}/${c.id}');
+      }
+    }
+    final a = exemples.grillePar(exemples.accueilId)!;
+    List<String> ligne(int l) =>
+        ([...a.cases.where((c) => c.ligne == l)]
+              ..sort((x, y) => x.colonne.compareTo(y.colonne)))
+            .map((c) => c.libelle)
+            .toList();
+    expect(ligne(0), ['je', 'veux', 'oui', 'non']);
+    expect(ligne(1), ['encore', 'fini', 'eau', 'Besoins']);
+    expect(ligne(2), ['Émotions', 'Manger', 'Jouer']);
+  });
+
   test('REQ025_AC4 exemples en version 3', () {
     expect(jsonDecode(json)['versionFormat'], 3);
     expect(json.contains('"couleur"'), isFalse);
@@ -220,7 +239,7 @@ void main() {
     };
     expect(banque.taille, ids.length);
     for (final g in exemples.grilles) {
-      expect(g.lignes, 4, reason: g.nom);
+      expect(g.lignes, 3, reason: g.nom);
       expect(g.colonnes, 4, reason: g.nom);
       expect(g.cases, isNotEmpty);
       for (final c in g.cases) {
@@ -283,6 +302,45 @@ void main() {
     expect(d2.grillePar(d2.accueilId)!.nom, 'Modifié');
     expect(s.ecritures, ecrit);
   });
+
+  test(
+    'REQ001_AC5 stockage 4×4 existant : rechargé et réenregistré en 4×4',
+    () async {
+      final s = StockageMemoire();
+      s.donnees = Donnees(
+        accueilId: 'acc',
+        grilles: [
+          Grille(
+            id: 'acc',
+            nom: 'Accueil',
+            lignes: 4,
+            colonnes: 4,
+            cases: const [
+              Case(
+                id: 'k',
+                ligne: 3,
+                colonne: 2,
+                type: TypeCase.mot,
+                libelle: 'bas',
+              ),
+            ],
+          ),
+        ],
+      );
+      final d = await chargerOuInitialiser(s, json);
+      expect(s.ecritures, 0);
+      final g = d.grillePar('acc')!;
+      expect((g.lignes, g.colonnes), (4, 4));
+      expect(g.casesVisibles.single.id, 'k');
+      expect(g.cases.single.ligne, 3);
+      await s.enregistrer(d);
+      final d2 = await chargerOuInitialiser(s, json);
+      final g2 = d2.grillePar('acc')!;
+      expect((g2.lignes, g2.colonnes), (4, 4));
+      expect(g2.cases.single.ligne, 3);
+      expect(g2.cases.single.libelle, 'bas');
+    },
+  );
 
   test(
     'JSON d\'exemples invalide : erreur explicite, rien enregistré',
