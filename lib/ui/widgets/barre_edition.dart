@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../textes.dart';
 import '../tokens.dart';
+import 'bouton_barre.dart';
 
 /// Barre d'édition (AC-030-4, AC-030-7) : prend la place et la hauteur de la
 /// barre de phrase en mode édition. Titre, Ajouter une case, Plus, Terminer.
@@ -9,6 +10,7 @@ class BarreEdition extends StatefulWidget {
   const BarreEdition({
     super.key,
     required this.nomGrille,
+    required this.onAccueil,
     required this.onTerminer,
     required this.onAjouter,
     required this.onCode,
@@ -19,6 +21,7 @@ class BarreEdition extends StatefulWidget {
   });
 
   final String nomGrille;
+  final VoidCallback onAccueil;
   final VoidCallback onTerminer;
   final VoidCallback onAjouter;
   final VoidCallback onCode;
@@ -26,9 +29,6 @@ class BarreEdition extends StatefulWidget {
   final VoidCallback onTaille;
   final VoidCallback onReglages;
   final VoidCallback onAPropos;
-
-  static const double _carre = 56;
-  static const double _icone = 28;
 
   @override
   State<BarreEdition> createState() => _BarreEditionState();
@@ -44,31 +44,28 @@ class _BarreEditionState extends State<BarreEdition> {
     label: Textes.titreEdition(widget.nomGrille),
     excludeSemantics: true,
     child: MediaQuery.withNoTextScaling(
-      child: Padding(
-        padding: const EdgeInsets.only(left: GlypheTokens.espace2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              Textes.modeEdition,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textScaler: TextScaler.noScaling,
-              style: GlypheTokens.caption.copyWith(color: t.inkMuted),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            Textes.modeEdition,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textScaler: TextScaler.noScaling,
+            style: GlypheTokens.caption.copyWith(color: t.inkMuted),
+          ),
+          Text(
+            widget.nomGrille,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textScaler: TextScaler.noScaling,
+            style: GlypheTokens.body.copyWith(
+              color: t.ink,
+              fontWeight: FontWeight.w700,
             ),
-            Text(
-              widget.nomGrille,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textScaler: TextScaler.noScaling,
-              style: GlypheTokens.body.copyWith(
-                color: t.ink,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     ),
   );
@@ -98,13 +95,12 @@ class _BarreEditionState extends State<BarreEdition> {
     label: Textes.plus,
     excludeSemantics: true,
     onTap: () => _menu.currentState?.showButtonMenu(),
-    child: _AnneauFocus(
-      tokens: t,
+    child: AnneauFocus(
       disque: true,
       child: PopupMenuButton<VoidCallback>(
         key: _menu,
         tooltip: Textes.plus,
-        icon: Icon(Icons.more_vert, size: BarreEdition._icone, color: t.ink),
+        icon: Icon(Icons.more_vert, size: 24, color: t.ink),
         style: IconButton.styleFrom(
           minimumSize: const Size.square(GlypheTokens.toucheMin),
           fixedSize: const Size.square(GlypheTokens.toucheMin),
@@ -167,158 +163,40 @@ class _BarreEditionState extends State<BarreEdition> {
         height: GlypheTokens.barrePhrase,
         width: double.infinity,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: GlypheTokens.espace1),
           child: Row(
             children: [
+              BoutonBarre(
+                key: const Key('bouton-accueil'),
+                libelle: Textes.accueil,
+                tooltip: Textes.accueil,
+                icone: Icons.home_outlined,
+                onTap: widget.onAccueil,
+              ),
+              const SizedBox(width: GlypheTokens.espace2),
               Expanded(child: _titre(t)),
-              const SizedBox(width: 8),
-              _BoutonCarre(
-                boutonKey: const Key('ajouter-case'),
-                tokens: t,
+              const SizedBox(width: GlypheTokens.espace2),
+              BoutonBarre(
+                key: const Key('ajouter-case'),
                 libelle: Textes.ajouterCase,
+                tooltip: Textes.ajouterCase,
                 icone: Icons.add,
-                plein: false,
                 onTap: widget.onAjouter,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: GlypheTokens.espace1),
               _plus(t),
-              const SizedBox(width: 12),
-              _BoutonCarre(
-                boutonKey: const Key('bouton-terminer'),
-                tokens: t,
+              const SizedBox(width: GlypheTokens.espace3),
+              BoutonBarre(
+                key: const Key('bouton-terminer'),
                 libelle: Textes.terminer,
+                tooltip: Textes.terminer,
                 icone: Icons.lock_outline,
-                plein: true,
+                variante: VarianteBouton.pleine,
                 onTap: widget.onTerminer,
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Carré de 56 (BoutonBarre) : icône seule, info-bulle et libellé
-/// d'accessibilité, voile `ink` 12 % sans ondulation.
-class _BoutonCarre extends StatelessWidget {
-  const _BoutonCarre({
-    required this.boutonKey,
-    required this.tokens,
-    required this.libelle,
-    required this.icone,
-    required this.plein,
-    required this.onTap,
-  });
-
-  final Key boutonKey;
-  final GlypheTokens tokens;
-  final String libelle;
-  final IconData icone;
-  final bool plein;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = tokens;
-    final forme = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(GlypheTokens.rayonMd),
-      side: plein ? BorderSide.none : BorderSide(color: t.border, width: 2),
-    );
-    return Semantics(
-      key: boutonKey,
-      button: true,
-      label: libelle,
-      excludeSemantics: true,
-      onTap: onTap,
-      child: Tooltip(
-        message: libelle,
-        excludeFromSemantics: true,
-        child: _AnneauFocus(
-          tokens: t,
-          disque: false,
-          child: Material(
-            color: plein ? t.primary : t.surface000,
-            shape: forme,
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              customBorder: forme,
-              onTap: onTap,
-              splashFactory: NoSplash.splashFactory,
-              splashColor: Colors.transparent,
-              highlightColor: t.ink.withValues(alpha: 0.12),
-              hoverColor: Colors.transparent,
-              focusColor: Colors.transparent,
-              child: SizedBox.square(
-                dimension: BarreEdition._carre,
-                child: Icon(
-                  icone,
-                  size: BarreEdition._icone,
-                  color: plein ? t.onPrimary : t.ink,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Anneau `focus` de 3, décalé de 2, autour de l'enfant dès qu'il (ou un de
-/// ses descendants) a le focus.
-class _AnneauFocus extends StatefulWidget {
-  const _AnneauFocus({
-    required this.tokens,
-    required this.disque,
-    required this.child,
-  });
-
-  final GlypheTokens tokens;
-  final bool disque;
-  final Widget child;
-
-  @override
-  State<_AnneauFocus> createState() => _AnneauFocusState();
-}
-
-class _AnneauFocusState extends State<_AnneauFocus> {
-  bool _focus = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = widget.tokens;
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onFocusChange: (v) => setState(() => _focus = v),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          widget.child,
-          if (_focus)
-            Positioned(
-              left: -5,
-              top: -5,
-              right: -5,
-              bottom: -5,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  key: const Key('anneau-focus'),
-                  decoration: BoxDecoration(
-                    shape: widget.disque ? BoxShape.circle : BoxShape.rectangle,
-                    borderRadius: widget.disque
-                        ? null
-                        : BorderRadius.circular(GlypheTokens.rayonMd + 5),
-                    border: Border.all(
-                      color: t.focus,
-                      width: GlypheTokens.anneauFocus,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }

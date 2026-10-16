@@ -10,7 +10,6 @@ import 'package:glyphe/ui/app.dart';
 import 'package:glyphe/ui/tokens.dart';
 import 'package:glyphe/ui/etat_appli.dart';
 import 'package:glyphe/ui/widgets/barre_edition.dart';
-import 'package:glyphe/ui/widgets/barre_navigation.dart';
 import 'package:glyphe/ui/widgets/barre_phrase.dart';
 
 import '../faux/faux_stockage.dart';
@@ -338,41 +337,82 @@ void main() {
       expect(find.bySemanticsLabel('Ajouter une case'), findsWidgets);
     });
 
-    testWidgets('REQ009_AC1 Retour remonte pas à pas', (tester) async {
+    testWidgets('REQ009_AC1 retour système remonte pas à pas', (tester) async {
       final e = await lance(tester);
       await tester.tap(grille('Manger'));
       await tester.pumpAndSettle();
       await tester.tap(grille('Fruits'));
       await tester.pumpAndSettle();
       expect(grille('poire'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('bouton-retour')));
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(grille('pomme'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('bouton-retour')));
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(grille('eau'), findsOneWidget);
       expect(e.etat.session.barre, isEmpty);
     });
 
     testWidgets('REQ009_AC2 Accueil depuis une sous-grille', (tester) async {
-      await lance(tester);
+      final e = await lance(tester);
       await tester.tap(grille('Manger'));
       await tester.pumpAndSettle();
       await tester.tap(grille('Fruits'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('onglet-acc')));
+      await tester.tap(find.byKey(const Key('bouton-accueil')));
       await tester.pumpAndSettle();
       expect(grille('eau'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('bouton-retour')));
-      await tester.pumpAndSettle();
-      expect(grille('eau'), findsOneWidget);
+      expect(e.etat.session.chemin, ['acc']);
+      expect(e.voix.journal, isEmpty);
     });
 
-    testWidgets('REQ009_AC3 Retour à l\'accueil sans effet', (tester) async {
-      await lance(tester);
-      await tester.tap(find.byKey(const Key('bouton-retour')));
+    testWidgets('REQ009_AC2 AC8 Accueil sur l\'accueil : rien ne change', (
+      tester,
+    ) async {
+      final h = tester.ensureSemantics();
+      final e = await lance(tester);
+      await tester.tap(grille('je'));
+      await tester.pumpAndSettle();
+      e.voix.journal.clear();
+      await tester.tap(find.byKey(const Key('bouton-accueil')));
       await tester.pumpAndSettle();
       expect(grille('eau'), findsOneWidget);
+      expect(e.etat.session.chemin, ['acc']);
+      expect([for (final x in e.etat.session.barre) x.libelle], ['je']);
+      expect(e.voix.journal, isEmpty);
+      expect(
+        tester
+            .widget<Opacity>(
+              find
+                  .descendant(
+                    of: find.byKey(const Key('bouton-accueil')),
+                    matching: find.byType(Opacity),
+                  )
+                  .first,
+            )
+            .opacity,
+        1,
+      );
+      expect(
+        tester
+            .getSemantics(find.byKey(const Key('bouton-accueil')))
+            .getSemanticsData()
+            .flagsCollection
+            .isEnabled
+            .name,
+        isNot('isFalse'),
+      );
+      h.dispose();
+    });
+
+    testWidgets('REQ009_AC4 Accueil ne modifie pas la barre', (tester) async {
+      final e = await lance(tester);
+      await tester.tap(grille('je'));
+      await tester.tap(grille('Manger'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('bouton-accueil')));
+      await tester.pumpAndSettle();
+      expect([for (final x in e.etat.session.barre) x.libelle], ['je']);
     });
 
     testWidgets('REQ009_AC1 retour système = Retour dans une sous-grille', (
@@ -399,20 +439,8 @@ void main() {
       expect(e.etat.session.barre, hasLength(3));
     });
 
-    testWidgets('REQ006_AC1 bouton Parler', (tester) async {
-      final e = await lance(tester);
-      await tester.tap(grille('je'));
-      await tester.tap(grille('veux'));
-      await tester.pumpAndSettle();
-      e.voix.journal.clear();
-      await tester.tap(find.byKey(const Key('bouton-parler')));
-      await tester.pumpAndSettle();
-      expect(e.voix.textesPrononces, ['je veux']);
-    });
-
     testWidgets('REQ006_AC3 barre vide : rien n\'est prononcé', (tester) async {
       final e = await lance(tester);
-      await tester.tap(find.byKey(const Key('bouton-parler')));
       await tester.tap(find.byKey(const Key('zone-barre')));
       await tester.pumpAndSettle();
       expect(e.voix.journal, isEmpty);
@@ -429,7 +457,8 @@ void main() {
       final zone = tester.getRect(find.byKey(const Key('zone-barre')));
       final dernier = tester.getRect(find.byKey(const Key('element-barre-29')));
       expect(dernier.right, lessThanOrEqualTo(zone.right + 0.5));
-      expect(dernier.left, greaterThanOrEqualTo(zone.left));
+      // Le dernier élément est au bout de la zone (marge interne de 9).
+      expect(dernier.right, greaterThanOrEqualTo(zone.right - 9 - 0.5));
       final defilement = tester.state<ScrollableState>(
         find.descendant(
           of: find.byKey(const Key('zone-barre')),
@@ -439,7 +468,18 @@ void main() {
       expect(defilement.position.pixels, defilement.position.maxScrollExtent);
     });
 
-    testWidgets('REQ034_AC4 Arrêter : stop émis, retour à Parler', (
+    Color couleurCadre(WidgetTester tester) =>
+        ((tester
+                    .widget<DecoratedBox>(
+                      find.byKey(const Key('cadre-lecture')),
+                    )
+                    .decoration)
+                as BoxDecoration)
+            .border!
+            .top
+            .color;
+
+    testWidgets('REQ034_AC4 appui pendant la lecture : stop, sans relire', (
       tester,
     ) async {
       final e = await lance(tester);
@@ -448,20 +488,21 @@ void main() {
       await tester.pump();
       e.voix.terminerParole();
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('bouton-parler')));
+      expect(couleurCadre(tester), Colors.transparent);
+      await tester.tap(find.byKey(const Key('zone-barre')));
       await tester.pump();
-      expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
+      expect(couleurCadre(tester), GlypheTokens.clair.primary);
       e.voix.journal.clear();
-      await tester.tap(find.byKey(const Key('bouton-parler')));
+      await tester.tap(find.byKey(const Key('zone-barre')));
       await tester.pump();
       expect(e.voix.journal, ['stop']);
-      expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
+      expect(couleurCadre(tester), Colors.transparent);
       e.voix.terminerParole();
       await tester.pumpAndSettle();
     });
 
     testWidgets(
-      'REQ034_AC4 retour à Parler à la fin et à l\'appui d\'une case',
+      'REQ034_AC4 fin de lecture et appui d\'une case : cadre transparent',
       (tester) async {
         final e = await lance(tester);
         e.voix.parolePilotee = true;
@@ -469,18 +510,18 @@ void main() {
         await tester.pump();
         e.voix.terminerParole();
         await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('bouton-parler')));
+        await tester.tap(find.byKey(const Key('zone-barre')));
         await tester.pump();
-        expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
+        expect(couleurCadre(tester), GlypheTokens.clair.primary);
         e.voix.terminerParole();
         await tester.pumpAndSettle();
-        expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
-        await tester.tap(find.byKey(const Key('bouton-parler')));
+        expect(couleurCadre(tester), Colors.transparent);
+        await tester.tap(find.byKey(const Key('zone-barre')));
         await tester.pump();
-        expect(find.byIcon(Icons.stop_circle_outlined), findsOneWidget);
+        expect(couleurCadre(tester), GlypheTokens.clair.primary);
         await tester.tap(grille('veux'));
         await tester.pump();
-        expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
+        expect(couleurCadre(tester), Colors.transparent);
         e.voix.terminerParole();
         await tester.pumpAndSettle();
       },
@@ -498,18 +539,37 @@ void main() {
       expect(dansBarre(find.text('manger')), findsNothing);
     });
 
-    testWidgets('REQ007_AC2 tout effacer, AC3 sur barre vide', (tester) async {
+    testWidgets('REQ007_AC2 Corbeille, AC3 sur barre vide', (tester) async {
       final e = await lance(tester);
-      await tester.longPress(find.byKey(const Key('bouton-effacer')));
+      await tester.tap(find.byKey(const Key('bouton-corbeille')));
       await tester.tap(find.byKey(const Key('bouton-effacer')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await tester.tap(grille('je'));
       await tester.tap(grille('veux'));
       await tester.pumpAndSettle();
-      await tester.longPress(find.byKey(const Key('bouton-effacer')));
+      await tester.tap(find.byKey(const Key('bouton-corbeille')));
       await tester.pumpAndSettle();
       expect(e.etat.session.barre, isEmpty);
+      expect(find.text('Ta phrase apparaît ici'), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('REQ007_AC4 appui maintenu 1 s sur Effacer : un mot retiré', (
+      tester,
+    ) async {
+      final e = await lance(tester);
+      for (final l in ['je', 'veux', 'manger']) {
+        await tester.tap(grille(l));
+      }
+      await tester.pumpAndSettle();
+      final g = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('bouton-effacer'))),
+      );
+      await tester.pump(const Duration(seconds: 1));
+      await g.up();
+      await tester.pumpAndSettle();
+      expect([for (final x in e.etat.session.barre) x.libelle], ['je', 'veux']);
     });
 
     testWidgets('REQ028_AC4 libellés d\'accessibilité des cases', (
@@ -551,30 +611,21 @@ void main() {
       });
     }
 
-    testWidgets(
-      'REQ028_AC1 Effacer et Parler >= 56 dp, autres contrôles >= 48',
-      (tester) async {
-        await lance(tester);
-        for (final f in [
-          find.byKey(const Key('bouton-parler')),
-          find.byKey(const Key('bouton-effacer')),
-        ]) {
-          final r = tester.getSize(f);
-          expect(r.width, greaterThanOrEqualTo(56), reason: '$f');
-          expect(r.height, greaterThanOrEqualTo(56), reason: '$f');
-        }
-        for (final f in [
-          find.byKey(const Key('bouton-retour')),
-          find.byKey(const Key('onglet-acc')),
-          find.byKey(const Key('onglet-manger-g')),
-          find.byKey(const Key('cadenas')),
-        ]) {
-          final r = tester.getSize(f);
-          expect(r.width, greaterThanOrEqualTo(48), reason: '$f');
-          expect(r.height, greaterThanOrEqualTo(48), reason: '$f');
-        }
-      },
-    );
+    testWidgets('REQ028_AC1 boutons de la barre de phrase >= 48 dp', (
+      tester,
+    ) async {
+      await lance(tester);
+      for (final f in [
+        find.byKey(const Key('bouton-accueil')),
+        find.byKey(const Key('bouton-corbeille')),
+        find.byKey(const Key('bouton-effacer')),
+        find.byKey(const Key('cadenas')),
+      ]) {
+        final r = tester.getSize(f);
+        expect(r.width, greaterThanOrEqualTo(48), reason: '$f');
+        expect(r.height, greaterThanOrEqualTo(48), reason: '$f');
+      }
+    });
 
     for (final taille in const [
       Size(360, 640),
@@ -613,7 +664,7 @@ void main() {
     }
   });
 
-  group('Disposition (REQ-030, REQ-031, REQ-009)', () {
+  group('Disposition (REQ-030, REQ-034, REQ-009)', () {
     Future<Env> exemples(WidgetTester tester, {Size? taille}) => lance(
       tester,
       taille: taille ?? const Size(360, 640),
@@ -624,206 +675,60 @@ void main() {
       ),
     );
 
-    // Couleur du contour de l'onglet : `primary` quand il est actif.
-    Color? contourOnglet(WidgetTester tester, String id) =>
-        ((tester.widget<Material>(find.byKey(Key('onglet-$id'))).shape!)
-                as OutlinedBorder)
-            .side
-            .color;
-
-    testWidgets('REQ031_AC1/AC2 onglets des grilles d\'exemple', (
+    testWidgets('REQ009_AC1 cases-retour des grilles d\'exemple', (
       tester,
     ) async {
-      await exemples(tester, taille: const Size(1280, 800));
-      for (final id in ['accueil', 'besoins', 'emotions', 'manger', 'jouer']) {
-        expect(find.byKey(Key('onglet-$id')), findsOneWidget, reason: id);
-      }
-      expect(find.byKey(const Key('onglet-fruits')), findsNothing);
-      final x = [
-        for (final id in ['accueil', 'besoins', 'emotions', 'manger', 'jouer'])
-          tester.getTopLeft(find.byKey(Key('onglet-$id'))).dx,
-      ];
-      expect(x, [...x]..sort());
-      expect(
-        find.descendant(
-          of: find.byKey(const Key('onglet-accueil')),
-          matching: find.byIcon(Icons.home_outlined),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        tester.getSize(find.byKey(const Key('onglet-manger'))),
-        Size(48, 48),
-      );
-    });
-
-    testWidgets('REQ031_AC1 les onglets défilent horizontalement', (
-      tester,
-    ) async {
-      await exemples(tester);
-      final liste = find.byKey(const Key('onglets'));
-      expect(liste, findsOneWidget);
-      final etat = tester.state<ScrollableState>(
-        find.descendant(of: liste, matching: find.byType(Scrollable)),
-      );
-      expect(etat.position.maxScrollExtent, greaterThan(0));
-      expect(etat.position.axis, Axis.horizontal);
-    });
-
-    testWidgets('REQ031_AC4 Fruits : l\'onglet Manger est actif', (
-      tester,
-    ) async {
-      final e = await exemples(tester, taille: const Size(1280, 800));
-      final t = GlypheTokens.clair;
-      expect(contourOnglet(tester, 'accueil'), t.primary);
-      expect(contourOnglet(tester, 'manger'), t.border);
-      e.etat.session.ouvrirGrille('manger');
-      await tester.pumpAndSettle();
-      await tester.tap(grille('Fruits'));
-      await tester.pumpAndSettle();
-      expect(e.etat.session.grilleCourante.id, 'fruits');
-      expect(contourOnglet(tester, 'manger'), t.primary);
-      expect(contourOnglet(tester, 'accueil'), t.border);
-    });
-
-    testWidgets('REQ031_AC4 onglet actif exposé comme sélectionné', (
-      tester,
-    ) async {
-      final h = tester.ensureSemantics();
-      await exemples(tester, taille: const Size(1280, 800));
-      expect(
-        tester.getSemantics(find.byKey(const Key('onglet-accueil'))),
-        isSemantics(label: 'Accueil', isSelected: true, isButton: true),
-      );
-      h.dispose();
-    });
-
-    testWidgets('REQ031_AC3 appui sur un onglet : rien dit, barre intacte', (
-      tester,
-    ) async {
-      final e = await exemples(tester, taille: const Size(1280, 800));
-      await tester.tap(grille('je'));
-      await tester.pumpAndSettle();
-      final avant = [for (final x in e.etat.session.barre) x.libelle];
-      expect(avant, isNotEmpty);
-      final dits = e.voix.journal.length;
+      final e = await exemples(tester);
       e.etat.session.ouvrirGrille('fruits');
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('onglet-manger')));
-      await tester.pumpAndSettle();
-      expect(e.etat.session.grilleCourante.id, 'manger');
-      expect(e.etat.session.chemin, ['accueil', 'manger']);
-      expect(e.voix.journal.length, dits);
-      expect([for (final x in e.etat.session.barre) x.libelle], avant);
-      await tester.tap(find.byKey(const Key('bouton-retour')));
+      expect(e.etat.session.chemin, ['accueil', 'fruits']);
+      await tester.tap(find.byKey(const Key('case-fruits-retour')));
       await tester.pumpAndSettle();
       expect(e.etat.session.grilleCourante.id, 'accueil');
-      await tester.tap(find.byKey(const Key('onglet-jouer')));
+      e.etat.session.ouvrirGrille('manger');
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('onglet-accueil')));
+      await tester.tap(find.byKey(const Key('case-manger-retour')));
       await tester.pumpAndSettle();
-      expect(e.etat.session.chemin, ['accueil']);
+      expect(e.etat.session.grilleCourante.id, 'accueil');
+      expect(e.etat.session.barre, isEmpty);
     });
 
-    testWidgets('REQ031_AC6 supprimer la grille Jouer retire son onglet', (
+    for (final taille in const [Size(360, 640), Size(640, 360)]) {
+      testWidgets('REQ030_AC5 case-accueil-0 même rectangle dans les deux '
+          'modes $taille', (tester) async {
+        final e = await exemples(tester, taille: taille);
+        final avant = tester.getRect(find.byKey(const Key('case-accueil-0')));
+        e.etat.ouvrirEdition();
+        await tester.pumpAndSettle();
+        expect(tester.getRect(find.byKey(const Key('case-accueil-0'))), avant);
+      });
+    }
+
+    testWidgets('REQ030_AC6 aucune navigation hors de la grille', (
       tester,
     ) async {
-      final e = await exemples(tester, taille: const Size(1280, 800));
-      final d = e.etat.session.donnees;
-      await e.etat.modifierDonnees(
-        d.copyWith(
-          grilles: [
-            for (final g in d.grilles)
-              if (g.id != 'jouer') g,
-          ],
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('onglet-jouer')), findsNothing);
-      expect(find.byKey(const Key('onglet-manger')), findsOneWidget);
+      await exemples(tester, taille: const Size(1280, 800));
+      expect(find.byKey(const Key('bouton-retour')), findsNothing);
+      expect(find.byKey(const Key('bouton-parler')), findsNothing);
+      expect(find.byKey(const Key('onglets')), findsNothing);
+      expect(find.byKey(const Key('onglet-accueil')), findsNothing);
+      expect(find.byKey(const Key('onglet-manger')), findsNothing);
+      expect(find.byKey(const Key('espace-cadenas')), findsNothing);
     });
 
-    testWidgets('REQ009_AC5 Retour atténué et sans effet sur l\'accueil', (
-      tester,
-    ) async {
-      final e = await lance(tester);
-      double opacite() => tester
-          .widget<Opacity>(find.byKey(const Key('bouton-retour')))
-          .opacity;
-      expect(opacite(), 0.4);
-      await tester.tap(find.byKey(const Key('bouton-retour')));
-      await tester.pumpAndSettle();
-      expect(e.etat.session.grilleCourante.id, 'acc');
-      await tester.tap(grille('Manger'));
-      await tester.pumpAndSettle();
-      expect(opacite(), 1);
-      await tester.tap(find.byKey(const Key('bouton-retour')));
-      await tester.pumpAndSettle();
-      expect(e.etat.session.grilleCourante.id, 'acc');
-    });
-
-    testWidgets('REQ009_AC5 case-dossier vers l\'accueil : Retour atténué', (
-      tester,
-    ) async {
-      final base = donnees();
-      final d = base.copyWith(
-        grilles: [
-          for (final g in base.grilles)
-            if (g.id == 'manger-g')
-              Grille(
-                id: g.id,
-                nom: g.nom,
-                lignes: g.lignes,
-                colonnes: g.colonnes,
-                cases: [...g.cases, dossier('d-maison', 'Maison', 1, 0, 'acc')],
-              )
-            else
-              g,
-        ],
-      );
-      final h = tester.ensureSemantics();
-      final e = await lance(tester, d: d);
-      await tester.tap(grille('Manger'));
-      await tester.pumpAndSettle();
-      await tester.tap(grille('Maison'));
-      await tester.pumpAndSettle();
-      expect(e.etat.session.grilleCourante.id, 'acc');
-      expect(
-        tester.widget<Opacity>(find.byKey(const Key('bouton-retour'))).opacity,
-        0.4,
-      );
-      await tester.tap(find.byKey(const Key('bouton-retour')));
-      await tester.pumpAndSettle();
-      expect(e.etat.session.grilleCourante.id, 'acc');
-      expect(
-        tester.getSemantics(find.byKey(const Key('onglet-acc'))),
-        isSemantics(label: 'Accueil', isSelected: true, isButton: true),
-      );
-      h.dispose();
-    });
-
-    testWidgets('REQ009_AC5 plus de bouton Accueil séparé', (tester) async {
-      await lance(tester);
-      expect(find.byTooltip('Accueil'), findsNothing);
-      expect(find.byIcon(Icons.home_outlined), findsOneWidget); // dans l'onglet
-    });
-
-    testWidgets('REQ030_AC1 portrait : barre 72, navigation 56, marges', (
+    testWidgets('REQ030_AC1 AC12 portrait : barre 72, grille dessous', (
       tester,
     ) async {
       await lance(tester);
       final barre = tester.getRect(find.byType(BarrePhrase));
-      final nav = tester.getRect(find.byType(BarreNavigation));
       final zone = tester.getRect(find.byKey(const Key('grille')));
+      expect(barre.top, 8);
       expect(barre.height, 72);
-      expect(nav.height, 56);
       expect(barre.left, 12);
       expect(barre.right, 360 - 12);
-      expect(nav.left, 12);
-      expect(nav.right, 360 - 12);
-      expect(nav.top - barre.bottom, 8);
       // La zone de grille inclut 4 de marge propre à chaque case.
-      expect(zone.top + 4 - nav.bottom, 8);
+      expect(zone.top + 4 - barre.bottom, 8);
+      expect(tester.getSize(find.byKey(const Key('zone-barre'))).width, 112);
       // Rectangle visible d'une case : sans sa marge propre de 3.
       Rect visible(String id) =>
           tester.getRect(find.byKey(Key('case-$id'))).deflate(3);
@@ -869,32 +774,26 @@ void main() {
       }
     });
 
-    testWidgets('REQ030_AC3 paysage peu haut : une seule rangée de 72', (
-      tester,
-    ) async {
-      await lance(tester, taille: const Size(640, 360));
-      final barre = tester.getRect(find.byType(BarrePhrase));
-      final nav = tester.getRect(find.byType(BarreNavigation));
-      expect(barre.height, 72);
-      expect(nav.height, 56);
-      expect(barre.left, 12);
-      expect(nav.right, 640 - 12);
-      expect(nav.left, greaterThan(barre.right));
-      expect(barre.center.dy, closeTo(nav.center.dy, 0.01));
-      final total = 640 - 24 - 8;
-      expect(barre.width / total, closeTo(0.55, 0.01));
-      final zone = tester.getRect(find.byKey(const Key('grille')));
-      expect(zone.top + 4, 8 + 72 + 8);
-    });
-
-    testWidgets('REQ030_AC3 paysage haut (>= 480) : deux rangées', (
-      tester,
-    ) async {
-      await lance(tester, taille: const Size(1280, 800));
-      final barre = tester.getRect(find.byType(BarrePhrase));
-      final nav = tester.getRect(find.byType(BarreNavigation));
-      expect(nav.top, greaterThan(barre.bottom));
-    });
+    for (final taille in const [Size(640, 360), Size(915, 412)]) {
+      testWidgets('REQ030_AC12 paysage $taille : barre pleine largeur, grille '
+          'entière dessous', (tester) async {
+        await lance(tester, taille: taille);
+        final barre = tester.getRect(find.byType(BarrePhrase));
+        expect(barre.height, 72);
+        expect(barre.left, 12);
+        expect(barre.width, taille.width - 24);
+        if (taille.width == 640) expect(barre.width, 616);
+        final zone = tester.getRect(find.byKey(const Key('grille')));
+        expect(zone.top + 4, barre.bottom + 8);
+        expect(zone.bottom, taille.height - 12 + 4);
+        expect(tester.takeException(), isNull);
+        for (final id in ['je', 'h']) {
+          final r = tester.getRect(find.byKey(Key('case-$id')));
+          expect(r.top, greaterThanOrEqualTo(barre.bottom));
+          expect(r.bottom, lessThanOrEqualTo(taille.height));
+        }
+      });
+    }
 
     for (final edition in [false, true]) {
       testWidgets('REQ030_AC4 barre d\'édition à la place de la barre de '
@@ -907,8 +806,7 @@ void main() {
           expect(find.byType(BarrePhrase), findsNothing);
           expect(tester.getRect(find.byType(BarreEdition)), barre);
           expect(find.byKey(const Key('cadenas')), findsNothing);
-          expect(find.byKey(const Key('espace-cadenas')), findsOneWidget);
-          expect(find.byKey(const Key('onglet-acc')), findsOneWidget);
+          expect(find.byKey(const Key('bouton-accueil')), findsOneWidget);
           for (final f in [
             find.byKey(const Key('bouton-terminer')),
             find.byKey(const Key('ajouter-case')),

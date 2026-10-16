@@ -125,27 +125,56 @@ Future<List<String?>> parcours(
 void main() {
   final t = GlypheTokens.clair;
 
-  testWidgets('REQ030_AC7 rectangles de la barre d\'édition (360×640)', (
+  testWidgets('REQ030_AC11 rectangles de la barre d\'édition (360×640)', (
     tester,
   ) async {
     final etat = await lance(tester);
-    final parler = tester.getRect(find.byKey(const Key('bouton-parler')));
+    final accueilCom = tester.getRect(find.byKey(const Key('bouton-accueil')));
+    final cadenas = tester.getRect(find.byKey(const Key('cadenas')));
     await edition(tester, etat);
     final barre = tester.getRect(find.byType(BarreEdition));
+    final accueil = tester.getRect(find.byKey(const Key('bouton-accueil')));
     final ajouter = tester.getRect(find.byKey(const Key('ajouter-case')));
     final plus = tester.getRect(find.byKey(const Key('bouton-plus')));
     final fin = tester.getRect(find.byKey(const Key('bouton-terminer')));
-    expect(ajouter.size, const Size(56, 56));
-    expect(fin.size, const Size(56, 56));
-    expect(plus.size, const Size(48, 48));
-    expect(fin, parler);
+    for (final r in [accueil, ajouter, plus, fin]) {
+      expect(r.size, const Size(48, 48));
+      expect(r.center.dy, barre.center.dy);
+    }
+    expect(accueil, accueilCom);
+    expect(accueil.left - barre.left, 4);
+    expect(fin.left, closeTo(cadenas.left, 0.5));
+    expect(fin.top, closeTo(cadenas.top, 0.5));
+    expect(fin.size, cadenas.size);
+    expect(barre.right - fin.right, 4);
     expect(plus.right + 12, fin.left);
-    expect(ajouter.right + 8, plus.left);
-    expect(ajouter.center.dy, barre.center.dy);
-    expect(plus.center.dy, barre.center.dy);
+    expect(ajouter.right + 4, plus.left);
     final titre = tester.getRect(find.byKey(const Key('titre-edition')));
+    expect(titre.left - accueil.right, 8);
     expect(titre.right + 8, ajouter.left);
-    expect(titre.left, greaterThanOrEqualTo(barre.left));
+    expect(titre.width, 104);
+  });
+
+  testWidgets('REQ009_AC7 Accueil : même rectangle en 640×360', (tester) async {
+    final etat = await lance(tester, taille: const Size(640, 360));
+    final accueilCom = tester.getRect(find.byKey(const Key('bouton-accueil')));
+    final cadenas = tester.getRect(find.byKey(const Key('cadenas')));
+    await edition(tester, etat);
+    expect(tester.getRect(find.byKey(const Key('bouton-accueil'))), accueilCom);
+    final fin = tester.getRect(find.byKey(const Key('bouton-terminer')));
+    expect((fin.left - cadenas.left).abs(), lessThan(0.5));
+    expect((fin.top - cadenas.top).abs(), lessThan(0.5));
+  });
+
+  testWidgets('REQ009_AC6 Accueil en édition : revient à l\'accueil', (
+    tester,
+  ) async {
+    final etat = await lance(tester);
+    await edition(tester, etat, 'manger');
+    await tester.tap(find.byKey(const Key('bouton-accueil')));
+    await tester.pumpAndSettle();
+    expect(etat.session.grilleCourante.id, 'acc');
+    expect(etat.modeEdition, isTrue);
   });
 
   testWidgets('REQ030_AC7 pas de texte de bouton, icônes et couleurs', (
@@ -178,13 +207,14 @@ void main() {
     final plus = tester.widget<Icon>(
       icone(find.byKey(const Key('bouton-plus')), Icons.more_vert),
     );
-    expect((plus.size, plus.color), (28, t.ink));
+    expect((plus.size, plus.color), (24, t.ink));
   });
 
   testWidgets('REQ036_AC2 info-bulles = libellés', (tester) async {
     final etat = await lance(tester);
     await edition(tester, etat);
     for (final (cle, libelle) in [
+      ('bouton-accueil', 'Accueil'),
       ('bouton-terminer', 'Terminer'),
       ('ajouter-case', 'Ajouter une case'),
       ('bouton-plus', 'Plus'),
@@ -207,7 +237,7 @@ void main() {
     final h = tester.ensureSemantics();
     final etat = await lance(tester);
     await edition(tester, etat);
-    for (final l in ['Terminer', 'Ajouter une case', 'Plus']) {
+    for (final l in ['Accueil', 'Terminer', 'Ajouter une case', 'Plus']) {
       expect(find.bySemanticsLabel(l), findsWidgets, reason: l);
     }
     h.dispose();
@@ -403,26 +433,20 @@ void main() {
       final etat = await lance(tester, taille: taille);
       await edition(tester, etat, 'manger');
       final ordre = await parcours(tester, {
+        'bouton-accueil',
         'ajouter-case',
         'bouton-plus',
         'bouton-terminer',
-        'bouton-retour',
-        'onglet-acc',
-        'onglet-manger',
-        'onglet-long',
         'case-pomme',
         'vide-0-1',
         'vide-1-0',
         'vide-1-1',
       }, (c) => c == 'vide-1-1');
       expect(ordre, [
+        'bouton-accueil',
         'ajouter-case',
         'bouton-plus',
         'bouton-terminer',
-        'bouton-retour',
-        'onglet-acc',
-        'onglet-manger',
-        'onglet-long',
         'case-pomme',
         'vide-0-1',
         'vide-1-0',
@@ -437,14 +461,11 @@ void main() {
       final etat = await lance(tester, taille: taille);
       await edition(tester, etat, 'manger');
       final labels = [
+        'Accueil',
         'Mode édition, grille Manger',
         'Ajouter une case',
         'Plus',
         'Terminer',
-        'Retour',
-        'Accueil',
-        'manger',
-        'long',
         'pomme',
         'Ajouter une case',
         'Ajouter une case',
@@ -484,19 +505,14 @@ void main() {
       etat.session.ouvrirGrille('manger');
       await tester.pumpAndSettle();
       expect(etat.verrouille, isTrue);
-      // Effacer et Parler ne sont actifs (donc focalisables) qu'avec un mot.
+      // Corbeille et Effacer ne sont actifs (donc focalisables) qu'avec un mot.
       await tester.tap(find.byKey(const Key('case-pomme')));
       await tester.pumpAndSettle();
-      // Retour actif : la grille manger n'est pas l'accueil.
-      expect(find.byKey(const Key('bouton-retour')), findsOneWidget);
       final voulu = [
+        'bouton-accueil',
         'zone-barre',
+        'bouton-corbeille',
         'bouton-effacer',
-        'bouton-parler',
-        'bouton-retour',
-        'onglet-acc',
-        'onglet-manger',
-        'onglet-long',
         'cadenas',
         'case-pomme',
       ];
@@ -509,13 +525,10 @@ void main() {
 
       // Même ordre pour le lecteur d'écran.
       const labels = [
-        'Phrase : pomme',
-        'Effacer le dernier mot',
-        'Parler',
-        'Retour',
         'Accueil',
-        'manger',
-        'long',
+        'Phrase : pomme',
+        'Tout effacer',
+        'Effacer le dernier mot',
         'Verrouillé',
         'pomme',
       ];

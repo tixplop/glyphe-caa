@@ -318,9 +318,7 @@ void main() {
       }
     }
 
-    testWidgets('REQ036_AC1 libellés et cibles des trois barres', (
-      tester,
-    ) async {
+    testWidgets('REQ036_AC1 libellés et cibles des barres', (tester) async {
       final h = tester.ensureSemantics();
       final etat = await lancer(tester, const Size(360, 640), false);
       await tester.tap(find.byKey(const Key('case-je')));
@@ -339,12 +337,13 @@ void main() {
         expect(taille.height, greaterThanOrEqualTo(48), reason: cle);
       }
 
-      commande('bouton-retour', 'Retour');
+      commande('bouton-accueil', 'Accueil');
+      commande('bouton-corbeille', 'Tout effacer');
       commande('bouton-effacer', 'Effacer le dernier mot');
-      commande('bouton-parler', 'Parler');
       commande('cadenas', 'Verrouillé', bouton: false);
       etat.ouvrirEdition();
       await tester.pumpAndSettle();
+      commande('bouton-accueil', 'Accueil');
       commande('bouton-terminer', 'Terminer');
       commande('ajouter-case', 'Ajouter une case');
       commande('bouton-plus', 'Plus');

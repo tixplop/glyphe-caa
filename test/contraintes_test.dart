@@ -64,10 +64,9 @@ void main() {
 
   test('REQ036_AC5 pas de FittedBox dans les barres ni l\'édition de case', () {
     final fichiers = [
-      ...Directory('lib/ui/widgets')
-          .listSync()
-          .whereType<File>()
-          .where((f) => RegExp(r'barre_[^/]*\.dart$').hasMatch(f.path)),
+      ...Directory('lib/ui/widgets').listSync().whereType<File>().where(
+        (f) => RegExp(r'(barre_|bouton_barre)[^/]*\.dart$').hasMatch(f.path),
+      ),
       File('lib/ui/ecran_edition_case.dart'),
     ];
     expect(fichiers.length, greaterThanOrEqualTo(4));

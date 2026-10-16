@@ -13,11 +13,10 @@ import 'etat_appli.dart';
 import 'textes.dart';
 import 'tokens.dart';
 import 'widgets/barre_edition.dart';
-import 'widgets/barre_navigation.dart';
 import 'widgets/barre_phrase.dart';
 import 'widgets/case_widget.dart';
 
-/// Écran principal : barre de phrase (ou d'édition), navigation, grille.
+/// Écran principal : barre de phrase (ou d'édition), puis grille.
 class EcranCommunication extends StatefulWidget {
   const EcranCommunication({super.key, required this.etat});
 
@@ -156,9 +155,10 @@ class _EcranCommunicationState extends State<EcranCommunication> {
 
   Widget _disposition(BuildContext context, BoxConstraints c) {
     final session = etat.session;
-    final haut = etat.modeEdition
+    final barre = etat.modeEdition
         ? BarreEdition(
             nomGrille: session.grilleCourante.nom,
+            onAccueil: session.accueil,
             onTerminer: etat.verrouiller,
             onAjouter: _ajouter,
             onCode: _ouvrirEcranCode,
@@ -174,35 +174,12 @@ class _EcranCommunicationState extends State<EcranCommunication> {
             onArreter: session.arreterLecture,
             onEffacerDernier: session.effacerDernier,
             onToutEffacer: session.toutEffacer,
+            onAccueil: session.accueil,
+            onDeverrouille: _deverrouiller,
           );
-    final navigation = BarreNavigation(
-      session: session,
-      modeEdition: etat.modeEdition,
-      onDeverrouille: _deverrouiller,
-    );
-    // Paysage peu haut : les deux barres sur une seule rangée de 72
-    // (AC-030-3).
-    final compact = c.maxHeight < 480 && c.maxWidth > c.maxHeight;
     final barres = Padding(
       padding: const EdgeInsets.symmetric(horizontal: _marge),
-      child: compact
-          ? SizedBox(
-              height: GlypheTokens.barrePhrase,
-              child: Row(
-                children: [
-                  Expanded(flex: 55, child: haut),
-                  const SizedBox(width: GlypheTokens.espace2),
-                  Expanded(flex: 45, child: Center(child: navigation)),
-                ],
-              ),
-            )
-          : Column(
-              children: [
-                haut,
-                const SizedBox(height: GlypheTokens.espace2),
-                navigation,
-              ],
-            ),
+      child: barre,
     );
     return Column(
       children: [

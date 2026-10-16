@@ -8,8 +8,6 @@ class Textes {
 
   static const String titreAppli = 'Glyphe';
 
-  static const String parler = 'Parler';
-  static const String arreter = 'Arrêter';
   static const String effacerDernierMot = 'Effacer le dernier mot';
   static const String aidePhrase = 'Ta phrase apparaît ici';
   static const String toutEffacer = 'Tout effacer';
@@ -18,6 +16,7 @@ class Textes {
   static const String verrouille = 'Verrouillé';
   static const String phrasePrefixe = 'Phrase : ';
   static const String appuyerPourLire = 'Appuyer pour lire';
+  static const String appuyerPourArreter = 'Appuyer pour arrêter';
   static const String caseSansNom = 'case sans nom';
   static const String chargementErreur =
       'Impossible de charger les données de l\'appli.';
