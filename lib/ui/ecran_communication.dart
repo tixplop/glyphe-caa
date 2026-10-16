@@ -141,6 +141,10 @@ class _EcranCommunicationState extends State<EcranCommunication> {
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.noScaling),
             child: Scaffold(
+              // Cet écran n'a aucun champ de saisie : il ignore le clavier
+              // pour que la grille ne s'écrase pas au retour de l'édition
+              // clavier ouvert (AC-038-8, DEC-019).
+              resizeToAvoidBottomInset: false,
               body: Builder(
                 builder: (context) {
                   // Marges de sécurité symétriques : max(gauche, droite)

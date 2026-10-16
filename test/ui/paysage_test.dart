@@ -234,6 +234,87 @@ void main() {
     );
   });
 
+  const grilleAttendue = Rect.fromLTRB(8, 84, 632, 352);
+  void memeRect(Rect a, Rect b, String raison) {
+    expect(a.left, closeTo(b.left, 0.5), reason: raison);
+    expect(a.top, closeTo(b.top, 0.5), reason: raison);
+    expect(a.right, closeTo(b.right, 0.5), reason: raison);
+    expect(a.bottom, closeTo(b.bottom, 0.5), reason: raison);
+  }
+
+  for (final sortie in const [
+    'bouton-retour-appli',
+    'bouton-enregistrer',
+    'bouton-ouvrir',
+  ]) {
+    testWidgets('REQ038_AC8 retour de l\'édition clavier ouvert : $sortie', (
+      tester,
+    ) async {
+      _regler(tester);
+      final etat = await etatPret(tester);
+      await tester.pumpWidget(GlypheApp(etat: etat));
+      etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      final grille = find.byKey(const Key('grille'));
+      final caseManger = find.byKey(const Key('case-accueil-9'));
+      final grilleAvant = tester.getRect(grille);
+      final caseAvant = tester.getRect(caseManger);
+      memeRect(grilleAvant, grilleAttendue, 'grille sans clavier');
+
+      await _ouvrirCaseExistante(tester, etat);
+      await tester.showKeyboard(find.byKey(const Key('champ-libelle')));
+      tester.view.viewInsets = const FakeViewPadding(bottom: 200);
+      await tester.pumpAndSettle();
+
+      final bouton = find.byKey(Key(sortie));
+      await tester.ensureVisible(bouton);
+      await tester.pumpAndSettle();
+      await tester.tap(bouton);
+      for (var i = 0; i < 20; i++) {
+        // Laisse aboutir les entrées-sorties réelles de l'enregistrement.
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 5)),
+        );
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.takeException(), isNull, reason: 'pompe $i');
+      }
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('ecran-edition-case')), findsNothing);
+      memeRect(tester.getRect(grille), grilleAttendue, 'grille avec clavier');
+      if (sortie == 'bouton-ouvrir') {
+        expect(etat.session.grilleCourante.id, 'manger');
+      } else {
+        memeRect(tester.getRect(caseManger), caseAvant, 'case-accueil-9');
+      }
+
+      tester.view.viewInsets = FakeViewPadding.zero;
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      memeRect(tester.getRect(grille), grilleAvant, 'grille clavier fermé');
+      if (sortie != 'bouton-ouvrir') {
+        memeRect(tester.getRect(caseManger), caseAvant, 'case clavier fermé');
+      }
+    });
+  }
+
+  testWidgets('REQ038_AC8 dialogue de code : la grille ignore le clavier', (
+    tester,
+  ) async {
+    await verrou.lance(tester, code: '1234');
+    _regler(tester);
+    await tester.pumpAndSettle();
+    final grille = find.byKey(const Key('grille'));
+    final avant = tester.getRect(grille);
+    await verrou.appui(tester, const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('champ-code')), findsOneWidget);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 200);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    memeRect(tester.getRect(grille), avant, 'grille derrière le dialogue');
+  });
+
   for (final cle in const ['champ-libelle', 'champ-texte']) {
     testWidgets('REQ038_AC7 clavier : édition de case, $cle', (tester) async {
       _regler(tester);
