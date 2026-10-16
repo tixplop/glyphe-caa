@@ -55,7 +55,7 @@ void main() {
   for (final edition in [false, true]) {
     testWidgets('REQ027_AC1 accessible depuis le menu Plus du mode édition '
         '(édition: $edition)', (tester) async {
-      tester.view.physicalSize = const Size(360, 640);
+      tester.view.physicalSize = const Size(640, 360);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
       final dossier = Directory.systemTemp.createTempSync('glyphe_apropos_');

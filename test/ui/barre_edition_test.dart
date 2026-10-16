@@ -303,7 +303,7 @@ void main() {
     h.dispose();
   });
 
-  testWidgets('REQ030_AC8 nom de 40 caractères, 360×640 sans débordement', (
+  testWidgets('REQ030_AC8 nom de 40 caractères, 640×360 sans débordement', (
     tester,
   ) async {
     final h = tester.ensureSemantics();

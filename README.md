@@ -52,8 +52,10 @@ dart run tool/generer_banque_arasaac.dart
 
 Le code est compatible iOS, mais il n'est pas compilé ni testé sans Mac : seul Android est construit.
 
-## Disposition (version 1.3.0)
+## Disposition (version 1.4.0)
 
+- **Orientation** : l'appli s'affiche en paysage seulement (les deux sens), y compris quand l'appareil est tenu en portrait. Tailles d'écran de référence : de 640×360 à 1280×800 (915×412 pour un Pixel 7 en paysage).
+- **Grilles en 4 colonnes × 3 lignes** : les nouvelles grilles et les grilles d'exemple ont 4 colonnes et 3 lignes. Une installation existante garde ses grilles en 4×4 ; pour les passer en 4×3, utiliser « Taille de la grille » du menu « Plus » du mode édition.
 - **Communication** : en haut, la barre de phrase, sur toute la largeur. De gauche à droite : « Accueil », la phrase composée (un appui sur la phrase la lit à voix haute, un nouvel appui pendant la lecture l'arrête), « Corbeille » (efface toute la phrase en un appui), « Effacer » (le dernier mot) et le cadenas, discret, à maintenir appuyé pour déverrouiller l'édition. Il n'y a plus de bouton Parler ni de barre de navigation : on change de page par les cases-dossiers et on revient par la case « Retour ». La grille de cases remplit le reste de l'écran, sans défilement.
 - **Édition** : la barre d'édition remplace la barre de phrase ; elle affiche le titre (« Mode édition » et le nom de la grille), « Ajouter une case », le menu « Plus » (code, grilles, taille de la grille, réglages, À propos) et « Terminer » (icône de cadenas) pour refermer l'édition.
 - **Édition d'une case** : les actions sont des icônes dans la barre d'application, toujours visibles : Supprimer, Échanger avec l'emplacement…, Ouvrir (dossier), Enregistrer. Le type de case se choisit entre Mot, Dossier et Retour. On touche l'aperçu de l'image, à côté du libellé, pour choisir l'image.
@@ -63,7 +65,7 @@ Le code est compatible iOS, mais il n'est pas compilé ni testé sans Mac : seul
 - **Thème sombre automatique** : l'appli suit le réglage clair ou sombre du système ; il n'y a pas de réglage manuel. Les couleurs viennent des tokens du design system (`lib/ui/tokens.dart`).
 - **Police** : Atkinson Hyperlegible (Braille Institute), embarquée, licence SIL Open Font License 1.1 (`assets/fonts/OFL.txt`). Aucun téléchargement à l'exécution.
 - **Taille de texte du système** : appliquée aux réglages, à l'édition et à À propos ; l'écran de communication garde sa géométrie.
-- **Sauvegarde** : le format est la version 3 ; les sauvegardes des versions 1 et 2 restent importables. Une sauvegarde de version 3 est refusée par Glyphe 1.2 et les versions antérieures.
+- **Sauvegarde** : le format est la version 3 ; les sauvegardes des versions 1 et 2 restent importables. Une sauvegarde de version 3 est refusée par Glyphe 1.2 et les versions antérieures. Les sauvegardes de Glyphe 1.3 sont compatibles avec la 1.4.
 
 ## Usage
 

@@ -67,7 +67,7 @@ Future<Env> lance(
   WidgetTester tester, {
   Donnees? d,
   String? json,
-  Size taille = const Size(400, 800),
+  Size taille = const Size(915, 412),
   String? photo,
 }) async {
   tester.view.physicalSize = taille;
@@ -319,9 +319,8 @@ void main() {
   });
 
   for (final taille in const [
-    Size(360, 640),
     Size(640, 360),
-    Size(800, 1280),
+    Size(915, 412),
     Size(1280, 800),
   ]) {
     testWidgets('REQ028 liste des grilles et dialogue de taille $taille', (
@@ -352,7 +351,7 @@ void main() {
 }
 
 void testsVisibilite() {
-  for (final taille in [const Size(360, 640), const Size(640, 360)]) {
+  for (final taille in [const Size(640, 360), const Size(915, 412)]) {
     testWidgets('REQ017_AC1/REQ018_AC1 actions d\'édition visibles $taille', (
       tester,
     ) async {

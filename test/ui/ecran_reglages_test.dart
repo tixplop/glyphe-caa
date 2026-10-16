@@ -60,7 +60,7 @@ Future<Env> lance(
   WidgetTester tester, {
   List<InfoVoix> voix = const [vFr, vFr2, vEn],
   Reglages reglages = const Reglages(),
-  Size taille = const Size(400, 800),
+  Size taille = const Size(640, 360),
   bool ouvrir = true,
 }) async {
   tester.view.physicalSize = taille;
@@ -414,9 +414,8 @@ void main() {
 
   group('REQ028 accessibilité des réglages', () {
     for (final taille in const [
-      Size(360, 640),
       Size(640, 360),
-      Size(800, 1280),
+      Size(915, 412),
       Size(1280, 800),
     ]) {
       testWidgets('guidelines $taille', (tester) async {
@@ -443,7 +442,7 @@ void main() {
         tester,
         voix: const [],
         reglages: const Reglages(voixId: 'x'),
-        taille: const Size(360, 640),
+        taille: const Size(640, 360),
       );
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
@@ -454,7 +453,7 @@ void main() {
 
   group('écritures concurrentes', () {
     Future<(Env, StockageLent)> lent(WidgetTester tester) async {
-      tester.view.physicalSize = const Size(400, 800);
+      tester.view.physicalSize = const Size(915, 412);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
       final stockage = StockageLent(donnees());
@@ -473,6 +472,8 @@ void main() {
     ) async {
       final (e, s) = await lent(tester);
       await tester.tap(find.byKey(const Key('voix-fr1')));
+      await tester.ensureVisible(find.byKey(const Key('delai-2000')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('delai-2000')));
       await tester.pump();
       expect(s.attentes.length, 2);
@@ -508,7 +509,7 @@ void main() {
       await tester.pumpAndSettle();
       final avant = tester.widget<Slider>(f).value;
       final g = await tester.startGesture(tester.getCenter(f));
-      await g.moveBy(const Offset(-120, 0));
+      await g.moveBy(const Offset(-300, 0));
       await tester.pump();
       expect(tester.widget<Slider>(f).value, lessThan(avant));
       expect(s.attentes, isEmpty);

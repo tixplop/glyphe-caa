@@ -55,7 +55,11 @@ Future<void> retour(WidgetTester tester) async {
 
 void main() {
   for (final sombre in const [false, true]) {
-    for (final taille in const [Size(360, 640), Size(800, 1280)]) {
+    for (final taille in const [
+      Size(640, 360),
+      Size(915, 412),
+      Size(1280, 800),
+    ]) {
       testWidgets('REQ028_AC1/AC2/AC4 REQ035_AC2 tous les écrans, thème '
           '${sombre ? 'sombre' : 'clair'} $taille', (tester) async {
         final h = tester.ensureSemantics();
@@ -116,7 +120,7 @@ void main() {
   ) async {
     tester.platformDispatcher.textScaleFactorTestValue = 2;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    tester.view.physicalSize = const Size(800, 1280);
+    tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     final etat = await etatPret(tester);
@@ -139,9 +143,8 @@ void main() {
   });
   for (final sombre in const [false, true]) {
     for (final taille in const [
-      Size(360, 640),
       Size(640, 360),
-      Size(800, 1280),
+      Size(915, 412),
       Size(1280, 800),
     ]) {
       testWidgets('REQ028_AC1/AC2/AC4 mode édition, sélecteur compris, thème '
@@ -282,7 +285,7 @@ void main() {
     }
 
     for (final sombre in const [false, true]) {
-      for (final taille in const [Size(360, 640), Size(640, 360)]) {
+      for (final taille in const [Size(640, 360), Size(915, 412)]) {
         testWidgets('REQ036_AC5 AC6 communication, édition, menu Plus, '
             'édition de case, ${sombre ? 'sombre' : 'clair'} $taille', (
           tester,
@@ -320,7 +323,7 @@ void main() {
 
     testWidgets('REQ036_AC1 libellés et cibles des barres', (tester) async {
       final h = tester.ensureSemantics();
-      final etat = await lancer(tester, const Size(360, 640), false);
+      final etat = await lancer(tester, const Size(640, 360), false);
       await tester.tap(find.byKey(const Key('case-je')));
       await tester.tap(find.byKey(const Key('case-d-man')));
       await tester.pumpAndSettle();
@@ -354,10 +357,9 @@ void main() {
   group('T-031 grilles d\'exemple (Manger, Retour, Dossier)', () {
     for (final sombre in const [false, true]) {
       for (final taille in const [
-        Size(360, 640),
         Size(640, 360),
-        Size(412, 915),
         Size(915, 412),
+        Size(1280, 800),
       ]) {
         testWidgets('REQ028_AC1 REQ028_AC2 REQ028_AC4 REQ036_AC5 REQ036_AC6 '
             'Manger, édition, menu Plus, cases Retour et Dossier, '

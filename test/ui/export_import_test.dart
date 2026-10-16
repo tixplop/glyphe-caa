@@ -84,7 +84,7 @@ class Env {
 Future<Env> lance(
   WidgetTester tester, {
   Uint8List? fichier,
-  Size taille = const Size(400, 800),
+  Size taille = const Size(915, 412),
   FauxStockage? stockage,
   Directory? tmp,
 }) async {
@@ -474,7 +474,7 @@ void main() {
         await stockage.ecrireCode('4321');
       });
       final zip = archiveB(tmp);
-      tester.view.physicalSize = const Size(400, 800);
+      tester.view.physicalSize = const Size(915, 412);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
       final choix = FauxChoixFichier(zip);
@@ -655,9 +655,8 @@ void main() {
   });
 
   for (final taille in const [
-    Size(360, 640),
     Size(640, 360),
-    Size(800, 1280),
+    Size(915, 412),
     Size(1280, 800),
   ]) {
     testWidgets('REQ028 dialogue d\'import accessible $taille', (tester) async {

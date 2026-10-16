@@ -41,7 +41,7 @@ EtatAppli creer(FauxStockage s) => EtatAppli(
 );
 
 Future<EtatAppli> lance(WidgetTester tester, {String? code}) async {
-  tester.view.physicalSize = const Size(360, 640);
+  tester.view.physicalSize = const Size(640, 360);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
   final s = FauxStockage(donnees())..code = code;

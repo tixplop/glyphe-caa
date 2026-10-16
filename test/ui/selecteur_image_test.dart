@@ -90,7 +90,7 @@ Env? envCourant;
 Future<Env> lance(
   WidgetTester tester, {
   String? photo,
-  Size taille = const Size(400, 800),
+  Size taille = const Size(915, 412),
 }) async {
   tester.view.physicalSize = taille;
   tester.view.devicePixelRatio = 1.0;

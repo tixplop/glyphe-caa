@@ -90,7 +90,7 @@ Future<Env> lance(
   Donnees? d,
   FauxStockage? stockage,
 }) async {
-  tester.view.physicalSize = const Size(400, 800);
+  tester.view.physicalSize = const Size(915, 412);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
   final s = stockage ?? FauxStockage(d ?? donnees());
@@ -621,7 +621,7 @@ void main() {
       expect(find.byTooltip('Back'), findsNothing);
     });
 
-    for (final taille in [const Size(360, 640), const Size(640, 360)]) {
+    for (final taille in [const Size(640, 360), const Size(915, 412)]) {
       testWidgets('REQ036_AC5 $taille dossier existant : sans débordement', (
         tester,
       ) async {
@@ -747,7 +747,7 @@ void main() {
   testWidgets('REQ036_AC4 nouvelle case : l\'image choisie remplace l\'icône', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(400, 800);
+    tester.view.physicalSize = const Size(915, 412);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     final etat = EtatAppli(
@@ -920,7 +920,7 @@ void main() {
       expect(find.text('Ajoutez une image ou un libellé'), findsOneWidget);
     });
 
-    for (final taille in const [Size(360, 640), Size(640, 360)]) {
+    for (final taille in const [Size(640, 360), Size(915, 412)]) {
       testWidgets('REQ037_AC8 type Retour sans débordement $taille', (
         tester,
       ) async {

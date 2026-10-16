@@ -7,6 +7,22 @@ import 'package:glyphe/ui/app.dart';
 import 'ui/accessibilite_edition_test.dart' show depuisMenu, etatPret, retour;
 
 void main() {
+  test('REQ038 aucune taille de test portrait dans test/ui', () {
+    final fautes = <String>[];
+    for (final f in Directory('test/ui').listSync(recursive: true)) {
+      if (f is! File || !f.path.endsWith('.dart')) continue;
+      final src = f.readAsStringSync().replaceAll(RegExp(r'//[^\n]*'), '');
+      for (final m in RegExp(
+        r'Size\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*\)',
+      ).allMatches(src)) {
+        final a = double.parse(m.group(1)!);
+        final b = double.parse(m.group(2)!);
+        if (a < b) fautes.add('${f.path} : ${m.group(0)}');
+      }
+    }
+    expect(fautes, isEmpty);
+  });
+
   test('REQ026_AC1 le manifeste principal supprime la permission INTERNET', () {
     final manifeste = File('android/app/src/main/AndroidManifest.xml')
         .readAsStringSync();
@@ -79,7 +95,7 @@ void main() {
   for (final sombre in const [false, true]) {
     testWidgets('REQ036_AC5 tout texte rendu sous un bouton fait au moins 15 '
         '(${sombre ? 'sombre' : 'clair'})', (tester) async {
-      tester.view.physicalSize = const Size(360, 640);
+      tester.view.physicalSize = const Size(640, 360);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
       if (sombre) {
