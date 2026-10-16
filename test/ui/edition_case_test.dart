@@ -11,6 +11,7 @@ import 'package:glyphe/ui/ecran_reglages.dart';
 import 'package:glyphe/ui/etat_appli.dart';
 import 'package:glyphe/ui/selecteur_image.dart';
 import 'package:glyphe/ui/tokens.dart';
+import 'package:glyphe/ui/widgets/barre_edition.dart';
 
 import '../faux/faux_stockage.dart';
 import '../faux/faux_voix.dart';
@@ -573,6 +574,16 @@ void main() {
       expect(cle('bouton-supprimer'), findsOneWidget);
     });
 
+    testWidgets('REQ037_AC8 dossier existant devenu Retour : pas d\'Ouvrir', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('case-d-man'));
+      expect(cle('bouton-ouvrir'), findsOneWidget);
+      await toucher(tester, cle('type-retour'));
+      expect(cle('bouton-ouvrir'), findsNothing);
+    });
+
     testWidgets('REQ036_AC3 AC9 dossier existant : ordre, icônes, sans texte', (
       tester,
     ) async {
@@ -804,5 +815,199 @@ void main() {
     await toucher(tester, cle('case-je'));
     expect(cle('ecran-edition-case'), findsOneWidget);
     verifie('édition de case');
+  });
+
+  group('case-retour dans l\'éditeur (REQ-037, REQ-016)', () {
+    testWidgets('REQ037_AC8 trois puces, champs masqués, aide, Ouvrir absent', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      // Ordre de lecture : ligne puis colonne (les puces peuvent passer à
+      // la ligne).
+      final pos = [
+        for (final k in ['type-mot', 'type-dossier', 'type-retour'])
+          tester.getTopLeft(cle(k)),
+      ];
+      for (var i = 0; i < 2; i++) {
+        final apres =
+            pos[i + 1].dy > pos[i].dy ||
+            (pos[i + 1].dy == pos[i].dy && pos[i + 1].dx > pos[i].dx);
+        expect(apres, isTrue);
+      }
+      expect(find.text('Retour'), findsWidgets);
+      expect(cle('champ-texte'), findsOneWidget);
+      await toucher(tester, cle('type-retour'));
+      expect(cle('champ-texte'), findsNothing);
+      expect(cle('champ-cible'), findsNothing);
+      expect(find.textContaining('est sans effet'), findsOneWidget);
+      expect(cle('bouton-ouvrir'), findsNothing);
+      // Libellé pré-rempli.
+      expect(
+        tester.widget<TextField>(cle('champ-libelle')).controller!.text,
+        'Retour',
+      );
+      // Retour à Mot : champs réaffichés.
+      await toucher(tester, cle('type-mot'));
+      expect(cle('champ-texte'), findsOneWidget);
+      expect(find.textContaining('est sans effet'), findsNothing);
+      await toucher(tester, cle('type-dossier'));
+      expect(cle('champ-cible'), findsOneWidget);
+    });
+
+    testWidgets('REQ037_AC5 libellé existant non écrasé', (tester) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      await saisir(tester, 'champ-libelle', 'Revenir');
+      await toucher(tester, cle('type-retour'));
+      expect(
+        tester.widget<TextField>(cle('champ-libelle')).controller!.text,
+        'Revenir',
+      );
+    });
+
+    testWidgets('REQ037_AC8 sur l\'accueil : sans effet', (tester) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      await toucher(tester, cle('type-retour'));
+      expect(
+        find.text('Sur l\'accueil, cette case est sans effet.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('REQ037_AC5 enregistrement persistant, sans texte ni cible', (
+      tester,
+    ) async {
+      final e = await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      await saisir(tester, 'champ-texte', 'bidon');
+      await toucher(tester, cle('type-retour'));
+      await toucher(tester, cle('bouton-enregistrer'));
+      final c = e.stockage.donnees!
+          .grillePar('acc')!
+          .cases
+          .firstWhere((c) => c.type == TypeCase.retour);
+      expect((c.ligne, c.colonne), (1, 1));
+      expect(c.libelle, 'Retour');
+      expect(c.textePrononce, '');
+      expect(c.cibleId, isNull);
+      expect(cle('fleche-retour'), findsOneWidget);
+      // Identique en édition : appui = éditeur, type Retour conservé.
+      await toucher(tester, cle('case-${c.id}'));
+      expect(tester.widget<ChoiceChip>(cle('type-retour')).selected, isTrue);
+    });
+
+    testWidgets('REQ037_AC5 sur une sous-grille : aide « Revient »', (
+      tester,
+    ) async {
+      final e = await lance(tester);
+      e.etat.session.ouvrirGrille('man');
+      await tester.pumpAndSettle();
+      await toucher(tester, cle('vide-1-1'));
+      await toucher(tester, cle('type-retour'));
+      expect(find.text('Revient à la grille précédente.'), findsOneWidget);
+    });
+
+    testWidgets('REQ037_AC5 AC015_2 retour sans libellé ni image refusé', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      await toucher(tester, cle('type-retour'));
+      await saisir(tester, 'champ-libelle', '');
+      await toucher(tester, cle('bouton-enregistrer'));
+      expect(find.text('Ajoutez une image ou un libellé'), findsOneWidget);
+    });
+
+    for (final taille in const [Size(360, 640), Size(640, 360)]) {
+      testWidgets('REQ037_AC8 type Retour sans débordement $taille', (
+        tester,
+      ) async {
+        await lance(tester);
+        tester.view.physicalSize = taille;
+        await tester.pumpAndSettle();
+        await toucher(tester, cle('vide-1-1'));
+        await toucher(tester, cle('type-retour'));
+        expect(tester.takeException(), isNull);
+        await toucher(tester, cle('type-dossier'));
+        await toucher(tester, cle('champ-cible'));
+        await toucher(tester, find.text('Nouvelle grille').last);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('REQ016_AC4 aide « Nouvelle grille » suit la frappe', (
+      tester,
+    ) async {
+      await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      await toucher(tester, cle('type-dossier'));
+      await toucher(tester, cle('champ-cible'));
+      await toucher(tester, find.text('Manger').last);
+      // Grille existante : pas d'aide.
+      expect(find.textContaining('sera créée'), findsNothing);
+      await toucher(tester, cle('champ-cible'));
+      await toucher(tester, find.text('Nouvelle grille').last);
+      expect(
+        find.text(
+          'Une grille « Nouvelle grille » sera créée, avec une case Retour.',
+        ),
+        findsOneWidget,
+      );
+      await saisir(tester, 'champ-libelle', '  Animaux ');
+      expect(
+        find.text('Une grille « Animaux » sera créée, avec une case Retour.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('REQ016_AC5 enregistrement puis ouverture de la grille', (
+      tester,
+    ) async {
+      final e = await lance(tester);
+      await toucher(tester, cle('vide-1-1'));
+      await saisir(tester, 'champ-libelle', 'Animaux');
+      await toucher(tester, cle('type-dossier'));
+      await toucher(tester, cle('champ-cible'));
+      await toucher(tester, find.text('Nouvelle grille').last);
+      await toucher(tester, cle('bouton-enregistrer'));
+      expect(e.etat.session.grilleCourante.id, 'acc');
+      expect(e.etat.modeEdition, isTrue);
+      final id = e.etat.session.donnees
+          .grillePar('acc')!
+          .cases
+          .firstWhere((c) => c.libelle == 'Animaux')
+          .id;
+      expect(
+        find.descendant(of: cle('case-$id'), matching: cle('coin-dossier')),
+        findsOneWidget,
+      );
+      await toucher(tester, cle('case-$id'));
+      await toucher(tester, cle('bouton-ouvrir'));
+      expect(find.text('Mode édition'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(BarreEdition),
+          matching: find.text('Animaux'),
+        ),
+        findsOneWidget,
+      );
+      final g = e.etat.session.grilleCourante;
+      final r = g.cases.single;
+      final zone = tester.getTopLeft(cle('grille'));
+      final pos = tester.getTopLeft(cle('case-${r.id}'));
+      expect((pos.dx - zone.dx).abs(), lessThan(8));
+      expect((pos.dy - zone.dy).abs(), lessThan(8));
+      expect(cle('fleche-retour'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((w) {
+          final k = w.key;
+          return k is ValueKey<String> && k.value.startsWith('vide-');
+        }),
+        findsNWidgets(15),
+      );
+      expect(cle('vide-0-0'), findsNothing);
+    });
   });
 }

@@ -293,4 +293,75 @@ void main() {
       );
     });
   });
+
+  group('case-retour (REQ-037)', () {
+    testWidgets('REQ037_AC4 AC9 flèche ink à la taille du picto, sans coin', (
+      tester,
+    ) async {
+      final h = tester.ensureSemantics();
+      await _pose(
+        tester,
+        _case('Retour', type: TypeCase.retour, cat: Categorie.petitMot),
+        taille: const Size(120, 100),
+      );
+      final fleche = find.byKey(const Key('fleche-retour'));
+      expect(fleche, findsOneWidget);
+      final icone = tester.widget<Icon>(fleche);
+      expect(icone.icon, Icons.arrow_back);
+      expect(icone.color, GlypheTokens.clair.ink);
+      expect(icone.size, closeTo(0.6 * 94, 0.01));
+      expect(
+        tester.getCenter(fleche).dx,
+        closeTo(tester.getCenter(find.byType(CaseWidget)).dx, 0.01),
+      );
+      expect(find.byKey(const Key('coin-dossier')), findsNothing);
+      expect(find.text('Retour'), findsOneWidget);
+      final m = tester.widget<Material>(
+        find
+            .descendant(
+              of: find.byType(CaseWidget),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      expect(m.color, GlypheTokens.clair.catLittleBg);
+      // Seul le libellé est exposé au lecteur d'écran.
+      expect(find.bySemanticsLabel('Retour'), findsOneWidget);
+      h.dispose();
+    });
+
+    testWidgets('REQ037_AC4 sans libellé : sémantique « Retour »', (
+      tester,
+    ) async {
+      final h = tester.ensureSemantics();
+      await _pose(tester, _case('', type: TypeCase.retour));
+      expect(find.bySemanticsLabel('Retour'), findsOneWidget);
+      h.dispose();
+    });
+
+    testWidgets('REQ037_AC4 avec image : rendu de case-mot', (tester) async {
+      const c = Case(
+        id: 'x',
+        ligne: 0,
+        colonne: 0,
+        type: TypeCase.retour,
+        libelle: 'Retour',
+        image: ImageArasaac(2617),
+      );
+      await _pose(tester, c);
+      expect(find.byKey(const Key('fleche-retour')), findsNothing);
+      expect(find.byKey(const Key('coin-dossier')), findsNothing);
+    });
+
+    testWidgets('REQ037_AC4 appui', (tester) async {
+      var n = 0;
+      await _pose(
+        tester,
+        _case('Retour', type: TypeCase.retour),
+        onTap: () => n++,
+      );
+      await tester.tap(find.byType(CaseWidget));
+      expect(n, 1);
+    });
+  });
 }

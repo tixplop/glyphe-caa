@@ -67,6 +67,12 @@ class Textes {
   static const String type = 'Type';
   static const String typeMot = 'Mot';
   static const String typeDossier = 'Dossier';
+  static const String typeRetour = 'Retour';
+  static const String aideRetour = 'Revient à la grille précédente.';
+  static const String aideRetourAccueil =
+      'Sur l\'accueil, cette case est sans effet.';
+  static String aideNouvelleGrille(String nom) =>
+      'Une grille « $nom » sera créée, avec une case Retour.';
   static const String grilleCible = 'Grille cible';
   static const String nouvelleGrille = 'Nouvelle grille';
   static const String nomNouvelleGrille = 'Nouvelle grille';

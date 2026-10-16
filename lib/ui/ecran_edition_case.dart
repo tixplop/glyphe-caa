@@ -107,6 +107,7 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     final existante = _existante;
     final libelle = _libelle.text.trim();
     final dossier = _type == TypeCase.dossier;
+    final retour = _type == TypeCase.retour;
     final nouvelle = dossier && _cible == _valeurNouvelleGrille
         ? nouvelleGrillePourDossier(
             libelle.isEmpty ? Textes.nomNouvelleGrille : libelle,
@@ -121,7 +122,7 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
       colonne: existante?.colonne ?? widget.colonne!,
       type: _type,
       libelle: libelle,
-      textePrononce: _texte.text.trim(),
+      textePrononce: retour ? '' : _texte.text.trim(),
       image: _image,
       categorie: _categorie,
       cibleId: dossier && nouvelle == null && _cible != _valeurNouvelleGrille
@@ -323,9 +324,18 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
     );
   }
 
+  /// Aide du champ Grille cible pour « Nouvelle grille » (AC-016-4).
+  String? get _aideCible {
+    if (_cible != _valeurNouvelleGrille) return null;
+    final nom = _libelle.text.trim();
+    return Textes.aideNouvelleGrille(
+      nom.isEmpty ? Textes.nomNouvelleGrille : nom,
+    );
+  }
+
   Widget _selecteurCible() {
     final proposees = _proposees;
-    return DropdownButton<String>(
+    final liste = DropdownButton<String>(
       key: const Key('champ-cible'),
       focusNode: _focusCible,
       isExpanded: true,
@@ -341,7 +351,23 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
       ],
       onChanged: (v) => setState(() => _cible = v),
     );
+    return InputDecorator(
+      decoration: InputDecoration(
+        helperText: _aideCible,
+        helperMaxLines: 3,
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.zero,
+      ),
+      child: liste,
+    );
   }
+
+  void _choisirType(TypeCase type) => setState(() {
+    _type = type;
+    if (type == TypeCase.retour && _libelle.text.trim().isEmpty) {
+      _libelle.text = Textes.retour;
+    }
+  });
 
   Widget _action(
     Key cle,
@@ -403,6 +429,8 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
   Widget build(BuildContext context) {
     final existante = _existante;
     final dossier = _type == TypeCase.dossier;
+    final retour = _type == TypeCase.retour;
+    final surAccueil = widget.grilleId == _donnees.accueilId;
     final cibleValide =
         existante?.cibleId != null &&
         _donnees.grillePar(existante!.cibleId!) != null;
@@ -433,9 +461,7 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
               t.ink,
               _echanger,
             ),
-          if (existante != null &&
-              existante.type == TypeCase.dossier &&
-              cibleValide)
+          if (existante != null && dossier && cibleValide)
             _action(
               const Key('bouton-ouvrir'),
               Icons.folder_open_outlined,
@@ -476,6 +502,9 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
                       key: const Key('champ-libelle'),
                       focusNode: _focusLibelle,
                       controller: _libelle,
+                      onChanged: (_) {
+                        if (_cible == _valeurNouvelleGrille) setState(() {});
+                      },
                       decoration: const InputDecoration(
                         labelText: Textes.libelle,
                       ),
@@ -484,13 +513,14 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
                 ],
               ),
               const SizedBox(height: 12),
-              TextField(
-                key: const Key('champ-texte'),
-                controller: _texte,
-                decoration: const InputDecoration(
-                  labelText: Textes.textePrononce,
+              if (!retour)
+                TextField(
+                  key: const Key('champ-texte'),
+                  controller: _texte,
+                  decoration: const InputDecoration(
+                    labelText: Textes.textePrononce,
+                  ),
                 ),
-              ),
               const SizedBox(height: 16),
               const Text(Textes.categorie),
               const SizedBox(height: 8),
@@ -502,17 +532,31 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
                   ChoiceChip(
                     key: const Key('type-mot'),
                     label: const Text(Textes.typeMot),
-                    selected: !dossier,
-                    onSelected: (_) => setState(() => _type = TypeCase.mot),
+                    selected: _type == TypeCase.mot,
+                    onSelected: (_) => _choisirType(TypeCase.mot),
                   ),
                   ChoiceChip(
                     key: const Key('type-dossier'),
                     label: const Text(Textes.typeDossier),
                     selected: dossier,
-                    onSelected: (_) => setState(() => _type = TypeCase.dossier),
+                    onSelected: (_) => _choisirType(TypeCase.dossier),
+                  ),
+                  ChoiceChip(
+                    key: const Key('type-retour'),
+                    label: const Text(Textes.typeRetour),
+                    selected: retour,
+                    onSelected: (_) => _choisirType(TypeCase.retour),
                   ),
                 ],
               ),
+              if (retour) ...[
+                const SizedBox(height: 8),
+                Text(
+                  surAccueil ? Textes.aideRetourAccueil : Textes.aideRetour,
+                  key: const Key('aide-retour'),
+                  style: GlypheTokens.caption.copyWith(color: t.inkMuted),
+                ),
+              ],
               if (dossier) ...[const SizedBox(height: 8), _selecteurCible()],
               if (_erreur != null) ...[
                 const SizedBox(height: 12),

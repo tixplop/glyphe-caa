@@ -13,6 +13,7 @@ class CaseWidget extends StatefulWidget {
     required this.caseData,
     required this.onTap,
     this.orphelin = false,
+    this.focusNode,
   });
 
   final Case caseData;
@@ -20,6 +21,9 @@ class CaseWidget extends StatefulWidget {
 
   /// Dossier dont la grille cible n'existe plus (signalé en édition).
   final bool orphelin;
+
+  /// Nœud de focus de la case (focus après navigation, AC-009-9).
+  final FocusNode? focusNode;
 
   @override
   State<CaseWidget> createState() => _CaseWidgetState();
@@ -52,7 +56,10 @@ class _CaseWidgetState extends State<CaseWidget> {
   Widget build(BuildContext context) {
     final c = widget.caseData;
     final libelle = c.libelle;
-    final nom = libelle.isEmpty ? Textes.caseSansNom : libelle;
+    final retour = c.type == TypeCase.retour;
+    final nom = libelle.isEmpty
+        ? (retour ? Textes.retour : Textes.caseSansNom)
+        : libelle;
     final base = _dossier ? Textes.dossier(nom) : nom;
     final etiquette = widget.orphelin
         ? '$base, ${Textes.grilleIntrouvable}'
@@ -86,6 +93,7 @@ class _CaseWidgetState extends State<CaseWidget> {
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
                       onTap: widget.onTap,
+                      focusNode: widget.focusNode,
                       onFocusChange: (v) => setState(() => _focus = v),
                       splashFactory: NoSplash.splashFactory,
                       splashColor: Colors.transparent,
@@ -107,7 +115,18 @@ class _CaseWidgetState extends State<CaseWidget> {
                                         child: SizedBox.square(
                                           key: const Key('picto'),
                                           dimension: d,
-                                          child: ImageCaseWidget(c.image),
+                                          child:
+                                              retour && c.image is ImageAucune
+                                              ? Icon(
+                                                  Icons.arrow_back,
+                                                  key: const Key(
+                                                    'fleche-retour',
+                                                  ),
+                                                  size: d,
+                                                  color: t.ink,
+                                                  semanticLabel: null,
+                                                )
+                                              : ImageCaseWidget(c.image),
                                         ),
                                       );
                                     },

@@ -11,6 +11,8 @@ import 'package:glyphe/ui/tokens.dart';
 import 'package:glyphe/ui/etat_appli.dart';
 import 'package:glyphe/ui/widgets/barre_edition.dart';
 import 'package:glyphe/ui/widgets/barre_phrase.dart';
+import 'package:glyphe/ui/widgets/bouton_barre.dart';
+import 'package:glyphe/ui/widgets/case_widget.dart';
 
 import '../faux/faux_stockage.dart';
 import '../faux/faux_voix.dart';
@@ -691,6 +693,267 @@ void main() {
       await tester.pumpAndSettle();
       expect(e.etat.session.grilleCourante.id, 'accueil');
       expect(e.etat.session.barre, isEmpty);
+    });
+
+    for (final g in ['besoins', 'emotions', 'manger', 'fruits', 'jouer']) {
+      testWidgets('REQ001_AC8 $g : case-retour en (0, 0)', (tester) async {
+        final h = tester.ensureSemantics();
+        final e = await exemples(tester);
+        e.etat.session.ouvrirGrille(g);
+        await tester.pumpAndSettle();
+        final c = e.etat.session.grilleCourante.cases.firstWhere(
+          (c) => c.ligne == 0 && c.colonne == 0,
+        );
+        expect(c.type, TypeCase.retour);
+        final k = find.byKey(Key('case-${c.id}'));
+        expect(
+          find.descendant(
+            of: k,
+            matching: find.byKey(const Key('fleche-retour')),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: k,
+            matching: find.byKey(const Key('coin-dossier')),
+          ),
+          findsNothing,
+        );
+        final fleche = tester.widget<Icon>(
+          find.byKey(const Key('fleche-retour')),
+        );
+        expect(fleche.icon, Icons.arrow_back);
+        expect(fleche.color, GlypheTokens.clair.ink);
+        final m = tester.widget<Material>(
+          find.descendant(of: k, matching: find.byType(Material)).first,
+        );
+        final forme = m.shape! as RoundedRectangleBorder;
+        expect(m.color, GlypheTokens.clair.catLittleBg);
+        expect(forme.side.color, GlypheTokens.clair.catLittleEdge);
+        expect(find.bySemanticsLabel('Retour'), findsOneWidget);
+        h.dispose();
+      });
+    }
+
+    testWidgets('REQ037_AC2 appui sur la case-retour : accueil, rien dit', (
+      tester,
+    ) async {
+      final e = await exemples(tester);
+      await tester.tap(find.byKey(const Key('case-accueil-0')));
+      await tester.pumpAndSettle();
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      final avant = e.etat.session.barre.length;
+      final dits = e.voix.textesPrononces.length;
+      await tester.tap(find.byKey(const Key('case-manger-retour')));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'accueil');
+      expect(e.etat.session.barre.length, avant);
+      expect(e.voix.textesPrononces.length, dits);
+    });
+
+    testWidgets('REQ037_AC2 le réglage retour à l\'accueil ne joue pas', (
+      tester,
+    ) async {
+      final d = donneesDepuisJson(
+        jsonDecode(
+          File('assets/exemples/grilles_exemple.json').readAsStringSync(),
+        ),
+      );
+      final e = await lance(
+        tester,
+        d: d.copyWith(
+          reglages: d.reglages.copyWith(retourAccueilApresMot: true),
+        ),
+      );
+      for (final cible in ['manger', 'fruits']) {
+        final s = e.etat.session;
+        s.appuyerCase(
+          s.grilleCourante.cases.firstWhere((c) => c.cibleId == cible),
+        );
+        await tester.pumpAndSettle();
+      }
+      expect(e.etat.session.grilleCourante.id, 'fruits');
+      await tester.tap(find.byKey(const Key('case-fruits-retour')));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'manger');
+    });
+
+    testWidgets('REQ037_AC3 case-retour sur l\'accueil : sans effet', (
+      tester,
+    ) async {
+      final d = donnees();
+      final acc = d.grilles.first;
+      final e = await lance(
+        tester,
+        d: d.copyWith(
+          grilles: [
+            acc.copyWith(cases: [...acc.cases]),
+            ...d.grilles.skip(1),
+          ],
+        ),
+      );
+      // Remplace « h » (3, 3) par une case-retour.
+      final g = e.etat.session.donnees.grillePar('acc')!;
+      await e.etat.modifierDonnees(
+        e.etat.session.donnees.copyWith(
+          grilles: [
+            g.copyWith(
+              cases: [
+                for (final c in g.cases)
+                  if (c.id == 'h')
+                    const Case(
+                      id: 'h',
+                      ligne: 3,
+                      colonne: 3,
+                      type: TypeCase.retour,
+                      libelle: 'Retour',
+                    )
+                  else
+                    c,
+              ],
+            ),
+            ...e.etat.session.donnees.grilles.skip(1),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('case-je')));
+      await tester.tap(find.byKey(const Key('case-h')));
+      await tester.pumpAndSettle();
+      expect(e.etat.session.grilleCourante.id, 'acc');
+      expect(e.etat.session.barre.length, 1);
+    });
+
+    group('focus après navigation (AC-009-9)', () {
+      Future<void> focaliser(WidgetTester tester, String id) async {
+        final scope = FocusScope.of(
+          tester.element(find.byKey(Key('case-$id'))),
+        );
+        scope.traversalDescendants
+            .firstWhere(
+              (n) =>
+                  n.context?.findAncestorWidgetOfExactType<CaseWidget>()?.key ==
+                  Key('case-$id'),
+            )
+            .requestFocus();
+        await tester.pump();
+      }
+
+      Key? surCase() => FocusManager.instance.primaryFocus?.context
+          ?.findAncestorWidgetOfExactType<CaseWidget>()
+          ?.key;
+
+      Key? surAccueil() => FocusManager.instance.primaryFocus?.context
+          ?.findAncestorWidgetOfExactType<BoutonBarre>()
+          ?.key;
+
+      Future<void> entree(WidgetTester tester) async {
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> naviguer(WidgetTester tester, Env e) async {
+        for (final cible in ['manger', 'fruits']) {
+          final s = e.etat.session;
+          s.appuyerCase(
+            s.grilleCourante.cases.firstWhere((c) => c.cibleId == cible),
+          );
+          await tester.pumpAndSettle();
+        }
+      }
+
+      testWidgets('Fruits -> Manger -> accueil', (tester) async {
+        final e = await exemples(tester);
+        await naviguer(tester, e);
+        expect(e.etat.session.grilleCourante.id, 'fruits');
+        await focaliser(tester, 'fruits-retour');
+        await entree(tester);
+        expect(e.etat.session.grilleCourante.id, 'manger');
+        expect(surCase(), const Key('case-manger-retour'));
+        await entree(tester);
+        expect(e.etat.session.grilleCourante.id, 'accueil');
+        expect(surCase(), const Key('case-accueil-0'));
+      });
+
+      testWidgets('dossier : focus sur la première case de la cible', (
+        tester,
+      ) async {
+        final e = await exemples(tester);
+        e.etat.session.ouvrirGrille('manger');
+        await tester.pumpAndSettle();
+        final fruits = e.etat.session.grilleCourante.cases.firstWhere(
+          (c) => c.type == TypeCase.dossier,
+        );
+        await focaliser(tester, fruits.id);
+        await entree(tester);
+        expect(e.etat.session.grilleCourante.id, 'fruits');
+        expect(surCase(), const Key('case-fruits-retour'));
+      });
+
+      testWidgets('grille sans case : focus sur Accueil', (tester) async {
+        final d = donnees();
+        final vide = Grille(id: 'vide', nom: 'Vide', lignes: 2, colonnes: 2);
+        final acc = d.grilles.first;
+        final e = await lance(
+          tester,
+          d: d.copyWith(
+            grilles: [
+              acc.copyWith(
+                cases: [
+                  for (final c in acc.cases)
+                    if (c.id == 'd-manger')
+                      dossier('d-manger', 'Manger', 1, 1, 'vide')
+                    else
+                      c,
+                ],
+              ),
+              ...d.grilles.skip(1),
+              vide,
+            ],
+          ),
+        );
+        await focaliser(tester, 'd-manger');
+        await entree(tester);
+        expect(e.etat.session.grilleCourante.id, 'vide');
+        expect(surAccueil(), const Key('bouton-accueil'));
+      });
+
+      testWidgets('Entrée sur Accueil : le focus reste sur Accueil', (
+        tester,
+      ) async {
+        final e = await exemples(tester);
+        e.etat.session.ouvrirGrille('fruits');
+        await tester.pumpAndSettle();
+        final ctx = tester.element(find.byKey(const Key('bouton-accueil')));
+        FocusScope.of(ctx).traversalDescendants
+            .firstWhere(
+              (n) =>
+                  n.context
+                      ?.findAncestorWidgetOfExactType<BoutonBarre>()
+                      ?.key ==
+                  const Key('bouton-accueil'),
+            )
+            .requestFocus();
+        await tester.pump();
+        expect(surAccueil(), const Key('bouton-accueil'));
+        await entree(tester);
+        expect(e.etat.session.grilleCourante.id, 'accueil');
+        expect(surAccueil(), const Key('bouton-accueil'));
+      });
+
+      testWidgets('sans focus sur une case : pas de déplacement', (
+        tester,
+      ) async {
+        final e = await exemples(tester);
+        await naviguer(tester, e);
+        await tester.tap(find.byKey(const Key('case-fruits-retour')));
+        await tester.pumpAndSettle();
+        // Appui tactile : le focus n'est pas sur la case -> pas forcé.
+        expect(e.etat.session.grilleCourante.id, 'manger');
+        expect(surCase(), isNull);
+      });
     });
 
     for (final taille in const [Size(360, 640), Size(640, 360)]) {

@@ -29,6 +29,7 @@ class EcranCommunication extends StatefulWidget {
 class _EcranCommunicationState extends State<EcranCommunication> {
   late final AppLifecycleListener _cycleDeVie;
   late bool _etaitVerrouille;
+  final FocusNode _focusAccueil = FocusNode(debugLabel: 'accueil');
 
   EtatAppli get etat => widget.etat;
 
@@ -51,6 +52,7 @@ class _EcranCommunicationState extends State<EcranCommunication> {
   void dispose() {
     etat.removeListener(_surChangement);
     _cycleDeVie.dispose();
+    _focusAccueil.dispose();
     super.dispose();
   }
 
@@ -175,6 +177,7 @@ class _EcranCommunicationState extends State<EcranCommunication> {
             onEffacerDernier: session.effacerDernier,
             onToutEffacer: session.toutEffacer,
             onAccueil: session.accueil,
+            focusAccueil: _focusAccueil,
             onDeverrouille: _deverrouiller,
           );
     final barres = Padding(
@@ -198,6 +201,7 @@ class _EcranCommunicationState extends State<EcranCommunication> {
               session: session,
               modeEdition: etat.modeEdition,
               onEditer: _editer,
+              focusAccueil: _focusAccueil,
             ),
           ),
         ),
@@ -206,25 +210,89 @@ class _EcranCommunicationState extends State<EcranCommunication> {
   }
 }
 
-class _GrilleWidget extends StatelessWidget {
+class _GrilleWidget extends StatefulWidget {
   const _GrilleWidget({
     required this.session,
     required this.modeEdition,
     required this.onEditer,
+    required this.focusAccueil,
   });
 
   final Session session;
   final bool modeEdition;
   final Future<void> Function(Grille, {Case? c, int? ligne, int? colonne})
   onEditer;
+  final FocusNode focusAccueil;
 
   /// Marge totale autour de chaque case : 3 propres à la case + 1 ajouté ici,
   /// soit une gouttière de 8 entre deux cases (AC-030-1).
   static const double margeCase = 4;
 
   @override
+  State<_GrilleWidget> createState() => _GrilleWidgetState();
+}
+
+class _GrilleWidgetState extends State<_GrilleWidget> {
+  final FocusNode _premiere = FocusNode(debugLabel: 'premiere-case');
+  late String _grilleId;
+
+  @override
+  void initState() {
+    super.initState();
+    _grilleId = widget.session.grilleCourante.id;
+  }
+
+  Session get session => widget.session;
+  bool get modeEdition => widget.modeEdition;
+  static const double margeCase = _GrilleWidget.margeCase;
+
+  @override
+  void dispose() {
+    _premiere.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(_GrilleWidget ancien) {
+    super.didUpdateWidget(ancien);
+    final id = session.grilleCourante.id;
+    if (id == _grilleId) return;
+    _grilleId = id;
+    // Le focus était sur une case de la grille qui disparaît : il suit la
+    // navigation (AC-009-9). Ailleurs (ex. Accueil), il ne bouge pas.
+    final ctx = FocusManager.instance.primaryFocus?.context;
+    final surCase =
+        ctx != null &&
+        ctx.findAncestorStateOfType<_GrilleWidgetState>() == this &&
+        ctx.findAncestorWidgetOfExactType<CaseWidget>() != null;
+    if (!surCase || modeEdition) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_premiereCase(session.grilleCourante) != null) {
+        _premiere.requestFocus();
+      } else {
+        widget.focusAccueil.requestFocus();
+      }
+    });
+  }
+
+  /// Première case visible dans l'ordre de lecture.
+  Case? _premiereCase(Grille g) {
+    Case? p;
+    for (final c in g.casesVisibles) {
+      if (p == null ||
+          c.ligne < p.ligne ||
+          (c.ligne == p.ligne && c.colonne < p.colonne)) {
+        p = c;
+      }
+    }
+    return p;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final grille = session.grilleCourante;
+    final premiere = _premiereCase(grille);
     final parPosition = {
       for (final c in grille.casesVisibles) (c.ligne, c.colonne): c,
     };
@@ -245,6 +313,7 @@ class _GrilleWidget extends StatelessWidget {
                         l,
                         col,
                         parPosition[(l, col)],
+                        premiere,
                       ),
                     ),
                   ),
@@ -261,6 +330,7 @@ class _GrilleWidget extends StatelessWidget {
     int l,
     int col,
     Case? c,
+    Case? premiere,
   ) {
     if (c == null) {
       if (!modeEdition) return const SizedBox.shrink();
@@ -271,11 +341,11 @@ class _GrilleWidget extends StatelessWidget {
           button: true,
           label: Textes.ajouterCase,
           excludeSemantics: true,
-          onTap: () => onEditer(grille, ligne: l, colonne: col),
+          onTap: () => widget.onEditer(grille, ligne: l, colonne: col),
           child: InkWell(
             key: Key('vide-$l-$col'),
             borderRadius: BorderRadius.circular(GlypheTokens.rayonMd),
-            onTap: () => onEditer(grille, ligne: l, colonne: col),
+            onTap: () => widget.onEditer(grille, ligne: l, colonne: col),
             child: DecoratedBox(
               decoration: BoxDecoration(
                 border: Border.all(color: t.border),
@@ -295,8 +365,9 @@ class _GrilleWidget extends StatelessWidget {
       key: Key('case-${c.id}'),
       caseData: c,
       orphelin: orphelin,
+      focusNode: identical(c, premiere) ? _premiere : null,
       onTap: () =>
-          modeEdition ? onEditer(grille, c: c) : session.appuyerCase(c),
+          modeEdition ? widget.onEditer(grille, c: c) : session.appuyerCase(c),
     );
   }
 }
