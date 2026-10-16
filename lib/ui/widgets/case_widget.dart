@@ -79,7 +79,18 @@ class _CaseWidgetState extends State<CaseWidget> {
             final cote =
                 0.6 *
                 (box.maxWidth < box.maxHeight ? box.maxWidth : box.maxHeight);
-            final largeurLibelle = box.maxWidth - 2 * _marge;
+            // Case basse (grille dense) : sans picto possible, on retire la
+            // marge interne et l'écart pour que le libellé tienne.
+            final basse =
+                libelle.isNotEmpty &&
+                box.maxHeight <
+                    (GlypheTokens.cellLabel.height! *
+                                GlypheTokens.cellLabel.fontSize!)
+                            .ceil() +
+                        GlypheTokens.espace1 +
+                        2 * _marge;
+            final margeInterne = basse ? 0.0 : _marge;
+            final largeurLibelle = box.maxWidth - 2 * margeInterne;
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -103,7 +114,7 @@ class _CaseWidgetState extends State<CaseWidget> {
                       child: Stack(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.all(_marge),
+                            padding: EdgeInsets.all(margeInterne),
                             child: Column(
                               children: [
                                 Expanded(
@@ -133,7 +144,9 @@ class _CaseWidgetState extends State<CaseWidget> {
                                   ),
                                 ),
                                 if (libelle.isNotEmpty) ...[
-                                  const SizedBox(height: GlypheTokens.espace1),
+                                  SizedBox(
+                                    height: basse ? 0 : GlypheTokens.espace1,
+                                  ),
                                   Text(
                                     libelle,
                                     maxLines: 1,

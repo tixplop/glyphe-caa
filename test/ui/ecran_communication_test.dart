@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyphe/domaine/modeles.dart';
 import 'package:glyphe/domaine/serialisation.dart';
 import 'package:glyphe/ui/app.dart';
 import 'package:glyphe/ui/tokens.dart';
+import 'package:glyphe/ui/ecran_edition_case.dart';
 import 'package:glyphe/ui/etat_appli.dart';
 import 'package:glyphe/ui/widgets/barre_edition.dart';
 import 'package:glyphe/ui/widgets/barre_phrase.dart';
@@ -17,6 +19,7 @@ import 'package:glyphe/ui/widgets/case_widget.dart';
 import '../faux/faux_stockage.dart';
 import '../faux/faux_voix.dart';
 import '../faux/fausse_horloge.dart';
+import '../faux/police.dart';
 
 Case mot(
   String id,
@@ -100,11 +103,14 @@ class Env {
 
 Future<Env> lance(
   WidgetTester tester, {
-  Size taille = const Size(360, 640),
+  Size taille = const Size(640, 360),
   Donnees? d,
+  FakeViewPadding securite = FakeViewPadding.zero,
 }) async {
   tester.view.physicalSize = taille;
   tester.view.devicePixelRatio = 1.0;
+  tester.view.padding = securite;
+  tester.view.viewPadding = securite;
   addTearDown(tester.view.reset);
   final stockage = FauxStockage(d ?? donnees());
   final voix = FauxVoix();
@@ -129,6 +135,8 @@ Finder grille(String libelle) => find.descendant(
 );
 
 void main() {
+  setUpAll(chargerPolice);
+
   group('EtatAppli', () {
     test('REQ025_AC3 démarre à l\'accueil, barre vide, verrouillé', () async {
       final etat = EtatAppli(
@@ -596,9 +604,8 @@ void main() {
     });
 
     for (final taille in const [
-      Size(360, 640),
       Size(640, 360),
-      Size(800, 1280),
+      Size(915, 412),
       Size(1280, 800),
     ]) {
       testWidgets('REQ028_AC1/AC2/AC4 guidelines d\'accessibilité $taille', (
@@ -630,9 +637,8 @@ void main() {
     });
 
     for (final taille in const [
-      Size(360, 640),
       Size(640, 360),
-      Size(800, 1280),
+      Size(915, 412),
       Size(1280, 800),
     ]) {
       testWidgets('REQ028_AC3 grille 4x4 sans débordement en $taille', (
@@ -669,7 +675,7 @@ void main() {
   group('Disposition (REQ-030, REQ-034, REQ-009)', () {
     Future<Env> exemples(WidgetTester tester, {Size? taille}) => lance(
       tester,
-      taille: taille ?? const Size(360, 640),
+      taille: taille ?? const Size(640, 360),
       d: donneesDepuisJson(
         jsonDecode(
           File('assets/exemples/grilles_exemple.json').readAsStringSync(),
@@ -956,7 +962,7 @@ void main() {
       });
     });
 
-    for (final taille in const [Size(360, 640), Size(640, 360)]) {
+    for (final taille in const [Size(640, 360), Size(915, 412)]) {
       testWidgets('REQ030_AC5 case-accueil-0 même rectangle dans les deux '
           'modes $taille', (tester) async {
         final e = await exemples(tester, taille: taille);
@@ -979,7 +985,7 @@ void main() {
       expect(find.byKey(const Key('espace-cadenas')), findsNothing);
     });
 
-    testWidgets('REQ030_AC1 AC12 portrait : barre 72, grille dessous', (
+    testWidgets('REQ030_AC1 AC12 paysage : barre 72, grille 4x4 dessous', (
       tester,
     ) async {
       await lance(tester);
@@ -988,10 +994,10 @@ void main() {
       expect(barre.top, 8);
       expect(barre.height, 72);
       expect(barre.left, 12);
-      expect(barre.right, 360 - 12);
+      expect(barre.right, 640 - 12);
       // La zone de grille inclut 4 de marge propre à chaque case.
       expect(zone.top + 4 - barre.bottom, 8);
-      expect(tester.getSize(find.byKey(const Key('zone-barre'))).width, 112);
+      expect(tester.getSize(find.byKey(const Key('zone-barre'))).width, 392);
       // Rectangle visible d'une case : sans sa marge propre de 3.
       Rect visible(String id) =>
           tester.getRect(find.byKey(Key('case-$id'))).deflate(3);
@@ -999,8 +1005,10 @@ void main() {
       final b = visible('veux');
       final c = visible('wc');
       expect(a.left, 12);
-      expect(b.left - a.right, 8);
-      expect(c.top - a.bottom, 8);
+      expect(a.size.width, closeTo(148, 0.5));
+      expect(a.size.height, closeTo(59, 0.5));
+      expect(b.left - a.right, closeTo(8, 0.01));
+      expect(c.top - a.bottom, closeTo(8, 0.01));
       expect(
         tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
         isNull,
@@ -1032,7 +1040,7 @@ void main() {
         final cm = tester.getRect(find.byKey(const Key('case-m')));
         expect(tester.takeException(), isNull);
         expect(cm.width, closeTo((zone.width / n) - 2, 0.01));
-        expect(zone.bottom, closeTo(640 - 12 + 4, 0.01));
+        expect(zone.bottom, closeTo(360 - 12 + 4, 0.01));
         expect(find.byKey(const Key('vide-0-1')), findsNothing);
       }
     });
@@ -1096,11 +1104,8 @@ void main() {
     }
 
     for (final taille in const [
-      Size(360, 640),
-      Size(412, 915),
       Size(640, 360),
       Size(915, 412),
-      Size(800, 1280),
       Size(1280, 800),
     ]) {
       testWidgets('REQ030_AC5 mêmes rectangles de cases en communication et '
@@ -1126,9 +1131,6 @@ void main() {
         final r = tester.getRect(find.byKey(const Key('case-h')));
         expect(r.width, greaterThanOrEqualTo(48));
         expect(r.height, greaterThanOrEqualTo(48));
-        if (taille == const Size(412, 915)) {
-          expect(r.width, greaterThanOrEqualTo(80));
-        }
       });
     }
 
@@ -1147,7 +1149,7 @@ void main() {
     ) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      await lance(tester, taille: const Size(412, 915));
+      await lance(tester, taille: const Size(915, 412));
       final texte = tester.widget<Text>(grille('je'));
       expect(texte.style!.fontSize, 17);
       expect(
@@ -1155,5 +1157,335 @@ void main() {
         TextScaler.noScaling,
       );
     });
+  });
+
+  group('Paysage 4x3 (REQ-030, REQ-009, REQ-001, REQ-016, REQ-038)', () {
+    Future<Env> exemples(
+      WidgetTester tester, {
+      Size taille = const Size(640, 360),
+      FakeViewPadding securite = FakeViewPadding.zero,
+    }) => lance(
+      tester,
+      taille: taille,
+      securite: securite,
+      d: donneesDepuisJson(
+        jsonDecode(
+          File('assets/exemples/grilles_exemple.json').readAsStringSync(),
+        ),
+      ),
+    );
+
+    Rect vis(WidgetTester tester, String id) =>
+        tester.getRect(find.byKey(Key('case-$id'))).deflate(3);
+
+    void verifie(Rect r, double x, double y, double l, double h, String m) {
+      expect(r.left, closeTo(x, 0.5), reason: '$m left');
+      expect(r.top, closeTo(y, 0.5), reason: '$m top');
+      expect(r.width, closeTo(l, 0.5), reason: '$m width');
+      expect(r.height, closeTo(h, 0.5), reason: '$m height');
+    }
+
+    testWidgets('REQ030_AC12 AC13 cotes 640x360, grille Manger', (
+      tester,
+    ) async {
+      final e = await exemples(tester);
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      verifie(
+        tester.getRect(find.byType(BarrePhrase)),
+        12,
+        8,
+        616,
+        72,
+        'barre',
+      );
+      const xs = [12.0, 168.0, 324.0, 480.0];
+      const ys = [88.0, 177.3, 266.7];
+      final trouves = find.descendant(
+        of: find.byKey(const Key('grille')),
+        matching: find.byType(CaseWidget),
+      );
+      expect(trouves, findsNWidgets(7));
+      final rects = [
+        for (final w in trouves.evaluate())
+          tester.getRect(find.byElementPredicate((x) => x == w)).deflate(3),
+      ];
+      for (final r in rects) {
+        expect(r.width, closeTo(148, 0.5));
+        expect(r.height, closeTo(81.3, 0.5));
+        expect(xs.any((x) => (x - r.left).abs() < 0.5), isTrue, reason: '$r');
+        expect(ys.any((y) => (y - r.top).abs() < 0.5), isTrue, reason: '$r');
+      }
+      final bas = rects.map((r) => r.bottom).reduce((a, b) => a > b ? a : b);
+      expect(bas, lessThanOrEqualTo(348.5));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('REQ030_AC13 cotes 640x360 accueil, colonnes et bas', (
+      tester,
+    ) async {
+      await exemples(tester);
+      const xs = [12.0, 168.0, 324.0, 480.0];
+      for (var i = 0; i < 4; i++) {
+        verifie(vis(tester, 'accueil-$i'), xs[i], 88, 148, 81.3, 'col $i');
+      }
+      final r = vis(tester, 'accueil-8');
+      verifie(r, 12, 266.7, 148, 81.3, 'accueil-8');
+      expect(r.bottom, closeTo(348, 0.5));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'REQ001_AC10 emplacement (2, 3) de l\'accueil : fond surface-100',
+      (tester) async {
+        for (final t in const [Size(640, 360), Size(915, 412)]) {
+          await exemples(tester, taille: t);
+          final grille = tester.getRect(find.byKey(const Key('grille')));
+          final w = (grille.width) / 4;
+          final h = (grille.height) / 3;
+          final centre = Offset(grille.left + 3.5 * w, grille.top + 2.5 * h);
+          expect(find.byKey(const Key('vide-2-3')), findsNothing);
+          for (final c in tester.widgetList<CaseWidget>(
+            find.byType(CaseWidget),
+          )) {
+            final rc = tester.getRect(find.byWidget(c));
+            expect(rc.contains(centre), isFalse, reason: '$t');
+          }
+          final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
+          final theme = Theme.of(tester.element(find.byType(Scaffold).first));
+          expect(
+            scaffold.backgroundColor ?? theme.scaffoldBackgroundColor,
+            GlypheTokens.of(tester.element(find.byType(Scaffold).first))
+                .surface100,
+          );
+          expect(find.byIcon(Icons.add), findsNothing);
+        }
+      },
+    );
+
+    testWidgets('REQ030_AC13 cotes 915x412 et 1280x800', (tester) async {
+      final e = await exemples(tester, taille: const Size(915, 412));
+      verifie(
+        tester.getRect(find.byType(BarrePhrase)),
+        12,
+        8,
+        891,
+        72,
+        'barre',
+      );
+      verifie(vis(tester, 'accueil-0'), 12, 88, 216.75, 98.7, 'case 915');
+      verifie(vis(tester, 'accueil-8'), 12, 301.3, 216.75, 98.7, 'bas 915');
+      expect(vis(tester, 'accueil-8').bottom, closeTo(400, 0.5));
+      expect(e.etat.session.grilleCourante.id, 'accueil');
+      await exemples(tester, taille: const Size(1280, 800));
+      verifie(vis(tester, 'accueil-0'), 12, 88, 308, 228, 'case 1280');
+    });
+
+    testWidgets('REQ030_AC13 grille 4x4 : cases de 148 x 59 en 640x360', (
+      tester,
+    ) async {
+      await lance(tester);
+      verifie(vis(tester, 'je'), 12, 88, 148, 59, 'je');
+      final bas = tester.getRect(find.byKey(const Key('grille'))).bottom - 4;
+      expect(bas, closeTo(348, 0.5));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('REQ009_AC7 AC10 Accueil (16, 20, 48x48), retour (12, 88)', (
+      tester,
+    ) async {
+      final e = await exemples(tester);
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      final acc = tester.getRect(find.byKey(const Key('bouton-accueil')));
+      verifie(acc, 16, 20, 48, 48, 'accueil');
+      final retour = vis(tester, 'manger-retour');
+      verifie(retour, 12, 88, 148, 81.3, 'retour');
+      e.etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      expect(tester.getRect(find.byKey(const Key('bouton-accueil'))), acc);
+      expect(vis(tester, 'manger-retour'), retour);
+    });
+
+    testWidgets('REQ016_AC6 grille Animaux 4x3 : 12 emplacements', (
+      tester,
+    ) async {
+      final d = Donnees(
+        accueilId: 'acc',
+        grilles: [
+          Grille(
+            id: 'acc',
+            nom: 'Accueil',
+            lignes: 3,
+            colonnes: 4,
+            cases: [dossier('d', 'Animaux', 0, 0, 'ani')],
+          ),
+          Grille(
+            id: 'ani',
+            nom: 'Animaux',
+            lignes: 3,
+            colonnes: 4,
+            cases: [
+              Case(
+                id: 'ani-retour',
+                ligne: 0,
+                colonne: 0,
+                type: TypeCase.retour,
+                libelle: 'Retour',
+                cibleId: 'acc',
+              ),
+            ],
+          ),
+        ],
+      );
+      final h = tester.ensureSemantics();
+      final e = await lance(tester, d: d);
+      e.etat.session.ouvrirGrille('ani');
+      e.etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      final vides = find.byWidgetPredicate(
+        (w) =>
+            w.key is ValueKey<String> &&
+            (w.key! as ValueKey<String>).value.startsWith('vide-'),
+      );
+      expect(vides, findsNWidgets(11));
+      for (final w in vides.evaluate()) {
+        final r = tester.getRect(find.byElementPredicate((x) => x == w));
+        expect(r.size.width, closeTo(148, 0.5));
+        expect(r.size.height, closeTo(81.3, 0.5));
+      }
+      expect(find.bySemanticsLabel('Ajouter une case'), findsNWidgets(12));
+      verifie(vis(tester, 'ani-retour'), 12, 88, 148, 81.3, 'retour');
+      await tester.tap(find.byKey(const Key('ajouter-case')));
+      await tester.pumpAndSettle();
+      expect(find.text('Nouvelle case'), findsWidgets);
+      final ecran = tester.widget<EcranEditionCase>(
+        find.byType(EcranEditionCase),
+      );
+      expect(ecran.grilleId, 'ani');
+      expect(ecran.ligne, 0);
+      expect(ecran.colonne, 1);
+      h.dispose();
+    });
+
+    for (final g in [
+      'accueil',
+      'besoins',
+      'emotions',
+      'manger',
+      'fruits',
+      'jouer',
+    ]) {
+      testWidgets(
+        'REQ001_AC10 $g : libellés en 17 sur une ligne, picto >= 44',
+        (tester) async {
+          final e = await exemples(tester);
+          e.etat.session.ouvrirGrille(g);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          final cases = find.descendant(
+            of: find.byKey(const Key('grille')),
+            matching: find.byType(CaseWidget),
+          );
+          expect(cases, findsWidgets);
+          for (final c in cases.evaluate()) {
+            final cf = find.byElementPredicate((x) => x == c);
+            final picto = tester.getSize(
+              find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
+            );
+            expect(picto.width, greaterThanOrEqualTo(44), reason: '$g $picto');
+            expect(picto.height, greaterThanOrEqualTo(44), reason: '$g $picto');
+            final textes = find.descendant(of: cf, matching: find.byType(Text));
+            for (final t in textes.evaluate()) {
+              final w = t.widget as Text;
+              expect(w.style!.fontSize, 17, reason: '${w.data}');
+              final rp = t.renderObject! as RenderParagraph;
+              expect(rp.didExceedMaxLines, isFalse, reason: '${w.data}');
+              expect(rp.size.height, lessThanOrEqualTo(20.5), reason: w.data);
+              expect(w.data!.contains('…'), isFalse);
+            }
+          }
+          if (g == 'accueil') {
+            expect(find.byKey(const Key('vide-2-3')), findsNothing);
+            expect(find.byIcon(Icons.add), findsNothing);
+            expect(find.byKey(const Key('case-accueil-11')), findsNothing);
+          }
+        },
+      );
+    }
+
+    testWidgets('REQ001_AC10 accueil vide en (2, 3) en mode édition', (
+      tester,
+    ) async {
+      final e = await exemples(tester);
+      e.etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('vide-2-3')), findsOneWidget);
+    });
+
+    for (final edition in [false, true]) {
+      testWidgets('REQ038_AC6 marge de sécurité gauche 44 (édition $edition)', (
+        tester,
+      ) async {
+        final e = await exemples(
+          tester,
+          securite: const FakeViewPadding(left: 44),
+        );
+        if (edition) {
+          e.etat.ouvrirEdition();
+          await tester.pumpAndSettle();
+        }
+        final barre = tester.getRect(
+          find.byType(edition ? BarreEdition : BarrePhrase),
+        );
+        expect(barre.left, closeTo(56, 0.5));
+        expect(barre.right, closeTo(584, 0.5));
+        expect(vis(tester, 'accueil-0').left, closeTo(56, 0.5));
+        expect(vis(tester, 'accueil-3').right, closeTo(584, 0.5));
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('REQ038_AC6 marge à droite = marge à gauche (édition '
+          '$edition)', (tester) async {
+        Future<List<Rect>> rects(FakeViewPadding p) async {
+          final e = await exemples(tester, securite: p);
+          if (edition) {
+            e.etat.ouvrirEdition();
+            await tester.pumpAndSettle();
+          }
+          final cles = edition
+              ? [
+                  'bouton-accueil',
+                  'ajouter-case',
+                  'bouton-plus',
+                  'bouton-terminer',
+                ]
+              : [
+                  'bouton-accueil',
+                  'bouton-corbeille',
+                  'bouton-effacer',
+                  'cadenas',
+                ];
+          return [
+            for (final k in cles) tester.getRect(find.byKey(Key(k))),
+            for (var i = 0; i < 11; i++)
+              tester.getRect(find.byKey(Key('case-accueil-$i'))),
+          ];
+        }
+
+        final gauche = await rects(const FakeViewPadding(left: 44));
+        final droite = await rects(const FakeViewPadding(right: 44));
+        expect(droite.length, gauche.length);
+        for (var i = 0; i < gauche.length; i++) {
+          expect(droite[i].left, closeTo(gauche[i].left, 0.5), reason: '$i');
+          expect(droite[i].top, closeTo(gauche[i].top, 0.5), reason: '$i');
+          expect(droite[i].width, closeTo(gauche[i].width, 0.5), reason: '$i');
+          expect(droite[i].height, closeTo(gauche[i].height, 0.5));
+          // Aucune zone tactile dans les 44 de l'encoche (à droite).
+          expect(droite[i].right, lessThanOrEqualTo(640 - 44 + 0.5));
+          expect(droite[i].left, greaterThanOrEqualTo(44 - 0.5));
+        }
+      });
+    }
   });
 }

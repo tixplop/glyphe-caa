@@ -64,7 +64,7 @@ Donnees donnees() => Donnees(
 );
 
 Future<EtatAppli> lance(WidgetTester tester, {Size? taille}) async {
-  tester.view.physicalSize = taille ?? const Size(360, 640);
+  tester.view.physicalSize = taille ?? const Size(640, 360);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
   final etat = EtatAppli(
@@ -125,7 +125,7 @@ Future<List<String?>> parcours(
 void main() {
   final t = GlypheTokens.clair;
 
-  testWidgets('REQ030_AC11 rectangles de la barre d\'édition (360×640)', (
+  testWidgets('REQ030_AC11 rectangles de la barre d\'édition (640×360)', (
     tester,
   ) async {
     final etat = await lance(tester);
@@ -152,7 +152,7 @@ void main() {
     final titre = tester.getRect(find.byKey(const Key('titre-edition')));
     expect(titre.left - accueil.right, 8);
     expect(titre.right + 8, ajouter.left);
-    expect(titre.width, 104);
+    expect(titre.width, 384);
   });
 
   testWidgets('REQ009_AC7 Accueil : même rectangle en 640×360', (tester) async {
@@ -426,7 +426,7 @@ void main() {
     expect(ink.highlightColor, t.ink.withValues(alpha: 0.12));
   });
 
-  for (final taille in const [Size(360, 640), Size(640, 360)]) {
+  for (final taille in const [Size(640, 360), Size(915, 412)]) {
     testWidgets('REQ030_AC10 ordre de focus en édition $taille', (
       tester,
     ) async {
@@ -496,7 +496,7 @@ void main() {
     });
   }
 
-  for (final taille in const [Size(360, 640), Size(640, 360)]) {
+  for (final taille in const [Size(640, 360), Size(915, 412)]) {
     testWidgets('REQ030_AC10 ordre de focus en communication $taille', (
       tester,
     ) async {

@@ -1,7 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyphe/domaine/modeles.dart';
@@ -9,6 +9,8 @@ import 'package:glyphe/domaine/session.dart';
 import 'package:glyphe/ui/theme.dart';
 import 'package:glyphe/ui/tokens.dart';
 import 'package:glyphe/ui/widgets/barre_phrase.dart';
+
+import '../faux/police.dart';
 
 ElementBarre _el(
   String lib, {
@@ -79,6 +81,8 @@ double _opacite(WidgetTester tester, String cle) => tester
 const _boutons = ['bouton-accueil', 'bouton-corbeille', 'bouton-effacer'];
 
 void main() {
+  setUpAll(chargerPolice);
+
   testWidgets('REQ034_AC1 barre de 72 de haut, surface-200', (tester) async {
     await _pose(tester, [_el('je')]);
     expect(tester.getSize(find.byType(BarrePhrase)).height, 72);
@@ -136,14 +140,14 @@ void main() {
   testWidgets('REQ034_AC2 AC9 géométrie 4|48|4|zone|4|48|12|48|4|48|4', (
     tester,
   ) async {
-    await _pose(tester, [_el('je')], taille: const Size(360, 640));
+    await _pose(tester, [_el('je')]);
     final barre = tester.getRect(find.byType(BarrePhrase));
     final acc = tester.getRect(find.byKey(const Key('bouton-accueil')));
     final zone = tester.getRect(find.byKey(const Key('zone-barre')));
     final cor = tester.getRect(find.byKey(const Key('bouton-corbeille')));
     final eff = tester.getRect(find.byKey(const Key('bouton-effacer')));
     final cad = tester.getRect(find.byKey(const Key('cadenas')));
-    expect(barre.width, 336);
+    expect(barre.width, 616);
     for (final r in [acc, cor, eff, cad]) {
       expect(r.size, const Size(48, 48));
       expect(r.center.dy, barre.center.dy);
@@ -154,17 +158,25 @@ void main() {
     expect(eff.left - cor.right, 12);
     expect(cad.left - eff.right, 4);
     expect(barre.right - cad.right, 4);
-    expect(zone.size, const Size(112, 56));
+    expect(zone.size, const Size(392, 56));
     expect(zone.center.dy, barre.center.dy);
   });
 
-  testWidgets('REQ034_AC6 zone de 164 en 412x915, 392 en 640x360', (
+  testWidgets('REQ034_AC6 AC9 zone de mots : 392, 667, 1032 sur 56', (
     tester,
   ) async {
-    await _pose(tester, [_el('je')], taille: const Size(412, 915));
-    expect(tester.getSize(find.byKey(const Key('zone-barre'))).width, 164);
-    await _pose(tester, [_el('je')], taille: const Size(640, 360));
-    expect(tester.getSize(find.byKey(const Key('zone-barre'))).width, 392);
+    for (final (taille, largeur) in const [
+      (Size(640, 360), 392.0),
+      (Size(915, 412), 667.0),
+      (Size(1280, 800), 1032.0),
+    ]) {
+      await _pose(tester, [_el('je')], taille: taille);
+      expect(
+        tester.getSize(find.byKey(const Key('zone-barre'))),
+        Size(largeur, 56),
+        reason: '$taille',
+      );
+    }
   });
 
   testWidgets('REQ036_AC11 rendu des boutons à contour et du cadenas', (
@@ -309,10 +321,10 @@ void main() {
     h.dispose();
   });
 
-  testWidgets('REQ034_AC11 aide en 360 : 2 lignes au plus, sans débordement', (
+  testWidgets('REQ034_AC11 AC12 aide sur une ligne, sans « … »', (
     tester,
   ) async {
-    await _pose(tester, [], taille: const Size(360, 640));
+    await _pose(tester, []);
     final texte = tester.widget<Text>(find.text('Ta phrase apparaît ici'));
     expect(texte.maxLines, 2);
     expect(texte.overflow, TextOverflow.ellipsis);
@@ -320,17 +332,55 @@ void main() {
     final zone = tester.getRect(find.byKey(const Key('zone-barre')));
     final r = tester.getRect(find.text('Ta phrase apparaît ici'));
     expect(zone.contains(r.topLeft) && zone.contains(r.bottomRight), isTrue);
+    // Une seule ligne : hauteur d'une ligne de `body`.
+    final rendu = tester.renderObject<RenderParagraph>(
+      find.text('Ta phrase apparaît ici'),
+    );
+    expect(rendu.didExceedMaxLines, isFalse);
+    expect(rendu.size.height, lessThan(texte.style!.fontSize! * 1.8));
+  });
+
+  testWidgets('REQ034_AC12 [je, veux, manger] sans défilement', (tester) async {
+    await _pose(tester, [_el('je'), _el('veux'), _el('manger')]);
+    final zone = tester.getRect(find.byKey(const Key('zone-barre')));
+    final defil = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(defil.position.pixels, 0);
+    expect(defil.position.maxScrollExtent, 0);
+    for (var i = 0; i < 3; i++) {
+      final puce = tester.getRect(find.byKey(Key('element-barre-$i')));
+      expect(zone.contains(puce.topLeft), isTrue);
+      expect(zone.contains(puce.bottomRight), isTrue);
+    }
+  });
+
+  testWidgets('REQ034_AC12 6 mots : « encore » entièrement visible', (
+    tester,
+  ) async {
+    final mots = [
+      _el('je'),
+      _el('veux'),
+      _el('manger'),
+      _el('une'),
+      _el('pomme'),
+    ];
+    await _pose(tester, mots);
+    // Le mot est ajouté à une phrase déjà affichée : la zone défile.
+    await _pose(tester, [...mots, _el('encore')]);
+    await tester.pumpAndSettle();
+    final zone = tester.getRect(find.byKey(const Key('zone-barre')));
+    final puce = tester.getRect(find.byKey(const Key('element-barre-5')));
+    expect(
+      tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels,
+      greaterThan(0),
+    );
+    expect(puce.left, greaterThanOrEqualTo(zone.left));
+    expect(zone.right - puce.right, inInclusiveRange(0, 9));
   });
 
   testWidgets('REQ034_AC11 la première puce commence à 9 de la zone', (
     tester,
   ) async {
-    await _pose(tester, [
-      _el('je'),
-      _el('veux'),
-      _el('manger'),
-      _el('aussi'),
-    ], taille: const Size(360, 640));
+    await _pose(tester, [_el('je'), _el('veux'), _el('manger'), _el('aussi')]);
     final zone = tester.getRect(find.byKey(const Key('zone-barre')));
     final scroll = tester.getRect(find.byType(SingleChildScrollView));
     expect(scroll.left - zone.left, 9);

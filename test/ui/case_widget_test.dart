@@ -100,6 +100,24 @@ void main() {
     expect(_texte(tester, 'mange').maxLines, 1);
   });
 
+  testWidgets('REQ001_AC10 case large 148 x 81,3 : picto >= 44, libellé 17', (
+    tester,
+  ) async {
+    await _pose(tester, _case('mange'), taille: const Size(148 + 6, 81.3 + 6));
+    expect(tester.takeException(), isNull);
+    final picto = tester.getRect(find.byKey(const Key('picto')));
+    expect(picto.width, greaterThanOrEqualTo(44));
+    expect(picto.height, greaterThanOrEqualTo(44));
+    expect(_texte(tester, 'mange').style!.fontSize, 17);
+    expect(_texte(tester, 'mange').maxLines, 1);
+    final caseR = tester.getRect(find.byType(CaseWidget));
+    expect(caseR.contains(picto.topLeft), isTrue);
+    expect(
+      caseR.contains(tester.getRect(find.text('mange')).bottomRight),
+      isTrue,
+    );
+  });
+
   testWidgets('REQ033_AC2 libellé trop long : 15 puis ellipsis', (
     tester,
   ) async {

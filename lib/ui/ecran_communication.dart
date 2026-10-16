@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../domaine/modeles.dart';
@@ -139,11 +141,22 @@ class _EcranCommunicationState extends State<EcranCommunication> {
             data: MediaQuery.of(context)
                 .copyWith(textScaler: TextScaler.noScaling),
             child: Scaffold(
-              body: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: GlypheTokens.espace2),
-                  child: LayoutBuilder(builder: _disposition),
-                ),
+              body: Builder(
+                builder: (context) {
+                  // Marges de sécurité symétriques : max(gauche, droite)
+                  // des deux côtés, haut et bas tels quels (AC-038-6).
+                  final sur = MediaQuery.paddingOf(context);
+                  final cote = math.max(sur.left, sur.right);
+                  return Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      cote,
+                      sur.top + GlypheTokens.espace2,
+                      cote,
+                      sur.bottom,
+                    ),
+                    child: LayoutBuilder(builder: _disposition),
+                  );
+                },
               ),
             ),
           ),
