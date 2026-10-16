@@ -60,7 +60,7 @@ void main() {
     final ecrit = jsonDecode(
       File('${stockage.dossier.path}/glyphe.json').readAsStringSync(),
     ) as Map<String, Object?>;
-    expect(ecrit['versionFormat'], 2);
+    expect(ecrit['versionFormat'], 3);
     final c0 =
         (((ecrit['grilles']! as List).single as Map)['cases'] as List)[0]
             as Map;

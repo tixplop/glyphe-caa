@@ -43,12 +43,29 @@ class ErreurEdition implements Exception {
   String toString() => 'ErreurEdition($code)';
 }
 
-/// Grille vide 4×4 portant le nom de la case-dossier (AC-016-2).
-Grille nouvelleGrillePourDossier(String nom, String id) => Grille(
+/// Grille 4×4 portant le nom de la case-dossier, dont la seule case est une
+/// case-retour en (0, 0) (AC-016-2, AC-037-5). [libelleRetour] est fourni par
+/// l'UI (le domaine ne dépend pas de `Textes`).
+Grille nouvelleGrillePourDossier(
+  String nom,
+  String id,
+  String idRetour,
+  String libelleRetour,
+) => Grille(
   id: id,
   nom: nom.trim(),
   lignes: tailleNouvelleGrille,
   colonnes: tailleNouvelleGrille,
+  cases: [
+    Case(
+      id: idRetour,
+      ligne: 0,
+      colonne: 0,
+      type: TypeCase.retour,
+      libelle: libelleRetour,
+      categorie: Categorie.petitMot,
+    ),
+  ],
 );
 
 /// Grilles proposables comme cible : toutes sauf la courante (AC-016-1).
@@ -69,7 +86,11 @@ Case _valider(Case c, Donnees d, String grilleId, Grille? nouvelle) {
   if (c.libelle.trim().isEmpty && c.image is ImageAucune) {
     throw const ErreurEdition(CodeErreurEdition.contenuVide);
   }
-  if (c.type == TypeCase.mot) return c.copyWith(cibleId: () => null);
+  if (c.type != TypeCase.dossier) {
+    return c.type == TypeCase.retour
+        ? c.copyWith(cibleId: () => null, textePrononce: '')
+        : c.copyWith(cibleId: () => null);
+  }
   if (nouvelle != null) return c.copyWith(cibleId: () => nouvelle.id);
   final cible = c.cibleId;
   if (cible == null || cible == grilleId || d.grillePar(cible) == null) {

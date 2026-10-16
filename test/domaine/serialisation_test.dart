@@ -51,7 +51,96 @@ Donnees exemple() => Donnees(
 Map<String, Object?> json() =>
     jsonDecode(jsonEncode(donneesVersJson(exemple()))) as Map<String, Object?>;
 
+Map<String, Object?> jsonAvecRetour({int version = 3}) {
+  final j = json()..['versionFormat'] = version;
+  final cases = ((j['grilles']! as List).last as Map)['cases'] as List;
+  cases.add({
+    'id': 'r1',
+    'ligne': 0,
+    'colonne': 0,
+    'type': 'retour',
+    'libelle': 'Retour',
+    'textePrononce': '',
+    'image': 'aucune',
+    'categorie': 'petitMot',
+  });
+  cases.add({
+    'id': 'r2',
+    'ligne': 0,
+    'colonne': 1,
+    'type': 'retour',
+    'libelle': '',
+    'textePrononce': '',
+    'image': 'arasaac:7',
+    'categorie': 'petitMot',
+  });
+  return j;
+}
+
 void main() {
+  test('REQ037_AC7 aller-retour avec case-retour (avec et sans image)', () {
+    final j = jsonAvecRetour();
+    final d = donneesDepuisJson(j);
+    final cases = d.grillePar('m')!.cases;
+    expect(cases.map((c) => c.type), [TypeCase.retour, TypeCase.retour]);
+    expect(cases[0].image, const ImageAucune());
+    expect(cases[1].image, const ImageArasaac(7));
+    expect(cases[0].cibleId, isNull);
+    final ecrit = jsonDecode(jsonEncode(donneesVersJson(d))) as Map;
+    expect(ecrit['versionFormat'], 3);
+    final casesJson = ((ecrit['grilles'] as List).last as Map)['cases'] as List;
+    for (final c in casesJson) {
+      expect((c as Map).containsKey('cibleId'), isFalse);
+    }
+    expect(
+      jsonEncode(donneesVersJson(donneesDepuisJson(ecrit))),
+      jsonEncode(ecrit),
+    );
+  });
+
+  test('REQ037_AC7 type retour en v1 ou v2 -> FormatInvalide', () {
+    for (final v in [1, 2]) {
+      expect(
+        () => donneesDepuisJson(jsonAvecRetour(version: v)),
+        throwsA(isA<FormatInvalide>()),
+        reason: 'v$v',
+      );
+    }
+  });
+
+  test('REQ037_AC7 case-retour avec cibleId -> FormatInvalide', () {
+    final j = jsonAvecRetour();
+    final cases = ((j['grilles']! as List).last as Map)['cases'] as List;
+    (cases[0] as Map)['cibleId'] = 'acc';
+    expect(() => donneesDepuisJson(j), throwsA(isA<FormatInvalide>()));
+  });
+
+  test('REQ037_AC7 case-retour sans categorie -> FormatInvalide', () {
+    final j = jsonAvecRetour();
+    final cases = ((j['grilles']! as List).last as Map)['cases'] as List;
+    (cases[0] as Map).remove('categorie');
+    expect(() => donneesDepuisJson(j), throwsA(isA<FormatInvalide>()));
+  });
+
+  test('REQ032_AC4 v2 lue sans perte, versions 0 et 4 refusees', () {
+    final v2 = jsonDecode(
+      File('test/fixtures/donnees_v2.json').readAsStringSync(),
+    );
+    final d = donneesDepuisJson(v2);
+    expect(d.grilles.expand((g) => g.cases).length, 7);
+    expect(
+      d.grilles.expand((g) => g.cases).any((c) => c.type == TypeCase.retour),
+      isFalse,
+    );
+    expect(donneesVersJson(d)['versionFormat'], 3);
+    for (final v in [0, 4]) {
+      expect(
+        () => donneesDepuisJson(json()..['versionFormat'] = v),
+        throwsA(isA<FormatInvalide>()),
+      );
+    }
+  });
+
   test('REQ025_AC1 aller-retour a l\'identique', () {
     final texte = jsonEncode(donneesVersJson(exemple()));
     final relu = donneesDepuisJson(jsonDecode(texte));
@@ -137,7 +226,7 @@ void main() {
 
   test('REQ032_AC4 categorie ecrite, couleur absente', () {
     final j = json();
-    expect(j['versionFormat'], 2);
+    expect(j['versionFormat'], 3);
     expect(caseJson(j, 0)['categorie'], 'action');
     expect(caseJson(j, 0).containsKey('couleur'), isFalse);
   });
@@ -187,7 +276,7 @@ void main() {
       File('test/fixtures/donnees_v1.json').readAsStringSync(),
     );
     final d = donneesDepuisJson(v1);
-    expect(d.versionFormat, 2);
+    expect(d.versionFormat, 3);
     final cases = d.grilles.single.cases;
     expect(cases.map((c) => c.categorie).toList(), [
       Categorie.personne,
@@ -205,7 +294,7 @@ void main() {
     expect(d.reglages.voixId, 'v1');
     expect(d.reglages.delaiAntiRepetitionMs, 700);
     final reecrit = donneesVersJson(d);
-    expect(reecrit['versionFormat'], 2);
+    expect(reecrit['versionFormat'], 3);
   });
 
   test('v1 : couleur non entiere -> FormatInvalide', () {

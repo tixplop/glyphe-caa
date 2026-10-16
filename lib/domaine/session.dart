@@ -105,6 +105,10 @@ class Session extends ChangeNotifier {
   }
 
   Future<void> appuyerCase(Case c) async {
+    if (c.type == TypeCase.retour) {
+      retour();
+      return;
+    }
     if (c.type == TypeCase.dossier) {
       final cible = c.cibleId;
       if (cible == null || _donnees.grillePar(cible) == null) return;

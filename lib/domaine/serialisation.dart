@@ -23,7 +23,7 @@ Donnees donneesDepuisJson(Object? json) {
   try {
     final m = _map(json, 'racine');
     final version = _int(m, 'versionFormat');
-    if (version != 1 && version != versionFormatCourant) {
+    if (version < 1 || version > versionFormatCourant) {
       throw FormatInvalide('version de format non gérée : $version');
     }
     final grilles = [
@@ -66,7 +66,7 @@ Map<String, Object?> _caseVersJson(Case c) => {
   'textePrononce': c.textePrononce,
   'image': _imageVersChaine(c.image),
   'categorie': c.categorie.name,
-  'cibleId': c.cibleId,
+  if (c.type != TypeCase.retour) 'cibleId': c.cibleId,
 };
 
 String _imageVersChaine(ImageCase i) => switch (i) {
@@ -157,6 +157,9 @@ Case _caseDepuis(Object? json, int version) {
     throw FormatInvalide('position négative');
   }
   final Categorie categorie;
+  if (type == TypeCase.retour && version < 3) {
+    throw FormatInvalide('case-retour interdite avant la version 3');
+  }
   if (version == 1) {
     final couleur = m['couleur'];
     if (couleur != null && couleur is! int) {
@@ -176,6 +179,9 @@ Case _caseDepuis(Object? json, int version) {
   final cible = m['cibleId'];
   if (cible != null && cible is! String) {
     throw FormatInvalide('cibleId doit être une chaîne');
+  }
+  if (type == TypeCase.retour && cible != null) {
+    throw FormatInvalide('une case-retour n\'a pas de cibleId');
   }
   return Case(
     id: _str(m, 'id'),

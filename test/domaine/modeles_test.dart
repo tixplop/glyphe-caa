@@ -75,7 +75,7 @@ void main() {
       );
       final d = Donnees(accueilId: 'g', grilles: [pleine(1)]);
       expect(d.copyWith(reglages: const Reglages(debit: 2)).reglages.debit, 2);
-      expect(d.versionFormat, 2);
+      expect(d.versionFormat, 3);
     },
   );
 

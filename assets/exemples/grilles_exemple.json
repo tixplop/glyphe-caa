@@ -1,5 +1,5 @@
 {
- "versionFormat": 2,
+ "versionFormat": 3,
  "accueilId": "accueil",
  "grilles": [
   {
@@ -138,9 +138,19 @@
    "colonnes": 4,
    "cases": [
     {
-     "id": "manger-0",
+     "id": "manger-retour",
      "ligne": 0,
      "colonne": 0,
+     "type": "retour",
+     "libelle": "Retour",
+     "textePrononce": "",
+     "image": "aucune",
+     "categorie": "petitMot"
+    },
+    {
+     "id": "manger-0",
+     "ligne": 0,
+     "colonne": 1,
      "type": "dossier",
      "libelle": "Fruits",
      "textePrononce": "",
@@ -151,7 +161,7 @@
     {
      "id": "manger-1",
      "ligne": 0,
-     "colonne": 1,
+     "colonne": 2,
      "type": "mot",
      "libelle": "pain",
      "textePrononce": "",
@@ -162,7 +172,7 @@
     {
      "id": "manger-2",
      "ligne": 0,
-     "colonne": 2,
+     "colonne": 3,
      "type": "mot",
      "libelle": "gâteau",
      "textePrononce": "",
@@ -172,8 +182,8 @@
     },
     {
      "id": "manger-3",
-     "ligne": 0,
-     "colonne": 3,
+     "ligne": 1,
+     "colonne": 0,
      "type": "mot",
      "libelle": "eau",
      "textePrononce": "",
@@ -184,7 +194,7 @@
     {
      "id": "manger-4",
      "ligne": 1,
-     "colonne": 0,
+     "colonne": 1,
      "type": "mot",
      "libelle": "boire",
      "textePrononce": "",
@@ -195,7 +205,7 @@
     {
      "id": "manger-5",
      "ligne": 1,
-     "colonne": 1,
+     "colonne": 2,
      "type": "mot",
      "libelle": "manger",
      "textePrononce": "",
@@ -212,9 +222,19 @@
    "colonnes": 4,
    "cases": [
     {
-     "id": "fruits-0",
+     "id": "fruits-retour",
      "ligne": 0,
      "colonne": 0,
+     "type": "retour",
+     "libelle": "Retour",
+     "textePrononce": "",
+     "image": "aucune",
+     "categorie": "petitMot"
+    },
+    {
+     "id": "fruits-0",
+     "ligne": 0,
+     "colonne": 1,
      "type": "mot",
      "libelle": "pomme",
      "textePrononce": "",
@@ -225,7 +245,7 @@
     {
      "id": "fruits-1",
      "ligne": 0,
-     "colonne": 1,
+     "colonne": 2,
      "type": "mot",
      "libelle": "banane",
      "textePrononce": "",
@@ -236,7 +256,7 @@
     {
      "id": "fruits-2",
      "ligne": 0,
-     "colonne": 2,
+     "colonne": 3,
      "type": "mot",
      "libelle": "orange",
      "textePrononce": "",
@@ -246,8 +266,8 @@
     },
     {
      "id": "fruits-3",
-     "ligne": 0,
-     "colonne": 3,
+     "ligne": 1,
+     "colonne": 0,
      "type": "mot",
      "libelle": "fraise",
      "textePrononce": "",
@@ -258,7 +278,7 @@
     {
      "id": "fruits-4",
      "ligne": 1,
-     "colonne": 0,
+     "colonne": 1,
      "type": "mot",
      "libelle": "poire",
      "textePrononce": "",
@@ -269,7 +289,7 @@
     {
      "id": "fruits-5",
      "ligne": 1,
-     "colonne": 1,
+     "colonne": 2,
      "type": "mot",
      "libelle": "raisin",
      "textePrononce": "",
@@ -286,9 +306,19 @@
    "colonnes": 4,
    "cases": [
     {
-     "id": "besoins-0",
+     "id": "besoins-retour",
      "ligne": 0,
      "colonne": 0,
+     "type": "retour",
+     "libelle": "Retour",
+     "textePrononce": "",
+     "image": "aucune",
+     "categorie": "petitMot"
+    },
+    {
+     "id": "besoins-0",
+     "ligne": 0,
+     "colonne": 1,
      "type": "mot",
      "libelle": "toilettes",
      "textePrononce": "",
@@ -299,7 +329,7 @@
     {
      "id": "besoins-1",
      "ligne": 0,
-     "colonne": 1,
+     "colonne": 2,
      "type": "mot",
      "libelle": "boire",
      "textePrononce": "",
@@ -310,7 +340,7 @@
     {
      "id": "besoins-2",
      "ligne": 0,
-     "colonne": 2,
+     "colonne": 3,
      "type": "mot",
      "libelle": "manger",
      "textePrononce": "",
@@ -320,8 +350,8 @@
     },
     {
      "id": "besoins-3",
-     "ligne": 0,
-     "colonne": 3,
+     "ligne": 1,
+     "colonne": 0,
      "type": "mot",
      "libelle": "dormir",
      "textePrononce": "",
@@ -332,7 +362,7 @@
     {
      "id": "besoins-4",
      "ligne": 1,
-     "colonne": 0,
+     "colonne": 1,
      "type": "mot",
      "libelle": "aide",
      "textePrononce": "",
@@ -343,7 +373,7 @@
     {
      "id": "besoins-5",
      "ligne": 1,
-     "colonne": 1,
+     "colonne": 2,
      "type": "mot",
      "libelle": "fatigué",
      "textePrononce": "",
@@ -360,9 +390,19 @@
    "colonnes": 4,
    "cases": [
     {
-     "id": "emotions-0",
+     "id": "emotions-retour",
      "ligne": 0,
      "colonne": 0,
+     "type": "retour",
+     "libelle": "Retour",
+     "textePrononce": "",
+     "image": "aucune",
+     "categorie": "petitMot"
+    },
+    {
+     "id": "emotions-0",
+     "ligne": 0,
+     "colonne": 1,
      "type": "mot",
      "libelle": "content",
      "textePrononce": "",
@@ -373,7 +413,7 @@
     {
      "id": "emotions-1",
      "ligne": 0,
-     "colonne": 1,
+     "colonne": 2,
      "type": "mot",
      "libelle": "triste",
      "textePrononce": "",
@@ -384,7 +424,7 @@
     {
      "id": "emotions-2",
      "ligne": 0,
-     "colonne": 2,
+     "colonne": 3,
      "type": "mot",
      "libelle": "fatigué",
      "textePrononce": "",
@@ -394,8 +434,8 @@
     },
     {
      "id": "emotions-3",
-     "ligne": 0,
-     "colonne": 3,
+     "ligne": 1,
+     "colonne": 0,
      "type": "mot",
      "libelle": "joyeux",
      "textePrononce": "",
@@ -406,7 +446,7 @@
     {
      "id": "emotions-4",
      "ligne": 1,
-     "colonne": 0,
+     "colonne": 1,
      "type": "mot",
      "libelle": "peur",
      "textePrononce": "",
@@ -423,9 +463,19 @@
    "colonnes": 4,
    "cases": [
     {
-     "id": "jouer-0",
+     "id": "jouer-retour",
      "ligne": 0,
      "colonne": 0,
+     "type": "retour",
+     "libelle": "Retour",
+     "textePrononce": "",
+     "image": "aucune",
+     "categorie": "petitMot"
+    },
+    {
+     "id": "jouer-0",
+     "ligne": 0,
+     "colonne": 1,
      "type": "mot",
      "libelle": "jouer",
      "textePrononce": "",
@@ -436,7 +486,7 @@
     {
      "id": "jouer-1",
      "ligne": 0,
-     "colonne": 1,
+     "colonne": 2,
      "type": "mot",
      "libelle": "jeu",
      "textePrononce": "",
@@ -447,7 +497,7 @@
     {
      "id": "jouer-2",
      "ligne": 0,
-     "colonne": 2,
+     "colonne": 3,
      "type": "mot",
      "libelle": "ballon",
      "textePrononce": "",
@@ -457,8 +507,8 @@
     },
     {
      "id": "jouer-3",
-     "ligne": 0,
-     "colonne": 3,
+     "ligne": 1,
+     "colonne": 0,
      "type": "mot",
      "libelle": "musique",
      "textePrononce": "",
@@ -469,7 +519,7 @@
     {
      "id": "jouer-4",
      "ligne": 1,
-     "colonne": 0,
+     "colonne": 1,
      "type": "mot",
      "libelle": "livre",
      "textePrononce": "",
@@ -480,7 +530,7 @@
     {
      "id": "jouer-5",
      "ligne": 1,
-     "colonne": 1,
+     "colonne": 2,
      "type": "mot",
      "libelle": "dessiner",
      "textePrononce": "",
@@ -491,7 +541,7 @@
     {
      "id": "jouer-6",
      "ligne": 1,
-     "colonne": 2,
+     "colonne": 3,
      "type": "mot",
      "libelle": "puzzle",
      "textePrononce": "",

@@ -111,6 +111,8 @@ class _EcranEditionCaseState extends State<EcranEditionCase> {
         ? nouvelleGrillePourDossier(
             libelle.isEmpty ? Textes.nomNouvelleGrille : libelle,
             etat.nouvelId('g'),
+            etat.nouvelId('c'),
+            Textes.retour,
           )
         : null;
     final c = Case(

@@ -118,7 +118,8 @@ void main() {
       final j = jsonDecode(
         utf8.decode(a.files.firstWhere((f) => f.name == 'glyphe.json').content),
       );
-      expect(j['versionFormat'], versionFormatCourant);
+      expect(j['versionFormat'], 3);
+      expect(versionFormatCourant, 3);
     });
 
     test('REQ023_AC3 le code de deverrouillage est absent de l\'archive', () {
@@ -272,6 +273,42 @@ void main() {
       expect(cases[5].categorie, Categorie.social);
       expect(cases[7].categorie, Categorie.petitMot);
       expect(cases[2].libelle, 'm2');
+    });
+    test('REQ024_AC8 une sauvegarde v2 est importee a l\'identique', () {
+      final v2 = jsonDecode(
+        File('test/fixtures/donnees_v2.json').readAsStringSync(),
+      );
+      final r = analyserSauvegarde(
+        zip([
+          jsonBrut(v2 as Object),
+          entree('photos/a.jpg', [1]),
+        ]),
+      );
+      expect(r, isA<SauvegardeValide>());
+      final donnees = (r as SauvegardeValide).donnees;
+      final cases = donnees.grilles.expand((g) => g.cases).toList();
+      expect(cases.length, 7);
+      expect(cases.any((c) => c.type == TypeCase.retour), isFalse);
+      final sortie = donneesVersJson(donnees);
+      final attendu = Map<String, Object?>.of(v2 as Map<String, Object?>)
+        ..['versionFormat'] = 3;
+      expect(jsonEncode(sortie), jsonEncode(attendu));
+    });
+    test('REQ024_AC5 version 4 refusee, version 3 acceptee', () {
+      final j = donneesVersJson(d);
+      expect(j['versionFormat'], 3);
+      expect(
+        analyserSauvegarde(
+          zip([
+            jsonBrut(j),
+            entree('photos/a.jpg', [1]),
+          ]),
+        ),
+        isA<SauvegardeValide>(),
+      );
+      j['versionFormat'] = 4;
+      final r = analyserSauvegarde(zip([jsonBrut(j)]));
+      expect((r as ErreurSauvegarde).motif, MotifErreur.tropRecente);
     });
     test('REQ024_AC5 version trop recente', () {
       final j = donneesVersJson(d)

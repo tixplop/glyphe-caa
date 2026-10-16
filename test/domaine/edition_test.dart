@@ -206,9 +206,45 @@ void main() {
   });
 
   test('REQ016_AC2 nouvelle grille nommée comme la case, 4x4, vide', () {
-    final g = nouvelleGrillePourDossier('Animaux', 'gn');
+    final g = nouvelleGrillePourDossier('Animaux', 'gn', 'cr', 'Retour');
     expect((g.id, g.nom, g.lignes, g.colonnes), ('gn', 'Animaux', 4, 4));
-    expect(g.cases, isEmpty);
+    expect(g.cases, hasLength(1));
+    final r = g.cases.single;
+    expect((r.id, r.type, r.ligne, r.colonne), ('cr', TypeCase.retour, 0, 0));
+    expect(r.libelle, 'Retour');
+    expect(r.image, isA<ImageAucune>());
+    expect(r.categorie, Categorie.petitMot);
+    expect(r.cibleId, isNull);
+    expect(r.textePrononce, isEmpty);
+  });
+
+  test('REQ037_AC1 case-retour normalisée à l\'enregistrement', () {
+    final r = Case(
+      id: 'r',
+      ligne: 0,
+      colonne: 0,
+      type: TypeCase.retour,
+      libelle: 'Retour',
+      textePrononce: 'bla',
+      cibleId: 'g2',
+    );
+    final d = ajouterCase(base(), 'acc', r, ligne: 1, colonne: 0);
+    final c = d.grillePar('acc')!.cases.firstWhere((c) => c.id == 'r');
+    expect(c.cibleId, isNull);
+    expect(c.textePrononce, isEmpty);
+    final m = modifierCase(d, 'acc', c.copyWith(textePrononce: 'x'));
+    expect(
+      m.grillePar('acc')!.cases.firstWhere((c) => c.id == 'r').textePrononce,
+      isEmpty,
+    );
+  });
+
+  test('REQ037_AC5 case-retour sans image ni libellé : refusée (AC-015-2)', () {
+    final r = Case(id: 'r', ligne: 0, colonne: 0, type: TypeCase.retour);
+    expectErreur(
+      () => ajouterCase(base(), 'acc', r, ligne: 1, colonne: 0),
+      CodeErreurEdition.contenuVide,
+    );
   });
 
   test('REQ016_AC2 enregistrer avec nouvelle grille : créée et liée', () {
@@ -223,7 +259,12 @@ void main() {
       base(),
       'acc',
       dos,
-      nouvelleGrille: nouvelleGrillePourDossier('Animaux', 'gn'),
+      nouvelleGrille: nouvelleGrillePourDossier(
+        'Animaux',
+        'gn',
+        'cr',
+        'Retour',
+      ),
     );
     expect(d.grillePar('gn')!.nom, 'Animaux');
     final c = d.grillePar('acc')!.cases.firstWhere((c) => c.id == 'd');
@@ -237,7 +278,7 @@ void main() {
         base(),
         'acc',
         dos,
-        nouvelleGrille: nouvelleGrillePourDossier('x', 'gn'),
+        nouvelleGrille: nouvelleGrillePourDossier('x', 'gn', 'cr', 'Retour'),
       ),
       CodeErreurEdition.contenuVide,
     );

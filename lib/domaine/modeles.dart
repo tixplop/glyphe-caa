@@ -1,11 +1,11 @@
 /// Modèle de données immuable (DEC-008). Pur Dart.
 library;
 
-const int versionFormatCourant = 2;
+const int versionFormatCourant = 3;
 const int tailleMin = 1;
 const int tailleMax = 8;
 
-enum TypeCase { mot, dossier }
+enum TypeCase { mot, dossier, retour }
 
 /// Catégorie grammaticale d'une case (clé de Fitzgerald modifiée, REQ-032).
 enum Categorie {

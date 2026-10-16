@@ -68,6 +68,7 @@ void main() {
 
   test('REQ001_AC6 chaque case d\'exemple a la categorie attendue', () {
     const attendu = {
+      'Retour': Categorie.petitMot,
       'je': Categorie.personne,
       'veux': Categorie.action,
       'boire': Categorie.action,
@@ -116,8 +117,85 @@ void main() {
     expect(vus, attendu.keys.toSet());
   });
 
-  test('REQ025_AC4 exemples en version 2', () {
-    expect(jsonDecode(json)['versionFormat'], 2);
+  test('REQ025_AC4 stockage v2 : chargé sans perte, réécrit en v3', () async {
+    final v2 = jsonDecode(
+      File('test/fixtures/donnees_v2.json').readAsStringSync(),
+    );
+    final s = StockageMemoire()..donnees = donneesDepuisJson(v2);
+    final d = await chargerOuInitialiser(s, json);
+    expect(s.ecritures, 0);
+    expect(d.grilles.expand((g) => g.cases).length, 7);
+    await s.enregistrer(d);
+    final sortie = donneesVersJson(s.donnees!);
+    expect(sortie['versionFormat'], 3);
+    expect(jsonEncode(sortie).contains('"retour"'), isFalse);
+    final attendu = Map<String, Object?>.of(v2 as Map<String, Object?>)
+      ..['versionFormat'] = 3;
+    expect(jsonEncode(sortie), jsonEncode(attendu));
+  });
+
+  test('REQ001_AC7 case-retour en (0, 0) de chaque grille non-accueil', () {
+    for (final g in exemples.grilles) {
+      final retours = g.cases.where((c) => c.type == TypeCase.retour);
+      if (g.id == exemples.accueilId) {
+        expect(retours, isEmpty);
+        continue;
+      }
+      expect(retours, hasLength(1), reason: g.nom);
+      final r = retours.single;
+      expect((r.ligne, r.colonne), (0, 0), reason: g.nom);
+      expect(r.libelle, 'Retour');
+      expect(r.id, '${g.id}-retour');
+      expect(r.image, isA<ImageAucune>());
+      expect(r.textePrononce, isEmpty);
+      expect(r.cibleId, isNull);
+      expect(r.categorie, Categorie.petitMot);
+      expect(
+        g.cases
+            .where((c) => c.type != TypeCase.retour)
+            .every((c) => (c.ligne, c.colonne) != (0, 0)),
+        isTrue,
+      );
+    }
+    expect(
+      exemples.grilles.where((g) => g.id != exemples.accueilId),
+      hasLength(5),
+    );
+  });
+
+  test(
+    'REQ001_AC7 Manger : Retour, Fruits, pain, gâteau / eau, boire, manger',
+    () {
+      final manger = exemples.grillePar('manger')!;
+      List<String> ligne(int l) =>
+          ([...manger.cases.where((c) => c.ligne == l)]
+                ..sort((a, b) => a.colonne.compareTo(b.colonne)))
+              .map((c) => c.libelle)
+              .toList();
+      expect(ligne(0), ['Retour', 'Fruits', 'pain', 'gâteau']);
+      expect(ligne(1), ['eau', 'boire', 'manger']);
+    },
+  );
+
+  test(
+    'REQ001_AC7 autres cases décalées d\'un emplacement, ordre conservé',
+    () {
+      for (final g in exemples.grilles) {
+        if (g.id == exemples.accueilId) continue;
+        final autres = g.cases.where((c) => c.type != TypeCase.retour).toList();
+        for (var i = 0; i < autres.length; i++) {
+          expect(
+            (autres[i].ligne, autres[i].colonne),
+            ((i + 1) ~/ 4, (i + 1) % 4),
+          );
+          expect(autres[i].id, '${g.id}-$i');
+        }
+      }
+    },
+  );
+
+  test('REQ025_AC4 exemples en version 3', () {
+    expect(jsonDecode(json)['versionFormat'], 3);
     expect(json.contains('"couleur"'), isFalse);
   });
 
@@ -147,6 +225,7 @@ void main() {
       expect(g.cases, isNotEmpty);
       for (final c in g.cases) {
         expect(c.libelle.trim(), isNotEmpty, reason: '${g.id}/${c.id}');
+        if (c.type == TypeCase.retour) continue;
         expect(c.image, isA<ImageArasaac>(), reason: '${g.id}/${c.libelle}');
         final id = (c.image as ImageArasaac).id;
         expect(ids, contains(id), reason: '${g.id}/${c.libelle}');

@@ -1,0 +1,107 @@
+{
+ "versionFormat": 2,
+ "accueilId": "acc",
+ "grilles": [
+  {
+   "id": "acc",
+   "nom": "Accueil",
+   "lignes": 3,
+   "colonnes": 4,
+   "cases": [
+    {
+     "id": "a0",
+     "ligne": 0,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "je",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "categorie": "personne",
+     "cibleId": null
+    },
+    {
+     "id": "a1",
+     "ligne": 0,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "veux",
+     "textePrononce": "je veux",
+     "image": "arasaac:2617",
+     "categorie": "action",
+     "cibleId": null
+    },
+    {
+     "id": "a2",
+     "ligne": 0,
+     "colonne": 2,
+     "type": "dossier",
+     "libelle": "Manger",
+     "textePrononce": "",
+     "image": "arasaac:2617",
+     "categorie": "objet",
+     "cibleId": "man"
+    },
+    {
+     "id": "a3",
+     "ligne": 1,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "oui",
+     "textePrononce": "",
+     "image": "aucune",
+     "categorie": "social",
+     "cibleId": null
+    },
+    {
+     "id": "a4",
+     "ligne": 1,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "photo",
+     "textePrononce": "",
+     "image": "photo:a.jpg",
+     "categorie": "objet",
+     "cibleId": null
+    }
+   ]
+  },
+  {
+   "id": "man",
+   "nom": "Manger",
+   "lignes": 2,
+   "colonnes": 3,
+   "cases": [
+    {
+     "id": "m0",
+     "ligne": 0,
+     "colonne": 0,
+     "type": "mot",
+     "libelle": "pomme",
+     "textePrononce": "",
+     "image": "arasaac:2618",
+     "categorie": "objet",
+     "cibleId": null
+    },
+    {
+     "id": "m1",
+     "ligne": 0,
+     "colonne": 1,
+     "type": "mot",
+     "libelle": "boire",
+     "textePrononce": "",
+     "image": "arasaac:2619",
+     "categorie": "action",
+     "cibleId": null
+    }
+   ]
+  }
+ ],
+ "reglages": {
+  "voixId": "v2",
+  "debit": 0.8,
+  "hauteur": 1.1,
+  "volume": 0.9,
+  "delaiAntiRepetitionMs": 500,
+  "retourAccueilApresMot": true
+ }
+}

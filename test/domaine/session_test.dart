@@ -444,6 +444,76 @@ void main() {
     });
   });
 
+  group('REQ-037 case-retour', () {
+    final retourCase = Case(
+      id: 'r',
+      ligne: 3,
+      colonne: 3,
+      type: TypeCase.retour,
+      libelle: 'Retour',
+    );
+
+    test(
+      'REQ037_AC2 appui : retour d\'un cran, rien dit, barre inchangée',
+      () async {
+        final t = cree();
+        await t.s.appuyerCase(c(t.s, 'd-manger'));
+        await t.s.appuyerCase(c(t.s, 'd-fruits'));
+        await t.s.appuyerCase(c(t.s, 'poire'));
+        final avant = List.of(t.v.journal);
+        await t.s.appuyerCase(retourCase);
+        expect(t.s.grilleCourante.id, 'manger-g');
+        await t.s.appuyerCase(retourCase);
+        expect(t.s.grilleCourante.id, 'acc');
+        expect(libelles(t.s), ['poire']);
+        expect(t.v.journal, avant);
+      },
+    );
+
+    test('REQ037_AC3 sur l\'accueil : aucun effet', () async {
+      final t = cree();
+      var n = 0;
+      t.s.addListener(() => n++);
+      await t.s.appuyerCase(retourCase);
+      expect(t.s.grilleCourante.id, 'acc');
+      expect(n, 0);
+      expect(t.v.journal, isEmpty);
+    });
+
+    test(
+      'REQ009_AC1 retourAccueilApresMot ignoré par la case-retour',
+      () async {
+        final t = cree(
+          d: donnees(reglages: const Reglages(retourAccueilApresMot: true)),
+        );
+        await t.s.appuyerCase(c(t.s, 'd-manger'));
+        await t.s.appuyerCase(c(t.s, 'd-fruits'));
+        await t.s.appuyerCase(retourCase);
+        expect(t.s.grilleCourante.id, 'manger-g');
+        expect(t.s.barre, isEmpty);
+      },
+    );
+
+    test(
+      'REQ037_AC3 anti-répétition non concerné par la case-retour',
+      () async {
+        final t = cree(
+          d: donnees(reglages: const Reglages(delaiAntiRepetitionMs: 1000)),
+        );
+        await t.s.appuyerCase(c(t.s, 'je'));
+        await t.s.appuyerCase(retourCase);
+        await t.s.appuyerCase(c(t.s, 'je'));
+        expect(libelles(t.s), ['je']);
+        await t.s.appuyerCase(c(t.s, 'd-manger'));
+        await t.s.appuyerCase(retourCase);
+        await t.s.appuyerCase(retourCase);
+        t.h.avancer(const Duration(milliseconds: 1001));
+        await t.s.appuyerCase(c(t.s, 'je'));
+        expect(libelles(t.s), ['je', 'je']);
+      },
+    );
+  });
+
   group('REQ-010 retour à l\'accueil après mot', () {
     Future<Session> dansManger(bool actif) async {
       final t = cree(

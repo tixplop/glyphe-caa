@@ -440,7 +440,11 @@ void main() {
     final d = e.etat.session.donnees;
     final nouvelle = d.grilles.firstWhere((g) => g.nom == 'Animaux');
     expect((nouvelle.lignes, nouvelle.colonnes), (4, 4));
-    expect(nouvelle.cases, isEmpty);
+    final r = nouvelle.cases.single;
+    expect((r.type, r.ligne, r.colonne), (TypeCase.retour, 0, 0));
+    expect(r.libelle, 'Retour');
+    expect(r.image, isA<ImageAucune>());
+    expect(r.categorie, Categorie.petitMot);
     final c = d
         .grillePar('acc')!
         .cases
