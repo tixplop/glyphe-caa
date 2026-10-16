@@ -165,4 +165,24 @@ void main() {
       await fermerPopup();
     });
   }
+
+  test('REQ031 REQ037 plus de barre de navigation ni d\'onglets dans lib/', () {
+    final noms = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .map((f) => f.uri.pathSegments.last)
+        .toList();
+    expect(noms, isNot(contains('barre_navigation.dart')));
+    expect(noms, isNot(contains('onglets.dart')));
+  });
+
+  test('REQ034 la barre de phrase n\'a ni bouton Parler, ni onglet, ni '
+      'appui long', () {
+    final src = File('lib/ui/widgets/barre_phrase.dart')
+        .readAsStringSync()
+        .replaceAll(RegExp(r'//[^\n]*'), '');
+    for (final interdit in const ['bouton-parler', 'onglet-', 'onLongPress']) {
+      expect(src.contains(interdit), isFalse, reason: interdit);
+    }
+  });
 }

@@ -350,4 +350,67 @@ void main() {
       h.dispose();
     });
   });
+
+  group('T-031 grilles d\'exemple (Manger, Retour, Dossier)', () {
+    for (final sombre in const [false, true]) {
+      for (final taille in const [
+        Size(360, 640),
+        Size(640, 360),
+        Size(412, 915),
+        Size(915, 412),
+      ]) {
+        testWidgets('REQ028_AC1 REQ028_AC2 REQ028_AC4 REQ036_AC5 REQ036_AC6 '
+            'Manger, édition, menu Plus, cases Retour et Dossier, '
+            '${sombre ? 'sombre' : 'clair'} $taille', (tester) async {
+          final h = tester.ensureSemantics();
+          tester.view.physicalSize = taille;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
+          if (sombre) {
+            tester.platformDispatcher.platformBrightnessTestValue =
+                Brightness.dark;
+            addTearDown(
+              tester.platformDispatcher.clearPlatformBrightnessTestValue,
+            );
+          }
+          final etat = await etatPret(tester);
+          await tester.pumpWidget(GlypheApp(etat: etat));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const Key('case-accueil-9')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('case-manger-retour')), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await verifier(tester); // Manger, barre vide
+
+          await tester.tap(find.byKey(const Key('case-manger-1')));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          await verifier(tester); // Manger, barre non vide
+
+          etat.ouvrirEdition();
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          await verifier(tester); // édition
+
+          await tester.tap(find.byKey(const Key('bouton-plus')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const Key('bouton-reglages')), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await verifier(tester); // menu Plus ouvert
+          await tester.tapAt(const Offset(2, 2));
+          await tester.pumpAndSettle();
+
+          for (final cle in const ['case-manger-0', 'case-manger-retour']) {
+            await tester.tap(find.byKey(Key(cle)));
+            await tester.pumpAndSettle();
+            expect(find.byKey(const Key('ecran-edition-case')), findsOneWidget);
+            expect(tester.takeException(), isNull);
+            await verifier(tester); // éditeur de case (Dossier, puis Retour)
+            await retour(tester);
+          }
+          h.dispose();
+        });
+      }
+    }
+  });
 }

@@ -52,17 +52,18 @@ dart run tool/generer_banque_arasaac.dart
 
 Le code est compatible iOS, mais il n'est pas compilé ni testé sans Mac : seul Android est construit.
 
-## Disposition (version 1.2.0)
+## Disposition (version 1.3.0)
 
-- **Communication** : en haut, la barre de phrase (la phrase composée) avec deux boutons icônes : « Effacer le dernier mot » (appui long : tout effacer) et « Parler » (qui devient « Arrêter » pendant la lecture). Dessous, la barre de navigation : Retour en icône, onglets de grilles en pictogrammes (seul un onglet sans image garde son texte), puis le cadenas, discret, à maintenir appuyé pour déverrouiller l'édition. La grille de cases remplit le reste de l'écran, sans défilement.
+- **Communication** : en haut, la barre de phrase, sur toute la largeur. De gauche à droite : « Accueil », la phrase composée (un appui sur la phrase la lit à voix haute, un nouvel appui pendant la lecture l'arrête), « Corbeille » (efface toute la phrase en un appui), « Effacer » (le dernier mot) et le cadenas, discret, à maintenir appuyé pour déverrouiller l'édition. Il n'y a plus de bouton Parler ni de barre de navigation : on change de page par les cases-dossiers et on revient par la case « Retour ». La grille de cases remplit le reste de l'écran, sans défilement.
 - **Édition** : la barre d'édition remplace la barre de phrase ; elle affiche le titre (« Mode édition » et le nom de la grille), « Ajouter une case », le menu « Plus » (code, grilles, taille de la grille, réglages, À propos) et « Terminer » (icône de cadenas) pour refermer l'édition.
-- **Édition d'une case** : les actions sont des icônes dans la barre d'application, toujours visibles : Supprimer, Échanger avec l'emplacement…, Ouvrir (dossier), Enregistrer. On touche l'aperçu de l'image, à côté du libellé, pour choisir l'image.
+- **Édition d'une case** : les actions sont des icônes dans la barre d'application, toujours visibles : Supprimer, Échanger avec l'emplacement…, Ouvrir (dossier), Enregistrer. Le type de case se choisit entre Mot, Dossier et Retour. On touche l'aperçu de l'image, à côté du libellé, pour choisir l'image.
+- **Case Retour** : une case de type « Retour » ramène à la page précédente. « Nouvelle grille » crée une case Retour. Les grilles existantes ne sont pas modifiées : pour en ajouter une, créer une case de type Retour à la main.
 - **Aide pour l'aidant** : les boutons de la barre d'édition et de l'édition de case ont une info-bulle (appui long) qui donne leur nom ; l'écran de communication n'en affiche pas.
 - **Catégories de cases** : chaque case a une catégorie grammaticale (personne, action, objet, description, social, question, petit mot) qui détermine sa couleur de fond et de contour, comme dans Grid 3.
 - **Thème sombre automatique** : l'appli suit le réglage clair ou sombre du système ; il n'y a pas de réglage manuel. Les couleurs viennent des tokens du design system (`lib/ui/tokens.dart`).
 - **Police** : Atkinson Hyperlegible (Braille Institute), embarquée, licence SIL Open Font License 1.1 (`assets/fonts/OFL.txt`). Aucun téléchargement à l'exécution.
 - **Taille de texte du système** : appliquée aux réglages, à l'édition et à À propos ; l'écran de communication garde sa géométrie.
-- **Sauvegarde** : le format est la version 2 (grilles avec catégories) ; les sauvegardes de la version 1 restent importables.
+- **Sauvegarde** : le format est la version 3 ; les sauvegardes des versions 1 et 2 restent importables. Une sauvegarde de version 3 est refusée par Glyphe 1.2 et les versions antérieures.
 
 ## Usage
 
