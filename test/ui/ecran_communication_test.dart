@@ -1144,14 +1144,14 @@ void main() {
       expect(find.byKey(const Key('bouton-plus')), findsNothing);
     });
 
-    testWidgets('REQ035_AC4 échelle de texte 2 : libellé de case en 15', (
+    testWidgets('REQ035_AC4 échelle de texte 2 : libellé de case en 13', (
       tester,
     ) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await lance(tester, taille: const Size(915, 412));
       final texte = tester.widget<Text>(grille('je'));
-      expect(texte.style!.fontSize, 15);
+      expect(texte.style!.fontSize, 13);
       expect(
         MediaQuery.of(tester.element(find.byType(BarrePhrase))).textScaler,
         TextScaler.noScaling,
@@ -1401,15 +1401,15 @@ void main() {
             final picto = tester.getSize(
               find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
             );
-            expect(picto.width, greaterThanOrEqualTo(54 - 0.5), reason: g);
-            expect(picto.height, greaterThanOrEqualTo(54 - 0.5), reason: g);
+            expect(picto.width, greaterThanOrEqualTo(72 - 0.5), reason: g);
+            expect(picto.height, greaterThanOrEqualTo(72 - 0.5), reason: g);
             final textes = find.descendant(of: cf, matching: find.byType(Text));
             for (final t in textes.evaluate()) {
               final w = t.widget as Text;
-              expect(w.style!.fontSize, 15, reason: '${w.data}');
+              expect(w.style!.fontSize, 13, reason: '${w.data}');
               final rp = t.renderObject! as RenderParagraph;
               expect(rp.didExceedMaxLines, isFalse, reason: '${w.data}');
-              expect(rp.size.height, lessThanOrEqualTo(20.5), reason: w.data);
+              expect(rp.size.height, lessThanOrEqualTo(16.5), reason: w.data);
               expect(w.data!.contains('…'), isFalse, reason: w.data);
               final rt = tester.getRect(find.byElementPredicate((x) => x == t));
               expect(rt.left, greaterThanOrEqualTo(contour.left - 0.5));
@@ -1492,15 +1492,15 @@ void main() {
         ),
       );
       verifie(vis(tester, 'accueil-0'), 12, 88, 148, 81.3, 'je');
-      verifie(de('case-accueil-0', 'picto'), 58.8, 93, 54.3, 54.3, 'picto je');
+      verifie(de('case-accueil-0', 'picto'), 19, 93, 72.3, 72.3, 'picto je');
       final lib = tester.getRect(
         find.descendant(
           of: find.byKey(const Key('case-accueil-0')),
           matching: find.text('je'),
         ),
       );
-      expect(lib.top, closeTo(147.3, 0.5));
-      expect(lib.bottom, closeTo(165.3, 0.5));
+      expect(lib.top, closeTo(121.2, 0.5));
+      expect(lib.bottom, closeTo(137.2, 0.5));
       e.etat.session.ouvrirGrille('manger');
       await tester.pumpAndSettle();
       final retour = find.descendant(
@@ -1516,10 +1516,10 @@ void main() {
             matching: find.byKey(const Key('picto')),
           ),
         ),
-        58.8,
+        19,
         93,
-        54.3,
-        54.3,
+        72.3,
+        72.3,
         'picto retour',
       );
       final libR = tester.getRect(
@@ -1528,8 +1528,8 @@ void main() {
           matching: find.text('Retour'),
         ),
       );
-      expect(libR.top, closeTo(147.3, 0.5));
-      expect(libR.bottom, closeTo(165.3, 0.5));
+      expect(libR.top, closeTo(121.2, 0.5));
+      expect(libR.bottom, closeTo(137.2, 0.5));
       expect(tester.takeException(), isNull);
     });
 
@@ -1552,7 +1552,7 @@ void main() {
               in find
                   .descendant(of: cf, matching: find.byType(Text))
                   .evaluate()) {
-            expect((t.widget as Text).style!.fontSize, 15);
+            expect((t.widget as Text).style!.fontSize, 13);
             res.add(tester.getRect(find.byElementPredicate((x) => x == t)));
           }
         }

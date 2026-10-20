@@ -79,13 +79,14 @@ void main() {
   });
 
   test(
-    'REQ033 REQ035 la case n\'utilise que cellLabelSmall, sans facteur 0,6',
+    'REQ033 REQ035 la case n\'utilise que caseLibelle, sans facteur 0,6',
     () {
       final src = File('lib/ui/widgets/case_widget.dart')
           .readAsStringSync()
           .replaceAll(RegExp(r'//[^\n]*'), '');
       expect(src.contains('cellLabel.'), isFalse);
-      expect(src.contains('cellLabelSmall'), isTrue);
+      expect(src.contains('cellLabelSmall'), isFalse);
+      expect(src.contains('caseLibelle'), isTrue);
       expect(src.contains('0.6'), isFalse);
       expect(src.contains('FittedBox'), isFalse);
     },

@@ -7,7 +7,8 @@ import '../textes.dart';
 import '../tokens.dart';
 import 'image_case.dart';
 
-/// Une case de la grille : picto, libellé dessous, fond et contour de
+/// Une case de la grille : picto à gauche et libellé à sa droite (repli :
+/// libellé sous le picto dans une case haute et étroite), fond et contour de
 /// catégorie (REQ-032, REQ-033).
 class CaseWidget extends StatefulWidget {
   const CaseWidget({
@@ -36,7 +37,7 @@ class _CaseWidgetState extends State<CaseWidget> {
   static const double _marge = 3;
   static const double _coin = 16;
   static const double _margeX = GlypheTokens.caseMargeX;
-  static const double _hLibelle = 18;
+  static const double _hLibelle = 16;
 
   static double _pos(double v) => v < 0 ? 0 : v;
 
@@ -80,11 +81,52 @@ class _CaseWidgetState extends State<CaseWidget> {
               hi = box.maxHeight - 2 * _bordure;
             }
             hi = _pos(hi);
-            final d = avecLibelle
-                ? _pos(
-                    math.min(li, hi - _hLibelle - GlypheTokens.caseEcartPicto),
-                  )
-                : math.min(li, hi);
+            final double d;
+            final bool superposee;
+            if (avecLibelle) {
+              final dC = _pos(
+                math.min(
+                  hi,
+                  li -
+                      GlypheTokens.caseEcartLibelle -
+                      GlypheTokens.caseLibelleMin,
+                ),
+              );
+              final dS = _pos(
+                math.min(li, hi - _hLibelle - GlypheTokens.caseEcartPicto),
+              );
+              superposee = dS > dC;
+              d = superposee ? dS : dC;
+            } else {
+              superposee = false;
+              d = math.min(li, hi);
+            }
+            // Positions dans la zone intérieure (li x hi).
+            final double pictoX;
+            final double pictoY;
+            final double libelleX;
+            final double libelleY;
+            final double libelleL;
+            if (!avecLibelle) {
+              pictoX = (li - d) / 2;
+              pictoY = (hi - d) / 2;
+              libelleX = 0;
+              libelleY = 0;
+              libelleL = 0;
+            } else if (superposee) {
+              final bloc = d + GlypheTokens.caseEcartPicto + _hLibelle;
+              pictoX = (li - d) / 2;
+              pictoY = (hi - bloc) / 2;
+              libelleX = 0;
+              libelleY = pictoY + d + GlypheTokens.caseEcartPicto;
+              libelleL = li;
+            } else {
+              pictoX = 0;
+              pictoY = (hi - d) / 2;
+              libelleX = d + GlypheTokens.caseEcartLibelle;
+              libelleY = (hi - _hLibelle) / 2;
+              libelleL = _pos(li - libelleX);
+            }
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -112,13 +154,15 @@ class _CaseWidgetState extends State<CaseWidget> {
                             top: _bordure + margeHaut,
                             width: li,
                             height: hi,
-                            child: OverflowBox(
-                              minHeight: 0,
-                              maxHeight: double.infinity,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox.square(
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Positioned(
+                                  left: pictoX,
+                                  top: pictoY,
+                                  width: d,
+                                  height: d,
+                                  child: SizedBox.square(
                                     key: const Key('picto'),
                                     dimension: d,
                                     child: retour && c.image is ImageAucune
@@ -131,27 +175,33 @@ class _CaseWidgetState extends State<CaseWidget> {
                                           )
                                         : ImageCaseWidget(c.image),
                                   ),
-                                  if (avecLibelle) ...[
-                                    const SizedBox(
-                                      height: GlypheTokens.caseEcartPicto,
-                                    ),
-                                    SizedBox(
-                                      width: li,
-                                      height: _hLibelle,
+                                ),
+                                if (avecLibelle)
+                                  Positioned(
+                                    left: libelleX,
+                                    top: libelleY,
+                                    width: libelleL,
+                                    height: _hLibelle,
+                                    child: Align(
+                                      key: const Key('libelle-place'),
+                                      alignment: superposee
+                                          ? Alignment.center
+                                          : Alignment.centerLeft,
                                       child: Text(
                                         libelle,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         softWrap: false,
-                                        textAlign: TextAlign.center,
+                                        textAlign: superposee
+                                            ? TextAlign.center
+                                            : TextAlign.left,
                                         textScaler: TextScaler.noScaling,
-                                        style: GlypheTokens.cellLabelSmall
+                                        style: GlypheTokens.caseLibelle
                                             .copyWith(color: t.ink),
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
                           ),
                           if (widget.orphelin)

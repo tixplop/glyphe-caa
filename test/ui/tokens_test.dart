@@ -116,6 +116,18 @@ void main() {
     expect(s.fontFamily, 'AtkinsonHyperlegible');
   });
 
+  test('REQ035_AC7 REQ035_AC8 case-libelle et écarts de case', () {
+    const s = GlypheTokens.caseLibelle;
+    expect(s.fontFamily, 'AtkinsonHyperlegible');
+    expect(s.fontWeight, FontWeight.w700);
+    expect(s.fontSize, 13);
+    expect(s.height, 16 / 13);
+    expect(s.fontSize! * s.height!, closeTo(16, 1e-9));
+    expect(s.leadingDistribution, TextLeadingDistribution.even);
+    expect(GlypheTokens.caseEcartLibelle, 2);
+    expect(GlypheTokens.caseLibelleMin, 32);
+  });
+
   test('REQ035_AC2 themeGlyphe porte les tokens du thème', () {
     final clair = themeGlyphe(Brightness.light);
     final sombre = themeGlyphe(Brightness.dark);

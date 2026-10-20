@@ -192,6 +192,8 @@ class GlypheTokens extends ThemeExtension<GlypheTokens> {
   static const double caseMargeHaut = 2;
   static const double caseMargeBas = 1;
   static const double caseEcartPicto = 0;
+  static const double caseEcartLibelle = 2;
+  static const double caseLibelleMin = 32;
 
   static const String famille = 'AtkinsonHyperlegible';
 
@@ -231,6 +233,13 @@ class GlypheTokens extends ThemeExtension<GlypheTokens> {
     fontSize: 17,
     height: 20 / 17,
     fontWeight: FontWeight.w700,
+  );
+  static const TextStyle caseLibelle = TextStyle(
+    fontFamily: famille,
+    fontSize: 13,
+    height: 16 / 13,
+    fontWeight: FontWeight.w700,
+    leadingDistribution: TextLeadingDistribution.even,
   );
   static const TextStyle cellLabelSmall = TextStyle(
     fontFamily: famille,
