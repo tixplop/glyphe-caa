@@ -1151,7 +1151,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await lance(tester, taille: const Size(915, 412));
       final texte = tester.widget<Text>(grille('je'));
-      expect(texte.style!.fontSize, 17);
+      expect(texte.style!.fontSize, 15);
       expect(
         MediaQuery.of(tester.element(find.byType(BarrePhrase))).textScaler,
         TextScaler.noScaling,
@@ -1398,7 +1398,7 @@ void main() {
             final textes = find.descendant(of: cf, matching: find.byType(Text));
             for (final t in textes.evaluate()) {
               final w = t.widget as Text;
-              expect(w.style!.fontSize, 17, reason: '${w.data}');
+              expect(w.style!.fontSize, 15, reason: '${w.data}');
               final rp = t.renderObject! as RenderParagraph;
               expect(rp.didExceedMaxLines, isFalse, reason: '${w.data}');
               expect(rp.size.height, lessThanOrEqualTo(20.5), reason: w.data);

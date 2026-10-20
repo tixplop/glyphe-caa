@@ -78,6 +78,19 @@ void main() {
     expect(fautes, isEmpty);
   });
 
+  test(
+    'REQ033 REQ035 la case n\'utilise que cellLabelSmall, sans facteur 0,6',
+    () {
+      final src = File('lib/ui/widgets/case_widget.dart')
+          .readAsStringSync()
+          .replaceAll(RegExp(r'//[^\n]*'), '');
+      expect(src.contains('cellLabel.'), isFalse);
+      expect(src.contains('cellLabelSmall'), isTrue);
+      expect(src.contains('0.6'), isFalse);
+      expect(src.contains('FittedBox'), isFalse);
+    },
+  );
+
   test('REQ036_AC5 pas de FittedBox dans les barres ni l\'édition de case', () {
     final fichiers = [
       ...Directory('lib/ui/widgets').listSync().whereType<File>().where(

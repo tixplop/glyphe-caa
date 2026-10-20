@@ -104,6 +104,18 @@ void main() {
     expect(GlypheTokens.cellLabel.fontWeight, FontWeight.w700);
   });
 
+  test('REQ035_AC7 marges internes de case et cell-label-small', () {
+    expect(GlypheTokens.caseMargeX, 4);
+    expect(GlypheTokens.caseMargeHaut, 2);
+    expect(GlypheTokens.caseMargeBas, 1);
+    expect(GlypheTokens.caseEcartPicto, 0);
+    const s = GlypheTokens.cellLabelSmall;
+    expect(s.fontSize, 15);
+    expect(s.height, 18 / 15);
+    expect(s.fontWeight, FontWeight.w700);
+    expect(s.fontFamily, 'AtkinsonHyperlegible');
+  });
+
   test('REQ035_AC2 themeGlyphe porte les tokens du thème', () {
     final clair = themeGlyphe(Brightness.light);
     final sombre = themeGlyphe(Brightness.dark);

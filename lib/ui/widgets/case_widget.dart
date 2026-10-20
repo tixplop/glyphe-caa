@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../domaine/modeles.dart';
@@ -33,24 +35,14 @@ class _CaseWidgetState extends State<CaseWidget> {
   static const double _bordure = GlypheTokens.contourCase;
   static const double _marge = 3;
   static const double _coin = 16;
+  static const double _margeX = GlypheTokens.caseMargeX;
+  static const double _hLibelle = 18;
+
+  static double _pos(double v) => v < 0 ? 0 : v;
 
   bool _focus = false;
 
   bool get _dossier => widget.caseData.type == TypeCase.dossier;
-
-  /// Style du libellé : `cell-label`, ou `cell-label-small` s'il ne tient pas.
-  TextStyle _style(String libelle, double largeur, Color encre) {
-    final grand = GlypheTokens.cellLabel.copyWith(color: encre);
-    final mesure = TextPainter(
-      text: TextSpan(text: libelle, style: grand),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-      textScaler: TextScaler.noScaling,
-    )..layout();
-    final tient = mesure.width <= largeur;
-    mesure.dispose();
-    return tient ? grand : GlypheTokens.cellLabelSmall.copyWith(color: encre);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,21 +68,23 @@ class _CaseWidgetState extends State<CaseWidget> {
         onTap: widget.onTap,
         child: LayoutBuilder(
           builder: (context, box) {
-            final cote =
-                0.6 *
-                (box.maxWidth < box.maxHeight ? box.maxWidth : box.maxHeight);
-            // Case basse (grille dense) : sans picto possible, on retire la
-            // marge interne et l'écart pour que le libellé tienne.
-            final basse =
-                libelle.isNotEmpty &&
-                box.maxHeight <
-                    (GlypheTokens.cellLabel.height! *
-                                GlypheTokens.cellLabel.fontSize!)
-                            .ceil() +
-                        GlypheTokens.espace1 +
-                        2 * _marge;
-            final margeInterne = basse ? 0.0 : _marge;
-            final largeurLibelle = box.maxWidth - 2 * margeInterne;
+            final avecLibelle = libelle.isNotEmpty;
+            final li = _pos(box.maxWidth - 2 * _bordure - 2 * _margeX);
+            var margeHaut = GlypheTokens.caseMargeHaut;
+            var margeBas = GlypheTokens.caseMargeBas;
+            var hi = box.maxHeight - 2 * _bordure - margeHaut - margeBas;
+            if (avecLibelle && hi < _hLibelle) {
+              // Case très basse : plus de marge haute ni basse.
+              margeHaut = 0;
+              margeBas = 0;
+              hi = box.maxHeight - 2 * _bordure;
+            }
+            hi = _pos(hi);
+            final d = avecLibelle
+                ? _pos(
+                    math.min(li, hi - _hLibelle - GlypheTokens.caseEcartPicto),
+                  )
+                : math.min(li, hi);
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -113,55 +107,51 @@ class _CaseWidgetState extends State<CaseWidget> {
                       focusColor: Colors.transparent,
                       child: Stack(
                         children: [
-                          Padding(
-                            padding: EdgeInsets.all(margeInterne),
-                            child: Column(
-                              children: [
-                                Expanded(
-                                  child: LayoutBuilder(
-                                    builder: (context, zone) {
-                                      final h = zone.maxHeight;
-                                      final d = cote < h ? cote : h;
-                                      return Center(
-                                        child: SizedBox.square(
-                                          key: const Key('picto'),
-                                          dimension: d,
-                                          child:
-                                              retour && c.image is ImageAucune
-                                              ? Icon(
-                                                  Icons.arrow_back,
-                                                  key: const Key(
-                                                    'fleche-retour',
-                                                  ),
-                                                  size: d,
-                                                  color: t.ink,
-                                                  semanticLabel: null,
-                                                )
-                                              : ImageCaseWidget(c.image),
-                                        ),
-                                      );
-                                    },
+                          Positioned(
+                            left: _bordure + _margeX,
+                            top: _bordure + margeHaut,
+                            width: li,
+                            height: hi,
+                            child: OverflowBox(
+                              minHeight: 0,
+                              maxHeight: double.infinity,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox.square(
+                                    key: const Key('picto'),
+                                    dimension: d,
+                                    child: retour && c.image is ImageAucune
+                                        ? Icon(
+                                            Icons.arrow_back,
+                                            key: const Key('fleche-retour'),
+                                            size: d,
+                                            color: t.ink,
+                                            semanticLabel: null,
+                                          )
+                                        : ImageCaseWidget(c.image),
                                   ),
-                                ),
-                                if (libelle.isNotEmpty) ...[
-                                  SizedBox(
-                                    height: basse ? 0 : GlypheTokens.espace1,
-                                  ),
-                                  Text(
-                                    libelle,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    softWrap: false,
-                                    textAlign: TextAlign.center,
-                                    textScaler: TextScaler.noScaling,
-                                    style: _style(
-                                      libelle,
-                                      largeurLibelle,
-                                      t.ink,
+                                  if (avecLibelle) ...[
+                                    const SizedBox(
+                                      height: GlypheTokens.caseEcartPicto,
                                     ),
-                                  ),
+                                    SizedBox(
+                                      width: li,
+                                      height: _hLibelle,
+                                      child: Text(
+                                        libelle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                        textAlign: TextAlign.center,
+                                        textScaler: TextScaler.noScaling,
+                                        style: GlypheTokens.cellLabelSmall
+                                            .copyWith(color: t.ink),
+                                      ),
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
                           if (widget.orphelin)

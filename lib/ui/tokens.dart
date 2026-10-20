@@ -187,6 +187,12 @@ class GlypheTokens extends ThemeExtension<GlypheTokens> {
   static const double anneauFocus = 3;
   static const double contourCase = 3;
 
+  // Marges internes d'une case (entre le contour et le picto / le libellé).
+  static const double caseMargeX = espace1;
+  static const double caseMargeHaut = 2;
+  static const double caseMargeBas = 1;
+  static const double caseEcartPicto = 0;
+
   static const String famille = 'AtkinsonHyperlegible';
 
   // Styles de texte (la couleur vient du thème).
