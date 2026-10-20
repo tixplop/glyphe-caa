@@ -13,6 +13,7 @@ import 'package:glyphe/ui/widgets/case_widget.dart';
 import '../faux/faux_stockage.dart';
 import '../faux/faux_voix.dart';
 import '../faux/fausse_horloge.dart';
+import '../faux/police.dart';
 
 /// Littéraux de texte d'interface hors `Textes` (AC-029-1).
 /// Exception documentée : un littéral sans aucune lettre une fois les
@@ -140,6 +141,53 @@ void main() {
             expect(r.height, greaterThanOrEqualTo(mini), reason: ecran);
           }
         }
+      });
+    }
+  }
+
+  // T-038 : cases agrandies (REQ-033), guidelines en clair et en sombre, sur
+  // l'accueil et Manger, aux 3 tailles.
+  for (final sombre in const [false, true]) {
+    for (final taille in const [
+      Size(640, 360),
+      Size(915, 412),
+      Size(1280, 800),
+    ]) {
+      testWidgets('REQ028_AC1/AC2/AC4 REQ033_AC7 cases agrandies, '
+          '${sombre ? 'sombre' : 'clair'} $taille', (tester) async {
+        await chargerPolice();
+        final h = tester.ensureSemantics();
+        tester.view.physicalSize = taille;
+        tester.view.devicePixelRatio = 1.0;
+        tester.platformDispatcher.platformBrightnessTestValue = sombre
+            ? Brightness.dark
+            : Brightness.light;
+        addTearDown(tester.view.reset);
+        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+        final etat = EtatAppli(
+          stockage: FauxStockage(
+            donneesDepuisJson(
+              jsonDecode(
+                File('assets/exemples/grilles_exemple.json').readAsStringSync(),
+              ),
+            ),
+          ),
+          voix: FauxVoix(),
+          horloge: FausseHorloge(),
+          jsonExemples: '{}',
+        );
+        await etat.init();
+        await tester.pumpWidget(GlypheApp(etat: etat));
+        await tester.pumpAndSettle();
+        for (final g in const ['accueil', 'manger']) {
+          etat.session.ouvrirGrille(g);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull, reason: g);
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(textContrastGuideline));
+        }
+        h.dispose();
       });
     }
   }

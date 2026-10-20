@@ -1144,7 +1144,7 @@ void main() {
       expect(find.byKey(const Key('bouton-plus')), findsNothing);
     });
 
-    testWidgets('REQ035_AC4 échelle de texte 2 : libellé de case en 17', (
+    testWidgets('REQ035_AC4 échelle de texte 2 : libellé de case en 15', (
       tester,
     ) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
@@ -1368,33 +1368,41 @@ void main() {
       h.dispose();
     });
 
-    for (final g in [
+    const grillesExemple = [
       'accueil',
       'besoins',
       'emotions',
       'manger',
       'fruits',
       'jouer',
-    ]) {
+    ];
+    const minimauxPicto = {640: 54.0, 915: 68.0, 1280: 190.0};
+
+    Iterable<Element> casesDe(WidgetTester tester) => find
+        .descendant(
+          of: find.byKey(const Key('grille')),
+          matching: find.byType(CaseWidget),
+        )
+        .evaluate();
+
+    for (final g in grillesExemple) {
       testWidgets(
-        'REQ001_AC10 $g : libellés en 17 sur une ligne, picto >= 44',
+        'REQ001_AC10 REQ033_AC7 $g : libellés en 15 sur une ligne, dans le '
+        'contour, pictos >= 54 (640x360)',
         (tester) async {
           final e = await exemples(tester);
           e.etat.session.ouvrirGrille(g);
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
-          final cases = find.descendant(
-            of: find.byKey(const Key('grille')),
-            matching: find.byType(CaseWidget),
-          );
-          expect(cases, findsWidgets);
-          for (final c in cases.evaluate()) {
+          expect(casesDe(tester), isNotEmpty);
+          for (final c in casesDe(tester)) {
             final cf = find.byElementPredicate((x) => x == c);
+            final contour = tester.getRect(cf).deflate(3 + 3);
             final picto = tester.getSize(
               find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
             );
-            expect(picto.width, greaterThanOrEqualTo(44), reason: '$g $picto');
-            expect(picto.height, greaterThanOrEqualTo(44), reason: '$g $picto');
+            expect(picto.width, greaterThanOrEqualTo(54 - 0.5), reason: g);
+            expect(picto.height, greaterThanOrEqualTo(54 - 0.5), reason: g);
             final textes = find.descendant(of: cf, matching: find.byType(Text));
             for (final t in textes.evaluate()) {
               final w = t.widget as Text;
@@ -1402,7 +1410,12 @@ void main() {
               final rp = t.renderObject! as RenderParagraph;
               expect(rp.didExceedMaxLines, isFalse, reason: '${w.data}');
               expect(rp.size.height, lessThanOrEqualTo(20.5), reason: w.data);
-              expect(w.data!.contains('…'), isFalse);
+              expect(w.data!.contains('…'), isFalse, reason: w.data);
+              final rt = tester.getRect(find.byElementPredicate((x) => x == t));
+              expect(rt.left, greaterThanOrEqualTo(contour.left - 0.5));
+              expect(rt.right, lessThanOrEqualTo(contour.right + 0.5));
+              expect(rt.top, greaterThanOrEqualTo(contour.top - 0.5));
+              expect(rt.bottom, lessThanOrEqualTo(contour.bottom + 0.5));
             }
           }
           if (g == 'accueil') {
@@ -1412,7 +1425,184 @@ void main() {
           }
         },
       );
+      for (final t in const [Size(915, 412), Size(1280, 800)]) {
+        testWidgets('REQ033_AC7 $g : pictos >= seuil en $t', (tester) async {
+          final e = await exemples(tester, taille: t);
+          e.etat.session.ouvrirGrille(g);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          for (final c in casesDe(tester)) {
+            final picto = tester.getSize(
+              find.descendant(
+                of: find.byElementPredicate((x) => x == c),
+                matching: find.byKey(const Key('picto')),
+              ),
+            );
+            final mini = minimauxPicto[t.width.toInt()]! - 0.5;
+            expect(picto.width, greaterThanOrEqualTo(mini), reason: '$g $t');
+            expect(picto.height, greaterThanOrEqualTo(mini), reason: '$g $t');
+          }
+        });
+      }
+      for (final t in const [Size(640, 360), Size(915, 412)]) {
+        testWidgets('REQ001_AC12 $g : même côté de picto, même haut par ligne '
+            'en $t', (tester) async {
+          final e = await exemples(tester, taille: t);
+          e.etat.session.ouvrirGrille(g);
+          await tester.pumpAndSettle();
+          final cases = casesDe(tester).toList();
+          expect(cases, isNotEmpty);
+          final pictos = [
+            for (final c in cases)
+              tester.getRect(
+                find.descendant(
+                  of: find.byElementPredicate((x) => x == c),
+                  matching: find.byKey(const Key('picto')),
+                ),
+              ),
+          ];
+          for (final r in pictos) {
+            expect(r.width, closeTo(pictos.first.width, 0.5));
+            expect(r.height, closeTo(pictos.first.width, 0.5));
+          }
+          final hautParLigne = <double, double>{};
+          for (var i = 0; i < cases.length; i++) {
+            final haut = tester
+                .getRect(find.byElementPredicate((x) => x == cases[i]))
+                .top;
+            final cle = hautParLigne.keys.firstWhere(
+              (k) => (k - haut).abs() < 0.5,
+              orElse: () => haut,
+            );
+            final ref = hautParLigne.putIfAbsent(cle, () => pictos[i].top);
+            expect(pictos[i].top, closeTo(ref, 0.5), reason: '$g $t');
+          }
+        });
+      }
     }
+
+    testWidgets('REQ001_AC11 cotes de « je » et de la flèche de Retour', (
+      tester,
+    ) async {
+      final e = await exemples(tester);
+      Rect de(String cle, String enfant) => tester.getRect(
+        find.descendant(
+          of: find.byKey(Key(cle)),
+          matching: find.byKey(Key(enfant)),
+        ),
+      );
+      verifie(vis(tester, 'accueil-0'), 12, 88, 148, 81.3, 'je');
+      verifie(de('case-accueil-0', 'picto'), 58.8, 93, 54.3, 54.3, 'picto je');
+      final lib = tester.getRect(
+        find.descendant(
+          of: find.byKey(const Key('case-accueil-0')),
+          matching: find.text('je'),
+        ),
+      );
+      expect(lib.top, closeTo(147.3, 0.5));
+      expect(lib.bottom, closeTo(165.3, 0.5));
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      final retour = find.descendant(
+        of: find.byKey(const Key('grille')),
+        matching: find.byIcon(Icons.arrow_back),
+      );
+      expect(retour, findsOneWidget);
+      verifie(vis(tester, 'manger-retour'), 12, 88, 148, 81.3, 'case retour');
+      verifie(
+        tester.getRect(
+          find.descendant(
+            of: find.byKey(const Key('case-manger-retour')),
+            matching: find.byKey(const Key('picto')),
+          ),
+        ),
+        58.8,
+        93,
+        54.3,
+        54.3,
+        'picto retour',
+      );
+      final libR = tester.getRect(
+        find.descendant(
+          of: find.byKey(const Key('case-manger-retour')),
+          matching: find.text('Retour'),
+        ),
+      );
+      expect(libR.top, closeTo(147.3, 0.5));
+      expect(libR.bottom, closeTo(165.3, 0.5));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('REQ035_AC6 accueil identique aux échelles 2 et 0,85', (
+      tester,
+    ) async {
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      Future<List<Rect>> mesure(double echelle) async {
+        tester.platformDispatcher.textScaleFactorTestValue = echelle;
+        await exemples(tester);
+        final res = <Rect>[];
+        for (final c in casesDe(tester)) {
+          final cf = find.byElementPredicate((x) => x == c);
+          res.add(
+            tester.getRect(
+              find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
+            ),
+          );
+          for (final t
+              in find
+                  .descendant(of: cf, matching: find.byType(Text))
+                  .evaluate()) {
+            expect((t.widget as Text).style!.fontSize, 15);
+            res.add(tester.getRect(find.byElementPredicate((x) => x == t)));
+          }
+        }
+        return res;
+      }
+
+      final ref = await mesure(1);
+      expect(ref, isNotEmpty);
+      for (final echelle in const [2.0, 0.85]) {
+        final autre = await mesure(echelle);
+        expect(autre.length, ref.length, reason: '$echelle');
+        for (var i = 0; i < ref.length; i++) {
+          expect(autre[i].left, closeTo(ref[i].left, 0.5));
+          expect(autre[i].top, closeTo(ref[i].top, 0.5));
+          expect(autre[i].width, closeTo(ref[i].width, 0.5));
+          expect(autre[i].height, closeTo(ref[i].height, 0.5));
+        }
+      }
+    });
+
+    testWidgets('REQ037_AC9 édition : mêmes pictos qu\'en communication', (
+      tester,
+    ) async {
+      final e = await exemples(tester);
+      for (final g in grillesExemple) {
+        e.etat.session.ouvrirGrille(g);
+        await tester.pumpAndSettle();
+        List<Rect> pictos() => [
+          for (final c in casesDe(tester))
+            tester.getRect(
+              find.descendant(
+                of: find.byElementPredicate((x) => x == c),
+                matching: find.byKey(const Key('picto')),
+              ),
+            ),
+        ];
+        final avant = pictos();
+        e.etat.ouvrirEdition();
+        await tester.pumpAndSettle();
+        final apres = pictos();
+        expect(apres.length, avant.length, reason: g);
+        for (var i = 0; i < avant.length; i++) {
+          expect(apres[i].left, closeTo(avant[i].left, 0.5), reason: g);
+          expect(apres[i].top, closeTo(avant[i].top, 0.5), reason: g);
+          expect(apres[i].width, closeTo(avant[i].width, 0.5), reason: g);
+        }
+        e.etat.verrouiller();
+        await tester.pumpAndSettle();
+      }
+    });
 
     testWidgets('REQ001_AC10 accueil vide en (2, 3) en mode édition', (
       tester,
