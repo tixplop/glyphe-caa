@@ -3,6 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyphe/ui/app.dart';
+import 'package:glyphe/ui/tokens.dart';
+import 'package:glyphe/ui/textes.dart';
+import 'package:glyphe/ui/widgets/barre_phrase.dart';
+import 'package:glyphe/ui/widgets/case_widget.dart';
 
 import 'ui/accessibilite_edition_test.dart' show depuisMenu, etatPret, retour;
 
@@ -195,6 +199,84 @@ void main() {
       await fermerPopup();
     });
   }
+
+  testWidgets('REQ036_AC13 textes sous 15 : libellés de case (13) et « Mode '
+      'édition » (14) seulement', (tester) async {
+    tester.view.physicalSize = const Size(640, 360);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    final etat = await etatPret(tester);
+    await tester.pumpWidget(GlypheApp(etat: etat));
+    await tester.pumpAndSettle();
+
+    void verifier(String ecran) {
+      final fautes = <String>[];
+      var libelles = 0;
+      for (final w in tester.widgetList<RichText>(find.byType(RichText))) {
+        final taille = w.text.style?.fontSize;
+        if (taille == null) {
+          fautes.add('${w.text.toPlainText()} : sans fontSize');
+          continue;
+        }
+        if (taille >= 15) continue;
+        final texte = w.text.toPlainText();
+        final estLibelle = find
+            .descendant(of: find.byType(CaseWidget), matching: find.byWidget(w))
+            .evaluate()
+            .isNotEmpty;
+        if (estLibelle && taille == 13) {
+          expect(w.text.style?.height, closeTo(16 / 13, 0.001), reason: ecran);
+          expect(w.text.style?.fontWeight, FontWeight.w700, reason: ecran);
+          libelles++;
+        } else if (texte == Textes.modeEdition &&
+            taille == GlypheTokens.caption.fontSize &&
+            w.text.style?.height == GlypheTokens.caption.height) {
+          continue;
+        } else {
+          fautes.add('$texte : $taille');
+        }
+      }
+      expect(fautes, isEmpty, reason: ecran);
+      expect(libelles, greaterThan(0), reason: ecran);
+    }
+
+    verifier('communication, phrase vide');
+    expect(
+      tester
+          .widget<RichText>(
+            find.descendant(
+              of: find.byType(BarrePhrase),
+              matching: find.byWidgetPredicate(
+                (w) =>
+                    w is RichText && w.text.toPlainText() == Textes.aidePhrase,
+              ),
+            ),
+          )
+          .text
+          .style
+          ?.fontSize,
+      17,
+    );
+    await tester.tap(find.byKey(const Key('case-accueil-0')));
+    await tester.tap(find.byKey(const Key('case-accueil-1')));
+    await tester.pumpAndSettle();
+    verifier('communication');
+    final barre = find.descendant(
+      of: find.byType(BarrePhrase),
+      matching: find.byType(RichText),
+    );
+    final tailles = {
+      for (final w in tester.widgetList<RichText>(barre))
+        w.text.toPlainText(): w.text.style?.fontSize,
+    };
+    expect(tailles['je'], 24);
+    expect(tailles['veux'], 24);
+    etat.ouvrirEdition();
+    etat.session.ouvrirGrille('manger');
+    await tester.pumpAndSettle();
+    verifier('édition');
+    expect(find.text(Textes.modeEdition), findsWidgets);
+  });
 
   test('REQ028_AC5 tout AppBar de lib/ui a un titre TitreBarre', () {
     for (final f in Directory('lib/ui').listSync(recursive: true)) {

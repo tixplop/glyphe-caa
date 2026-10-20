@@ -145,7 +145,7 @@ void main() {
     }
   }
 
-  // T-038 : cases agrandies (REQ-033), guidelines en clair et en sombre, sur
+  // T-038/T-040 : cases côte à côte (REQ-033), guidelines en clair et en sombre, sur
   // l'accueil et Manger, aux 3 tailles.
   for (final sombre in const [false, true]) {
     for (final taille in const [

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:glyphe/domaine/edition.dart';
 import 'package:glyphe/domaine/modeles.dart';
 import 'package:glyphe/domaine/serialisation.dart';
 import 'package:glyphe/ui/app.dart';
@@ -731,6 +732,15 @@ void main() {
         );
         expect(fleche.icon, Icons.arrow_back);
         expect(fleche.color, GlypheTokens.clair.ink);
+        final rf = tester.getRect(find.byKey(const Key('fleche-retour')));
+        final rl = tester.getRect(
+          find.descendant(
+            of: k,
+            matching: find.byKey(const Key('libelle-place')),
+          ),
+        );
+        expect(rf.right, lessThanOrEqualTo(rl.left + 0.5));
+        expect(rf.center.dy, closeTo(rl.center.dy, 0.5));
         final m = tester.widget<Material>(
           find.descendant(of: k, matching: find.byType(Material)).first,
         );
@@ -1376,7 +1386,7 @@ void main() {
       'fruits',
       'jouer',
     ];
-    const minimauxPicto = {640: 54.0, 915: 68.0, 1280: 190.0};
+    const minimauxPicto = {640: 72.0, 915: 89.0, 1280: 210.0};
 
     Iterable<Element> casesDe(WidgetTester tester) => find
         .descendant(
@@ -1385,63 +1395,72 @@ void main() {
         )
         .evaluate();
 
+    // Contrôles de AC-001-10 / AC-033-7 : picto >= mini, libellé en 13 sur une
+    // ligne, entièrement dans le contour (place mesurée via `libelle-place`).
+    void controleCases(WidgetTester tester, String g, double mini) {
+      expect(tester.takeException(), isNull, reason: g);
+      expect(casesDe(tester), isNotEmpty);
+      for (final c in casesDe(tester)) {
+        final cf = find.byElementPredicate((x) => x == c);
+        final contour = tester.getRect(cf).deflate(3 + 3);
+        final picto = tester.getSize(
+          find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
+        );
+        expect(picto.width, greaterThanOrEqualTo(mini - 0.5), reason: g);
+        expect(picto.height, greaterThanOrEqualTo(mini - 0.5), reason: g);
+        final textes = find.descendant(of: cf, matching: find.byType(Text));
+        final places = find.descendant(
+          of: cf,
+          matching: find.byKey(const Key('libelle-place')),
+        );
+        expect(places, findsOneWidget, reason: g);
+        expect(textes, findsOneWidget, reason: g);
+        final t = textes.evaluate().single;
+        final w = t.widget as Text;
+        expect(w.style!.fontSize, 13, reason: '${w.data}');
+        final rp = t.renderObject! as RenderParagraph;
+        expect(rp.didExceedMaxLines, isFalse, reason: '${w.data}');
+        expect(w.data!.contains('…'), isFalse, reason: w.data);
+        final rt = tester.getRect(places);
+        expect(rt.left, greaterThanOrEqualTo(contour.left - 0.5), reason: g);
+        expect(rt.right, lessThanOrEqualTo(contour.right + 0.5), reason: g);
+        expect(rt.top, greaterThanOrEqualTo(contour.top - 0.5), reason: g);
+        expect(rt.bottom, lessThanOrEqualTo(contour.bottom + 0.5), reason: g);
+        expect(rp.size.width, lessThanOrEqualTo(rt.width + 0.5), reason: g);
+        expect(rp.size.height, lessThanOrEqualTo(16.5), reason: w.data);
+        // Disposition côte à côte (AC-033-13, AC-033-14).
+        final rPicto = tester.getRect(
+          find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
+        );
+        final rTexte = tester.getRect(find.byElementPredicate((x) => x == t));
+        expect(w.textAlign, TextAlign.left, reason: '$g ${w.data}');
+        expect(rt.left, closeTo(rPicto.right + 2, 0.5), reason: '$g ${w.data}');
+        expect(rTexte.left, closeTo(rt.left, 0.5), reason: '$g ${w.data}');
+        expect(rt.center.dy, closeTo(rPicto.center.dy, 0.5), reason: g);
+        expect(rTexte.center.dy, closeTo(rPicto.center.dy, 0.5), reason: g);
+      }
+    }
+
     for (final g in grillesExemple) {
-      testWidgets(
-        'REQ001_AC10 REQ033_AC7 $g : libellés en 15 sur une ligne, dans le '
-        'contour, pictos >= 54 (640x360)',
-        (tester) async {
-          final e = await exemples(tester);
-          e.etat.session.ouvrirGrille(g);
-          await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-          expect(casesDe(tester), isNotEmpty);
-          for (final c in casesDe(tester)) {
-            final cf = find.byElementPredicate((x) => x == c);
-            final contour = tester.getRect(cf).deflate(3 + 3);
-            final picto = tester.getSize(
-              find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
-            );
-            expect(picto.width, greaterThanOrEqualTo(72 - 0.5), reason: g);
-            expect(picto.height, greaterThanOrEqualTo(72 - 0.5), reason: g);
-            final textes = find.descendant(of: cf, matching: find.byType(Text));
-            for (final t in textes.evaluate()) {
-              final w = t.widget as Text;
-              expect(w.style!.fontSize, 13, reason: '${w.data}');
-              final rp = t.renderObject! as RenderParagraph;
-              expect(rp.didExceedMaxLines, isFalse, reason: '${w.data}');
-              expect(rp.size.height, lessThanOrEqualTo(16.5), reason: w.data);
-              expect(w.data!.contains('…'), isFalse, reason: w.data);
-              final rt = tester.getRect(find.byElementPredicate((x) => x == t));
-              expect(rt.left, greaterThanOrEqualTo(contour.left - 0.5));
-              expect(rt.right, lessThanOrEqualTo(contour.right + 0.5));
-              expect(rt.top, greaterThanOrEqualTo(contour.top - 0.5));
-              expect(rt.bottom, lessThanOrEqualTo(contour.bottom + 0.5));
-            }
-          }
-          if (g == 'accueil') {
-            expect(find.byKey(const Key('vide-2-3')), findsNothing);
-            expect(find.byIcon(Icons.add), findsNothing);
-            expect(find.byKey(const Key('case-accueil-11')), findsNothing);
-          }
-        },
-      );
+      testWidgets('REQ001_AC10 REQ033_AC7 $g : libellés en 13 sur une ligne, '
+          'dans le contour, pictos >= 72 (640x360)', (tester) async {
+        final e = await exemples(tester);
+        e.etat.session.ouvrirGrille(g);
+        await tester.pumpAndSettle();
+        controleCases(tester, g, 72);
+        if (g == 'accueil') {
+          expect(find.byKey(const Key('vide-2-3')), findsNothing);
+          expect(find.byIcon(Icons.add), findsNothing);
+          expect(find.byKey(const Key('case-accueil-11')), findsNothing);
+        }
+      });
       for (final t in const [Size(915, 412), Size(1280, 800)]) {
-        testWidgets('REQ033_AC7 $g : pictos >= seuil en $t', (tester) async {
+        testWidgets('REQ001_AC10 REQ033_AC7 $g : pictos >= seuil, libellés '
+            'en 13 en $t', (tester) async {
           final e = await exemples(tester, taille: t);
           e.etat.session.ouvrirGrille(g);
           await tester.pumpAndSettle();
-          expect(tester.takeException(), isNull);
-          for (final c in casesDe(tester)) {
-            final picto = tester.getSize(
-              find.descendant(
-                of: find.byElementPredicate((x) => x == c),
-                matching: find.byKey(const Key('picto')),
-              ),
-            );
-            final mini = minimauxPicto[t.width.toInt()]! - 0.5;
-            expect(picto.width, greaterThanOrEqualTo(mini), reason: '$g $t');
-            expect(picto.height, greaterThanOrEqualTo(mini), reason: '$g $t');
-          }
+          controleCases(tester, g, minimauxPicto[t.width.toInt()]!);
         });
       }
       for (final t in const [Size(640, 360), Size(915, 412)]) {
@@ -1477,6 +1496,33 @@ void main() {
             final ref = hautParLigne.putIfAbsent(cle, () => pictos[i].top);
             expect(pictos[i].top, closeTo(ref, 0.5), reason: '$g $t');
           }
+          // Même bord gauche par colonne.
+          final gaucheParColonne = <double, double>{};
+          for (var i = 0; i < cases.length; i++) {
+            final gauche = tester
+                .getRect(find.byElementPredicate((x) => x == cases[i]))
+                .left;
+            final cle = gaucheParColonne.keys.firstWhere(
+              (k) => (k - gauche).abs() < 0.5,
+              orElse: () => gauche,
+            );
+            final ref = gaucheParColonne.putIfAbsent(cle, () => pictos[i].left);
+            expect(pictos[i].left, closeTo(ref, 0.5), reason: '$g $t');
+          }
+          // Même taille de libellé.
+          for (final c in cases) {
+            final texte = find.descendant(
+              of: find.byElementPredicate((x) => x == c),
+              matching: find.byType(Text),
+            );
+            expect(tester.widget<Text>(texte).style!.fontSize, 13);
+            expect(
+              (texte.evaluate().single.renderObject! as RenderParagraph)
+                  .size
+                  .height,
+              closeTo(16, 0.5),
+            );
+          }
         });
       }
     }
@@ -1493,14 +1539,16 @@ void main() {
       );
       verifie(vis(tester, 'accueil-0'), 12, 88, 148, 81.3, 'je');
       verifie(de('case-accueil-0', 'picto'), 19, 93, 72.3, 72.3, 'picto je');
-      final lib = tester.getRect(
+      Rect place(String cle) => tester.getRect(
         find.descendant(
-          of: find.byKey(const Key('case-accueil-0')),
-          matching: find.text('je'),
+          of: find.byKey(Key(cle)),
+          matching: find.byKey(const Key('libelle-place')),
         ),
       );
-      expect(lib.top, closeTo(121.2, 0.5));
-      expect(lib.bottom, closeTo(137.2, 0.5));
+      final lib = place('case-accueil-0');
+      expect(lib.left, greaterThanOrEqualTo(91.3 - 0.5));
+      expect(lib.right, lessThanOrEqualTo(153 + 0.5));
+      expect(lib.center.dy, closeTo(129.2, 0.5));
       e.etat.session.ouvrirGrille('manger');
       await tester.pumpAndSettle();
       final retour = find.descendant(
@@ -1522,14 +1570,47 @@ void main() {
         72.3,
         'picto retour',
       );
-      final libR = tester.getRect(
-        find.descendant(
-          of: find.byKey(const Key('case-manger-retour')),
-          matching: find.text('Retour'),
-        ),
+      final libR = place('case-manger-retour');
+      expect(libR.left, greaterThanOrEqualTo(91.3 - 0.5));
+      expect(libR.right, lessThanOrEqualTo(153 + 0.5));
+      expect(libR.center.dy, closeTo(129.2, 0.5));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('REQ001_AC13 cotes des libellés de l\'accueil', (tester) async {
+      await exemples(tester);
+      const gauches = [93.3, 249.3, 405.3, 561.3];
+      const hauts = [121.2, 210.5, 299.8];
+      final grille = find.byKey(const Key('grille'));
+      final cases = find.descendant(
+        of: grille,
+        matching: find.byType(CaseWidget),
       );
-      expect(libR.top, closeTo(121.2, 0.5));
-      expect(libR.bottom, closeTo(137.2, 0.5));
+      expect(cases, findsNWidgets(11));
+      for (final c in cases.evaluate()) {
+        final cf = find.byElementPredicate((x) => x == c);
+        final cle = (c.widget.key! as ValueKey<String>).value;
+        final i = int.parse(cle.split('-').last);
+        final texte = find.descendant(of: cf, matching: find.byType(Text));
+        final place = tester.getRect(texte);
+        expect(place.left, closeTo(gauches[i % 4], 0.5), reason: cle);
+        expect(place.top, closeTo(hauts[i ~/ 4], 0.5), reason: cle);
+        final w = tester.widget<Text>(texte);
+        expect(w.style!.fontSize, 13);
+        expect(w.style!.height, closeTo(16 / 13, 0.01));
+        expect(w.textAlign, TextAlign.left);
+      }
+      final emotions = find.descendant(
+        of: find.byKey(const Key('case-accueil-8')),
+        matching: find.byType(Text),
+      );
+      expect(tester.widget<Text>(emotions).data, 'Émotions');
+      expect(
+        (emotions.evaluate().single.renderObject! as RenderParagraph)
+            .didExceedMaxLines,
+        isFalse,
+      );
+      expect(tester.getRect(emotions).right, lessThanOrEqualTo(153 + 0.5));
       expect(tester.takeException(), isNull);
     });
 
@@ -1552,9 +1633,19 @@ void main() {
               in find
                   .descendant(of: cf, matching: find.byType(Text))
                   .evaluate()) {
-            expect((t.widget as Text).style!.fontSize, 13);
-            res.add(tester.getRect(find.byElementPredicate((x) => x == t)));
+            final w = t.widget as Text;
+            expect(w.style!.fontSize, 13);
+            expect(w.style!.fontWeight, FontWeight.w700);
+            res.add(tester.getRect(find.byWidget(w)));
           }
+          res.add(
+            tester.getRect(
+              find.descendant(
+                of: cf,
+                matching: find.byKey(const Key('libelle-place')),
+              ),
+            ),
+          );
         }
         return res;
       }
@@ -1571,6 +1662,86 @@ void main() {
           expect(autre[i].height, closeTo(ref[i].height, 0.5));
         }
       }
+    });
+
+    testWidgets('REQ033_AC13 REQ037_AC10 grille 4 colonnes x 1 ligne : '
+        'cases superposées, flèche au-dessus de « Retour »', (tester) async {
+      final base = donneesDepuisJson(
+        jsonDecode(
+          File('assets/exemples/grilles_exemple.json').readAsStringSync(),
+        ),
+      );
+      final d = redimensionnerGrille(base, 'manger', 1, 4);
+      final e = await lance(tester, d: d);
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final cases = casesDe(tester).toList();
+      expect(cases, isNotEmpty);
+      for (final c in cases) {
+        final cf = find.byElementPredicate((x) => x == c);
+        final picto = tester.getRect(
+          find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
+        );
+        final texte = find.descendant(of: cf, matching: find.byType(Text));
+        final place = tester.getRect(texte);
+        expect(tester.widget<Text>(texte).textAlign, TextAlign.center);
+        expect(picto.width, closeTo(134, 0.5));
+        expect(picto.height, closeTo(134, 0.5));
+        expect(place.top, greaterThanOrEqualTo(picto.bottom - 0.5));
+        expect(place.center.dx, closeTo(picto.center.dx, 0.5));
+      }
+      final fleche = tester.getRect(find.byKey(const Key('fleche-retour')));
+      final libelle = tester.getRect(
+        find.descendant(
+          of: find.byKey(const Key('case-manger-retour')),
+          matching: find.byKey(const Key('libelle-place')),
+        ),
+      );
+      expect(fleche.width, closeTo(134, 0.5));
+      expect(fleche.bottom, lessThanOrEqualTo(libelle.top + 0.5));
+      expect(fleche.center.dx, closeTo(libelle.center.dx, 0.5));
+      e.etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      for (final c in casesDe(tester)) {
+        final cf = find.byElementPredicate((x) => x == c);
+        final picto = tester.getRect(
+          find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
+        );
+        final texte = find.descendant(of: cf, matching: find.byType(Text));
+        final place = tester.getRect(texte);
+        expect(tester.widget<Text>(texte).textAlign, TextAlign.center);
+        expect(place.top, greaterThanOrEqualTo(picto.bottom - 0.5));
+        expect(place.center.dx, closeTo(picto.center.dx, 0.5));
+      }
+    });
+
+    testWidgets('REQ037_AC10 édition : flèche et « Retour » comme en '
+        'communication', (tester) async {
+      final e = await exemples(tester);
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      Rect fleche() => tester.getRect(find.byKey(const Key('fleche-retour')));
+      Rect libelle() => tester.getRect(
+        find.descendant(
+          of: find.byKey(const Key('case-manger-retour')),
+          matching: find.byKey(const Key('libelle-place')),
+        ),
+      );
+      final f = fleche();
+      final l = libelle();
+      verifie(f, 19, 93, 72.3, 72.3, 'flèche');
+      expect(l.left, closeTo(93.3, 0.5));
+      expect(l.center.dy, closeTo(f.center.dy, 0.5));
+      expect(
+        tester.widget<Icon>(find.byKey(const Key('fleche-retour'))).size,
+        closeTo(72.3, 0.5),
+      );
+      e.etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      expect(fleche(), f);
+      expect(libelle(), l);
     });
 
     testWidgets('REQ037_AC9 édition : mêmes pictos qu\'en communication', (
