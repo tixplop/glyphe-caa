@@ -38,7 +38,32 @@ flutter build apk --release
 adb install build/app/outputs/flutter-apk/app-release.apk
 ```
 
-L'identifiant de l'appli est `org.glyphe.glyphe`. Pour construire l'APK et vérifier que la permission `INTERNET` y est absente : `bash tool/verifier_apk.sh`.
+L'identifiant de l'appli est `org.glyphe.glyphe`. Pour construire l'APK et vérifier que la permission `INTERNET` y est absente et qu'il est signé avec une clé dédiée (pas celle de debug) : `bash tool/verifier_apk.sh`.
+
+## Signature de l'APK
+
+Une mise à jour de l'appli installée n'est acceptée qu'avec la même clé de signature. La clé de debug, propre à chaque machine, ne convient donc pas : il faut une clé dédiée, conservée durablement.
+
+1. Créer la clé, hors du dépôt :
+
+```
+keytool -genkeypair -v -keystore ~/glyphe-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias glyphe
+```
+
+2. Créer `android/key.properties` (jamais commité, ignoré par git) :
+
+```
+storePassword=<mot de passe>
+keyPassword=<mot de passe>
+keyAlias=glyphe
+storeFile=/home/<vous>/glyphe-release.jks
+```
+
+3. Sauvegarder le keystore et ses mots de passe hors de la machine : sans eux, plus aucune mise à jour de l'appli installée n'est possible.
+
+Sans `key.properties`, l'APK est signé avec la clé de debug et `bash tool/verifier_apk.sh` échoue.
+
+Passage unique depuis la 1.7.0 ou antérieure (APK signé en debug) : exporter les grilles (menu « Plus » du mode édition), désinstaller l'appli, installer le nouvel APK, puis importer la sauvegarde.
 
 ## Régénérer la banque ARASAAC
 
@@ -52,12 +77,12 @@ dart run tool/generer_banque_arasaac.dart
 
 Le code est compatible iOS, mais il n'est pas compilé ni testé sans Mac : seul Android est construit.
 
-## Disposition (version 1.7.0)
+## Disposition (version 1.7.1)
 
 - **Orientation** : l'appli s'affiche en paysage seulement (les deux sens), y compris quand l'appareil est tenu en portrait. Tailles d'écran de référence : de 640×360 à 1280×800 (915×412 pour un Pixel 7 en paysage).
 - **Grilles en 4 colonnes × 3 lignes** : les nouvelles grilles et les grilles d'exemple ont 4 colonnes et 3 lignes. Une installation existante garde ses grilles en 4×4 ; pour les passer en 4×3, utiliser « Taille de la grille » du menu « Plus » du mode édition.
 - **Communication** : en haut, la barre de phrase, sur toute la largeur. De gauche à droite : « Accueil », la phrase composée (un appui sur la phrase la lit à voix haute, un nouvel appui pendant la lecture l'arrête), « Corbeille » (efface toute la phrase en un appui), « Effacer » (le dernier mot) et le cadenas, discret, à maintenir appuyé pour déverrouiller l'édition. Il n'y a plus de bouton Parler ni de barre de navigation : on change de page par les cases-dossiers et on revient par la case « Retour ». La grille de cases remplit le reste de l'écran, sans défilement.
-- **Cases** : sur la grille, le picto occupe toute la hauteur de la case, à gauche, et le libellé, plus petit (13), est à sa droite ; un libellé trop long se termine par « … » (le lecteur d'écran dit le libellé complet) ; une grille aux cases hautes et étroites garde le picto au-dessus du libellé. Dans chaque case, le picto et son libellé forment un bloc centré : un mot court laisse autant de marge des deux côtés, et toute la case reste sensible au toucher. Les sauvegardes restent compatibles avec la version 1.6.
+- **Cases** : sur la grille, le picto occupe toute la hauteur de la case, à gauche, et le libellé, plus petit (13), est à sa droite ; un libellé trop long se termine par « … » (le lecteur d'écran dit le libellé complet) ; une grille aux cases hautes et étroites garde le picto au-dessus du libellé. Dans chaque case, le picto et son libellé forment un bloc centré : un mot court laisse autant de marge des deux côtés, et toute la case reste sensible au toucher. Un libellé trop long est centré avec son « … », comme un mot entier. Les sauvegardes restent compatibles avec la version 1.7.
 - **Édition** : la barre d'édition remplace la barre de phrase ; elle affiche le titre (« Mode édition » et le nom de la grille), « Ajouter une case », le menu « Plus » (code, grilles, taille de la grille, réglages, À propos) et « Terminer » (icône de cadenas) pour refermer l'édition.
 - **Édition d'une case** : les actions sont des icônes dans la barre d'application, toujours visibles : Supprimer, Échanger avec l'emplacement…, Ouvrir (dossier), Enregistrer. Le type de case se choisit entre Mot, Dossier et Retour. On touche l'aperçu de l'image, à côté du libellé, pour choisir l'image.
 - **Case Retour** : une case de type « Retour » ramène à la page précédente. « Nouvelle grille » crée une case Retour. Les grilles existantes ne sont pas modifiées : pour en ajouter une, créer une case de type Retour à la main.

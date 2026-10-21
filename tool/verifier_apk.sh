@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # Construit l'APK release puis échoue si la permission INTERNET y figure
-# (AC-026-1). À lancer depuis la racine du projet ; nécessite le SDK Android.
+# (AC-026-1) ou s'il est signé avec la clé de debug (AC-039-4, vérifié par
+# apksigner). À lancer depuis la racine du projet ; nécessite le SDK Android.
 set -euo pipefail
+
+if [ ! -f android/key.properties ]; then
+  echo "ATTENTION : android/key.properties absent : APK release signé avec la clé de debug (voir README, « Signature de l'APK »)." >&2
+fi
 
 flutter build apk --release
 
@@ -31,3 +36,23 @@ if echo "$permissions" | grep -q "android.permission.INTERNET"; then
   exit 1
 fi
 echo "OK : la permission INTERNET est absente."
+
+apksigner="$(command -v apksigner || true)"
+if [ -z "$apksigner" ] && [ -n "${ANDROID_HOME:-}" ]; then
+  apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1 || true)"
+fi
+if [ -z "$apksigner" ]; then
+  echo "apksigner introuvable (SDK Android requis)." >&2
+  exit 2
+fi
+
+if ! certs="$("$apksigner" verify --print-certs "$apk")"; then
+  echo "ECHEC : la signature de l'APK n'est pas valide." >&2
+  exit 1
+fi
+if echo "$certs" | grep -q "CN=Android Debug"; then
+  echo "ECHEC : APK signé avec la clé de debug" >&2
+  exit 1
+fi
+echo "$certs" | grep "Signer #1 certificate DN:" || true
+echo "OK : APK signé avec une clé dédiée."
