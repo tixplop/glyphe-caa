@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart' show RenderParagraph;
@@ -96,40 +97,59 @@ void main() {
   Future<void> poseRect(WidgetTester tester, Case c, double w, double h) =>
       _pose(tester, c, taille: Size(w + 6, h + 6));
 
-  // Cotes en côte à côte : picto d, haut à 5, texte à picto.right + 2, ligne
-  // centrée sur le picto, ensemble centré sur la case ; [tronque] : libellé
-  // tronqué de largeur [largeur].
-  void mesures(WidgetTester tester, String lib, double d, {double? largeur}) {
+  // Texte réellement affiché (boîtes de glyphes, « … » compris), en global :
+  // bord gauche, bord droit, tronqué ou non.
+  (double, double, bool) texteAffiche(WidgetTester tester, String lib) {
+    final r = tester.renderObject<RenderParagraph>(find.text(lib));
+    final boites = r.getBoxesForSelection(
+      TextSelection(baseOffset: 0, extentOffset: lib.length),
+    );
+    var gauche = double.infinity;
+    var droite = double.negativeInfinity;
+    for (final b in boites) {
+      gauche = math.min(gauche, r.localToGlobal(Offset(b.left, 0)).dx);
+      droite = math.max(droite, r.localToGlobal(Offset(b.right, 0)).dx);
+    }
+    return (gauche, droite, r.didExceedMaxLines);
+  }
+
+  // Cotes en côte à côte : picto d, haut à [haut], texte à picto.right + 2,
+  // ligne centrée sur le picto, ensemble [picto.left ; dernier glyphe] centré
+  // sur la case ; [tronque] : libellé tronqué dont la boîte épouse le texte
+  // affiché (AC-033-14, AC-033-20).
+  void mesures(
+    WidgetTester tester,
+    String lib,
+    double d, {
+    bool tronque = false,
+    double haut = 5,
+    double? placeMax,
+  }) {
     expect(tester.takeException(), isNull);
     final caseR = tester.getRect(find.byType(CaseWidget)).deflate(3);
     final picto = tester.getRect(find.byKey(const Key('picto')));
     expect(picto.width, closeTo(d, 0.5));
     expect(picto.height, closeTo(d, 0.5));
-    expect(picto.top - caseR.top, closeTo(5, 0.5));
+    expect(picto.top - caseR.top, closeTo(haut, 0.5));
     final l = tester.getRect(find.text(lib));
+    final (gauche, droite, exceed) = texteAffiche(tester, lib);
+    expect(exceed, tronque);
+    expect(gauche, closeTo(picto.right + 2, 0.5));
     expect(l.left, closeTo(picto.right + 2, 0.5));
     expect(l.height, closeTo(16, 0.5));
     expect(l.center.dy, closeTo(picto.center.dy, 0.5));
-    expect((picto.left + l.right) / 2, closeTo(caseR.center.dx, 0.5));
-    final r = tester.renderObject<RenderParagraph>(find.text(lib));
-    if (largeur == null) {
-      final boites = r.getBoxesForSelection(
-        TextSelection(baseOffset: 0, extentOffset: lib.length),
-      );
-      expect(l.left + boites.last.right, closeTo(l.right, 0.5));
-      expect(r.didExceedMaxLines, isFalse);
-      expect(picto.left - caseR.left, greaterThan(7));
+    expect((picto.left + droite) / 2, closeTo(caseR.center.dx, 0.5));
+    expect(l.width, closeTo(droite - gauche, 0.5));
+    if (tronque) {
+      expect(picto.left - caseR.left, greaterThanOrEqualTo(7 - 0.01));
+      expect(droite, lessThanOrEqualTo(caseR.right - 7 + 0.5));
     } else {
-      expect(r.didExceedMaxLines, isTrue);
-      expect(picto.left - caseR.left, closeTo(7, 0.5));
-      expect(l.width, closeTo(largeur, 0.5));
-      expect(l.right, lessThanOrEqualTo(caseR.right - 7 + 0.5));
+      expect(picto.left - caseR.left, greaterThan(7));
     }
     expect(find.byKey(const Key('libelle-place')), findsOneWidget);
-    expect(
-      tester.getSize(find.byKey(const Key('libelle-place'))).width,
-      closeTo(l.width, 0.5),
-    );
+    final place = tester.getSize(find.byKey(const Key('libelle-place'))).width;
+    expect(place, closeTo(droite - gauche, 0.5));
+    if (placeMax != null) expect(place, lessThanOrEqualTo(placeMax + 0.5));
     expect(_texte(tester, lib).style!.fontSize, 13);
     expect(_texte(tester, lib).maxLines, 1);
     expect(_texte(tester, lib).textAlign, TextAlign.left);
@@ -154,7 +174,23 @@ void main() {
         }
         const long = 'je veux aller aux toilettes';
         await poseRect(tester, _case(long), w, h);
-        mesures(tester, long, d, largeur: lg);
+        mesures(tester, long, d, tronque: true, placeMax: lg);
+      });
+    }
+
+    // (libellé, w, h, picto, haut)
+    for (final (lib, w, h, d, haut) in const [
+      ('je veux aller aux toilettes', 148.0, 81.3, 72.3, 5.0),
+      ('je veux aller aux toilettes', 148.0, 59.0, 50.0, 5.0),
+      ('je veux aller aux toilettes', 70.0, 25.5, 16.0, 4.75),
+      ('pomme de terre', 70.0, 25.5, 16.0, 4.75),
+      ('bonjour tout le monde', 148.0, 59.0, 50.0, 5.0),
+    ]) {
+      testWidgets('REQ033_AC20 « $lib » en $w x $h : centré avec son « … »', (
+        tester,
+      ) async {
+        await poseRect(tester, _case(lib), w, h);
+        mesures(tester, lib, d, tronque: true, haut: haut);
       });
     }
 
@@ -324,7 +360,7 @@ void main() {
     final caseR = tester.getRect(find.byType(CaseWidget)).deflate(3);
     final r = tester.renderObject<RenderParagraph>(find.text(lib));
     expect(r.didExceedMaxLines, isTrue);
-    expect(r.size.width, closeTo(59.7, 0.5));
+    expect(r.size.width, lessThanOrEqualTo(59.7 + 0.5));
     expect(
       tester.getRect(find.text(lib)).right,
       lessThanOrEqualTo(caseR.right - 7 + 0.5),
@@ -339,6 +375,29 @@ void main() {
     expect(find.byType(FittedBox), findsNothing);
     h.dispose();
   });
+
+  testWidgets(
+    'REQ033_AC21 superposée 148 x 260 tronquée : centrée avec « … »',
+    (tester) async {
+      await chargerPolice();
+      final h = tester.ensureSemantics();
+      const lib = 'je veux aller aux toilettes';
+      await poseRect(tester, _case(lib), 148, 260);
+      expect(tester.takeException(), isNull);
+      final caseR = tester.getRect(find.byType(CaseWidget)).deflate(3);
+      final (gauche, droite, exceed) = texteAffiche(tester, lib);
+      expect(exceed, isTrue);
+      expect((gauche + droite) / 2 - caseR.left, closeTo(74, 0.5));
+      expect(gauche - caseR.left, greaterThanOrEqualTo(7 - 0.5));
+      expect(droite - caseR.left, lessThanOrEqualTo(148 - 7 + 0.5));
+      final picto = tester.getRect(find.byKey(const Key('picto')));
+      expect(picto.width, closeTo(134, 0.5));
+      expect(picto.left - caseR.left, closeTo(7, 0.5));
+      expect(picto.top - caseR.top, closeTo(55.5, 0.5));
+      expect(find.bySemanticsLabel(lib), findsOneWidget);
+      h.dispose();
+    },
+  );
 
   testWidgets('REQ033_AC12 coin et badge hors du picto, aux trois tailles', (
     tester,

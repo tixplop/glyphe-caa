@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -1907,7 +1908,28 @@ void main() {
       await tester.pumpAndSettle();
       final fin = mesures();
       expect(fin.length, avant.length);
-      expect(fin[0].left, closeTo(19, 0.5));
+      final premiere = tester.getRect(
+        find.byElementPredicate((x) => x == casesDe(tester).first),
+      );
+      final rp = tester.renderObject<RenderParagraph>(
+        find.descendant(
+          of: find.byElementPredicate((x) => x == casesDe(tester).first),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(rp.didExceedMaxLines, isTrue);
+      var droite = double.negativeInfinity;
+      for (final b in rp.getBoxesForSelection(
+        const TextSelection(baseOffset: 0, extentOffset: 27),
+      )) {
+        droite = math.max(droite, rp.localToGlobal(Offset(b.right, 0)).dx);
+      }
+      expect(
+        (fin[0].left + droite) / 2,
+        closeTo(premiere.deflate(3).center.dx, 0.5),
+      );
+      expect(premiere.deflate(3).center.dx, closeTo(86, 0.5));
+      expect(fin[0].left, greaterThanOrEqualTo(19 - 0.5));
       for (var i = 2; i < avant.length; i++) {
         expect(fin[i].left, closeTo(avant[i].left, 0.5), reason: '$i');
         expect(fin[i].top, closeTo(avant[i].top, 0.5), reason: '$i');

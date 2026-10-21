@@ -7,10 +7,12 @@ import '../textes.dart';
 import '../tokens.dart';
 import 'image_case.dart';
 
-/// Une case de la grille : bloc picto + écart + libellé, centré
-/// horizontalement (repli : libellé sous le picto, centré, dans une case haute
-/// et étroite), fond et contour de
-/// catégorie (REQ-032, REQ-033).
+/// Une case de la grille (REQ-032, REQ-033) : fond et contour de catégorie,
+/// picto et libellé.
+///
+/// Côte à côte : bloc picto + écart + libellé, centré horizontalement sur le
+/// texte affiché (« … » compris pour un libellé tronqué). Repli : libellé sous
+/// le picto, centré, dans une case haute et étroite.
 class CaseWidget extends StatefulWidget {
   const CaseWidget({
     super.key,
@@ -102,32 +104,18 @@ class _CaseWidgetState extends State<CaseWidget> {
               superposee = false;
               d = math.min(li, hi);
             }
-            // Positions dans la zone intérieure (li x hi).
-            final double pictoX;
+            // Positions (sans libellé ou superposée) dans la zone li x hi ; le
+            // côte à côte est porté par le bloc centré (Row).
+            final double pictoX = (li - d) / 2;
             final double pictoY;
-            final double libelleX;
             final double libelleY;
-            final double libelleL;
             if (!avecLibelle) {
-              pictoX = (li - d) / 2;
               pictoY = (hi - d) / 2;
-              libelleX = 0;
               libelleY = 0;
-              libelleL = 0;
-            } else if (superposee) {
-              final bloc = d + GlypheTokens.caseEcartPicto + _hLibelle;
-              pictoX = (li - d) / 2;
-              pictoY = (hi - bloc) / 2;
-              libelleX = 0;
-              libelleY = pictoY + d + GlypheTokens.caseEcartPicto;
-              libelleL = li;
             } else {
-              // Côte à côte : positions portées par le bloc centré (Row).
-              pictoX = 0;
-              pictoY = 0;
-              libelleX = 0;
-              libelleY = 0;
-              libelleL = 0;
+              final bloc = d + GlypheTokens.caseEcartPicto + _hLibelle;
+              pictoY = (hi - bloc) / 2;
+              libelleY = pictoY + d + GlypheTokens.caseEcartPicto;
             }
             final hBloc = math.max(d, _hLibelle);
             final picto = SizedBox.square(
@@ -143,12 +131,13 @@ class _CaseWidgetState extends State<CaseWidget> {
                     )
                   : ImageCaseWidget(c.image),
             );
-            Widget texte(TextAlign align) => Text(
+            Widget texte(TextAlign align, {TextWidthBasis? basis}) => Text(
               libelle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               softWrap: false,
               textAlign: align,
+              textWidthBasis: basis,
               textScaler: TextScaler.noScaling,
               style: GlypheTokens.caseLibelle.copyWith(color: t.ink),
             );
@@ -210,7 +199,10 @@ class _CaseWidgetState extends State<CaseWidget> {
                                           child: SizedBox(
                                             key: const Key('libelle-place'),
                                             height: _hLibelle,
-                                            child: texte(TextAlign.left),
+                                            child: texte(
+                                              TextAlign.left,
+                                              basis: TextWidthBasis.longestLine,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -226,9 +218,9 @@ class _CaseWidgetState extends State<CaseWidget> {
                                   ),
                                   if (avecLibelle)
                                     Positioned(
-                                      left: libelleX,
+                                      left: 0,
                                       top: libelleY,
-                                      width: libelleL,
+                                      width: li,
                                       height: _hLibelle,
                                       child: Align(
                                         key: const Key('libelle-place'),
