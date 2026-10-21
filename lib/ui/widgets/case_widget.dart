@@ -7,8 +7,9 @@ import '../textes.dart';
 import '../tokens.dart';
 import 'image_case.dart';
 
-/// Une case de la grille : picto à gauche et libellé à sa droite (repli :
-/// libellé sous le picto dans une case haute et étroite), fond et contour de
+/// Une case de la grille : bloc picto + écart + libellé, centré
+/// horizontalement (repli : libellé sous le picto, centré, dans une case haute
+/// et étroite), fond et contour de
 /// catégorie (REQ-032, REQ-033).
 class CaseWidget extends StatefulWidget {
   const CaseWidget({
@@ -121,12 +122,36 @@ class _CaseWidgetState extends State<CaseWidget> {
               libelleY = pictoY + d + GlypheTokens.caseEcartPicto;
               libelleL = li;
             } else {
+              // Côte à côte : positions portées par le bloc centré (Row).
               pictoX = 0;
-              pictoY = (hi - d) / 2;
-              libelleX = d + GlypheTokens.caseEcartLibelle;
-              libelleY = (hi - _hLibelle) / 2;
-              libelleL = _pos(li - libelleX);
+              pictoY = 0;
+              libelleX = 0;
+              libelleY = 0;
+              libelleL = 0;
             }
+            final hBloc = math.max(d, _hLibelle);
+            final picto = SizedBox.square(
+              key: const Key('picto'),
+              dimension: d,
+              child: retour && c.image is ImageAucune
+                  ? Icon(
+                      Icons.arrow_back,
+                      key: const Key('fleche-retour'),
+                      size: d,
+                      color: t.ink,
+                      semanticLabel: null,
+                    )
+                  : ImageCaseWidget(c.image),
+            );
+            Widget texte(TextAlign align) => Text(
+              libelle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+              textAlign: align,
+              textScaler: TextScaler.noScaling,
+              style: GlypheTokens.caseLibelle.copyWith(color: t.ink),
+            );
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -157,50 +182,61 @@ class _CaseWidgetState extends State<CaseWidget> {
                             child: Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                Positioned(
-                                  left: pictoX,
-                                  top: pictoY,
-                                  width: d,
-                                  height: d,
-                                  child: SizedBox.square(
-                                    key: const Key('picto'),
-                                    dimension: d,
-                                    child: retour && c.image is ImageAucune
-                                        ? Icon(
-                                            Icons.arrow_back,
-                                            key: const Key('fleche-retour'),
-                                            size: d,
-                                            color: t.ink,
-                                            semanticLabel: null,
-                                          )
-                                        : ImageCaseWidget(c.image),
-                                  ),
-                                ),
-                                if (avecLibelle)
+                                if (avecLibelle && !superposee)
+                                  // Disposition côte à côte : bloc picto +
+                                  // écart + libellé centré horizontalement
+                                  // (AC-033-16).
                                   Positioned(
-                                    left: libelleX,
-                                    top: libelleY,
-                                    width: libelleL,
-                                    height: _hLibelle,
-                                    child: Align(
-                                      key: const Key('libelle-place'),
-                                      alignment: superposee
-                                          ? Alignment.center
-                                          : Alignment.centerLeft,
-                                      child: Text(
-                                        libelle,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        softWrap: false,
-                                        textAlign: superposee
-                                            ? TextAlign.center
-                                            : TextAlign.left,
-                                        textScaler: TextScaler.noScaling,
-                                        style: GlypheTokens.caseLibelle
-                                            .copyWith(color: t.ink),
+                                    left: 0,
+                                    width: li,
+                                    top: (hi - hBloc) / 2,
+                                    height: hBloc,
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        picto,
+                                        SizedBox(
+                                          width: _pos(
+                                            math.min(
+                                              GlypheTokens.caseEcartLibelle,
+                                              li - d,
+                                            ),
+                                          ),
+                                        ),
+                                        Flexible(
+                                          child: SizedBox(
+                                            key: const Key('libelle-place'),
+                                            height: _hLibelle,
+                                            child: texte(TextAlign.left),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else ...[
+                                  Positioned(
+                                    left: pictoX,
+                                    top: pictoY,
+                                    width: d,
+                                    height: d,
+                                    child: picto,
+                                  ),
+                                  if (avecLibelle)
+                                    Positioned(
+                                      left: libelleX,
+                                      top: libelleY,
+                                      width: libelleL,
+                                      height: _hLibelle,
+                                      child: Align(
+                                        key: const Key('libelle-place'),
+                                        alignment: Alignment.center,
+                                        child: texte(TextAlign.center),
                                       ),
                                     ),
-                                  ),
+                                ],
                               ],
                             ),
                           ),

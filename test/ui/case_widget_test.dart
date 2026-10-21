@@ -1,8 +1,13 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:glyphe/domaine/modeles.dart';
+import 'package:glyphe/domaine/photos.dart';
+import 'package:glyphe/ui/widgets/image_case.dart';
 import 'package:glyphe/ui/theme.dart';
 import 'package:glyphe/ui/tokens.dart';
 import 'package:glyphe/ui/widgets/case_widget.dart';
@@ -91,30 +96,40 @@ void main() {
   Future<void> poseRect(WidgetTester tester, Case c, double w, double h) =>
       _pose(tester, c, taille: Size(w + 6, h + 6));
 
-  // Cotes en côte à côte : picto d, haut à 5, x = 7 ; place du libellé.
-  void mesures(
-    WidgetTester tester,
-    String lib,
-    double d,
-    double xLibelle,
-    double largeur,
-    double hautLigne,
-  ) {
+  // Cotes en côte à côte : picto d, haut à 5, texte à picto.right + 2, ligne
+  // centrée sur le picto, ensemble centré sur la case ; [tronque] : libellé
+  // tronqué de largeur [largeur].
+  void mesures(WidgetTester tester, String lib, double d, {double? largeur}) {
     expect(tester.takeException(), isNull);
     final caseR = tester.getRect(find.byType(CaseWidget)).deflate(3);
     final picto = tester.getRect(find.byKey(const Key('picto')));
     expect(picto.width, closeTo(d, 0.5));
     expect(picto.height, closeTo(d, 0.5));
-    expect(picto.left - caseR.left, closeTo(7, 0.5));
     expect(picto.top - caseR.top, closeTo(5, 0.5));
     final l = tester.getRect(find.text(lib));
-    expect(l.left - caseR.left, closeTo(xLibelle, 0.5));
+    expect(l.left, closeTo(picto.right + 2, 0.5));
+    expect(l.height, closeTo(16, 0.5));
+    expect(l.center.dy, closeTo(picto.center.dy, 0.5));
+    expect((picto.left + l.right) / 2, closeTo(caseR.center.dx, 0.5));
+    final r = tester.renderObject<RenderParagraph>(find.text(lib));
+    if (largeur == null) {
+      final boites = r.getBoxesForSelection(
+        TextSelection(baseOffset: 0, extentOffset: lib.length),
+      );
+      expect(l.left + boites.last.right, closeTo(l.right, 0.5));
+      expect(r.didExceedMaxLines, isFalse);
+      expect(picto.left - caseR.left, greaterThan(7));
+    } else {
+      expect(r.didExceedMaxLines, isTrue);
+      expect(picto.left - caseR.left, closeTo(7, 0.5));
+      expect(l.width, closeTo(largeur, 0.5));
+      expect(l.right, lessThanOrEqualTo(caseR.right - 7 + 0.5));
+    }
+    expect(find.byKey(const Key('libelle-place')), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const Key('libelle-place'))).width,
-      closeTo(largeur, 0.5),
+      closeTo(l.width, 0.5),
     );
-    expect(l.top - caseR.top, closeTo(hautLigne, 0.5));
-    expect(l.height, closeTo(16, 0.5));
     expect(_texte(tester, lib).style!.fontSize, 13);
     expect(_texte(tester, lib).maxLines, 1);
     expect(_texte(tester, lib).textAlign, TextAlign.left);
@@ -123,20 +138,27 @@ void main() {
   group('REQ033_AC8 REQ033_AC14 cotes du picto et du libellé', () {
     setUpAll(chargerPolice);
 
-    // (w, h, picto, bord gauche du libellé, largeur de sa place, haut ligne)
-    for (final (w, h, d, x, lg, y) in const [
-      (148.0, 81.3, 72.3, 81.3, 59.7, 33.2),
-      (216.75, 98.7, 89.7, 98.7, 111.1, 41.8),
-      (308.0, 228.0, 219.0, 228.0, 73.0, 106.5),
-      (148.0, 59.0, 50.0, 59.0, 82.0, 22.0),
+    // (w, h, picto, largeur du libellé tronqué)
+    for (final (w, h, d, lg) in const [
+      (148.0, 81.3, 72.3, 59.7),
+      (216.75, 98.7, 89.7, 111.1),
+      (308.0, 228.0, 219.0, 73.0),
+      (148.0, 59.0, 50.0, 82.0),
     ]) {
-      testWidgets('REQ033_AC8 ${w}x$h : picto $d', (tester) async {
-        await poseRect(tester, _case('mange'), w, h);
-        mesures(tester, 'mange', d, x, lg, y);
+      testWidgets('REQ033_AC8 REQ033_AC16 ${w}x$h : bloc centré', (
+        tester,
+      ) async {
+        for (final lib in ['je', 'Émotions']) {
+          await poseRect(tester, _case(lib), w, h);
+          mesures(tester, lib, d);
+        }
+        const long = 'je veux aller aux toilettes';
+        await poseRect(tester, _case(long), w, h);
+        mesures(tester, long, d, largeur: lg);
       });
     }
 
-    testWidgets('REQ033_AC14 « je » : premier glyphe au bord gauche', (
+    testWidgets('REQ033_AC14 « je » : premier glyphe au bord gauche du Text', (
       tester,
     ) async {
       await poseRect(tester, _case('je'), 148, 81.3);
@@ -199,7 +221,7 @@ void main() {
       ) async {
         await poseRect(tester, _case('Retour', type: TypeCase.retour), w, h);
         final fleche = tester.getRect(find.byKey(const Key('fleche-retour')));
-        await poseRect(tester, _case('mange'), w, h);
+        await poseRect(tester, _case('Retour'), w, h);
         final picto = tester.getRect(find.byKey(const Key('picto')));
         expect(fleche.size, picto.size);
         expect(fleche.topLeft, picto.topLeft);
@@ -230,18 +252,14 @@ void main() {
         );
         final caseR = tester.getRect(find.byType(CaseWidget)).deflate(3);
         final picto = tester.getRect(find.byKey(const Key('picto')));
-        expect(picto.left - caseR.left, closeTo(7, 0.5));
         expect(picto.top - caseR.top, closeTo(5, 0.5));
         expect(picto.width, closeTo(72.3, 0.5));
         expect(picto.height, closeTo(72.3, 0.5));
         final l = tester.getRect(find.text('mange'));
-        expect(l.left - caseR.left, closeTo(81.3, 0.5));
-        expect(l.top - caseR.top, closeTo(33.2, 0.5));
+        expect(l.left, closeTo(picto.right + 2, 0.5));
+        expect(l.center.dy, closeTo(picto.center.dy, 0.5));
+        expect((picto.left + l.right) / 2, closeTo(caseR.center.dx, 0.5));
         expect(l.height, closeTo(16, 0.5));
-        expect(
-          tester.getSize(find.byKey(const Key('libelle-place'))).width,
-          closeTo(59.7, 0.5),
-        );
         expect(_texte(tester, 'mange').style!.fontSize, 13);
       });
     }
@@ -263,7 +281,7 @@ void main() {
   });
 
   testWidgets(
-    'REQ033_AC10 case 8x8 en 640x360 : côte à côte, dans le contour',
+    'REQ033_AC10 REQ033_AC19 case 8x8 en 640x360 : bloc centré dans le contour',
     (tester) async {
       await chargerPolice();
       await poseRect(tester, _case('eau'), 70, 25.5);
@@ -279,7 +297,10 @@ void main() {
             .didExceedMaxLines,
         isFalse,
       );
-      expect(l.left, greaterThan(picto.right));
+      expect(l.left, closeTo(picto.right + 2, 0.5));
+      expect((picto.left + l.right) / 2, closeTo(caseR.center.dx, 0.5));
+      expect(picto.left - caseR.left, greaterThanOrEqualTo(7 - 0.5));
+      expect(l.right, lessThanOrEqualTo(caseR.right - 7 + 0.5));
       expect(caseR.contains(l.topLeft), isTrue);
       expect(caseR.contains(l.bottomRight), isTrue);
     },
@@ -303,7 +324,7 @@ void main() {
     final caseR = tester.getRect(find.byType(CaseWidget)).deflate(3);
     final r = tester.renderObject<RenderParagraph>(find.text(lib));
     expect(r.didExceedMaxLines, isTrue);
-    expect(r.size.width, lessThanOrEqualTo(59.7 + 0.5));
+    expect(r.size.width, closeTo(59.7, 0.5));
     expect(
       tester.getRect(find.text(lib)).right,
       lessThanOrEqualTo(caseR.right - 7 + 0.5),
@@ -604,6 +625,110 @@ void main() {
       );
       await tester.tap(find.byType(CaseWidget));
       expect(n, 1);
+    });
+  });
+
+  group('bloc centré (AC-033-16 à 19, AC-037-10)', () {
+    setUpAll(chargerPolice);
+
+    testWidgets('REQ033_AC18 picto ARASAAC ou photo : mêmes rectangles', (
+      tester,
+    ) async {
+      final dossier = Directory.systemTemp.createTempSync('glyphe_case');
+      addTearDown(() => dossier.deleteSync(recursive: true));
+      await tester.runAsync(() async {
+        final rec = ui.PictureRecorder();
+        ui.Canvas(rec).drawRect(
+          const ui.Rect.fromLTWH(0, 0, 300, 400),
+          ui.Paint()..color = const ui.Color(0xFF336699),
+        );
+        final img = await rec.endRecording().toImage(300, 400);
+        final oct = await img.toByteData(format: ui.ImageByteFormat.png);
+        File('${dossier.path}/p.png')
+            .writeAsBytesSync(oct!.buffer.asUint8List());
+      });
+      Case avec(ImageCase i) => Case(
+        id: 'x',
+        ligne: 0,
+        colonne: 0,
+        type: TypeCase.mot,
+        libelle: 'chien',
+        image: i,
+      );
+      Future<(Rect, Rect)> mesure(ImageCase i) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: themeGlyphe(Brightness.light),
+            home: PhotosScope(
+              photos: Photos(dossier),
+              child: Scaffold(
+                body: Align(
+                  alignment: Alignment.topLeft,
+                  child: SizedBox(
+                    width: 154,
+                    height: 87.3,
+                    child: CaseWidget(caseData: avec(i), onTap: () {}),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        return (
+          tester.getRect(find.byKey(const Key('picto'))),
+          tester.getRect(find.text('chien')),
+        );
+      }
+
+      final (p1, t1) = await mesure(const ImageArasaac(10148));
+      final (p2, t2) = await mesure(const ImagePhoto('p.png'));
+      expect(p1.width, closeTo(72.3, 0.5));
+      expect(p1.top - 3, closeTo(5, 0.5));
+      expect(p2, p1);
+      expect(t2, t1);
+      final image = tester.widget<Image>(
+        find.descendant(
+          of: find.byKey(const Key('picto')),
+          matching: find.byType(Image),
+        ),
+      );
+      expect(image.fit, BoxFit.contain);
+    });
+
+    testWidgets('REQ033_AC17 appui à gauche du picto et à droite du libellé', (
+      tester,
+    ) async {
+      var n = 0;
+      final h = tester.ensureSemantics();
+      await _pose(
+        tester,
+        _case('je'),
+        taille: const Size(154, 87.3),
+        onTap: () => n++,
+      );
+      final r = tester.getRect(find.byType(CaseWidget)).deflate(3);
+      await tester.tapAt(Offset(r.left + 4, r.center.dy));
+      expect(n, 1);
+      await tester.tapAt(Offset(r.right - 4, r.center.dy));
+      expect(n, 2);
+      final sem = tester.getSemantics(find.bySemanticsLabel('je'));
+      expect(sem.rect.width, closeTo(148, 0.5));
+      expect(sem.rect.height, closeTo(81.3, 0.5));
+      h.dispose();
+    });
+
+    testWidgets('REQ037_AC10 case-retour : flèche + Retour centrés', (
+      tester,
+    ) async {
+      await poseRect(tester, _case('Retour', type: TypeCase.retour), 148, 81.3);
+      final caseR = tester.getRect(find.byType(CaseWidget)).deflate(3);
+      final f = tester.getRect(find.byKey(const Key('fleche-retour')));
+      final l = tester.getRect(find.text('Retour'));
+      expect(f.width, closeTo(72.3, 0.5));
+      expect(f.top - caseR.top, closeTo(5, 0.5));
+      expect(l.left, closeTo(f.right + 2, 0.5));
+      expect((f.left + l.right) / 2, closeTo(caseR.center.dx, 0.5));
     });
   });
 }
