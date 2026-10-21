@@ -52,12 +52,12 @@ dart run tool/generer_banque_arasaac.dart
 
 Le code est compatible iOS, mais il n'est pas compilé ni testé sans Mac : seul Android est construit.
 
-## Disposition (version 1.6.0)
+## Disposition (version 1.7.0)
 
 - **Orientation** : l'appli s'affiche en paysage seulement (les deux sens), y compris quand l'appareil est tenu en portrait. Tailles d'écran de référence : de 640×360 à 1280×800 (915×412 pour un Pixel 7 en paysage).
 - **Grilles en 4 colonnes × 3 lignes** : les nouvelles grilles et les grilles d'exemple ont 4 colonnes et 3 lignes. Une installation existante garde ses grilles en 4×4 ; pour les passer en 4×3, utiliser « Taille de la grille » du menu « Plus » du mode édition.
 - **Communication** : en haut, la barre de phrase, sur toute la largeur. De gauche à droite : « Accueil », la phrase composée (un appui sur la phrase la lit à voix haute, un nouvel appui pendant la lecture l'arrête), « Corbeille » (efface toute la phrase en un appui), « Effacer » (le dernier mot) et le cadenas, discret, à maintenir appuyé pour déverrouiller l'édition. Il n'y a plus de bouton Parler ni de barre de navigation : on change de page par les cases-dossiers et on revient par la case « Retour ». La grille de cases remplit le reste de l'écran, sans défilement.
-- **Cases** : sur la grille, le picto occupe toute la hauteur de la case, à gauche, et le libellé, plus petit (13), est à sa droite ; un libellé trop long se termine par « … » (le lecteur d'écran dit le libellé complet) ; une grille aux cases hautes et étroites garde le picto au-dessus du libellé.
+- **Cases** : sur la grille, le picto occupe toute la hauteur de la case, à gauche, et le libellé, plus petit (13), est à sa droite ; un libellé trop long se termine par « … » (le lecteur d'écran dit le libellé complet) ; une grille aux cases hautes et étroites garde le picto au-dessus du libellé. Dans chaque case, le picto et son libellé forment un bloc centré : un mot court laisse autant de marge des deux côtés, et toute la case reste sensible au toucher. Les sauvegardes restent compatibles avec la version 1.6.
 - **Édition** : la barre d'édition remplace la barre de phrase ; elle affiche le titre (« Mode édition » et le nom de la grille), « Ajouter une case », le menu « Plus » (code, grilles, taille de la grille, réglages, À propos) et « Terminer » (icône de cadenas) pour refermer l'édition.
 - **Édition d'une case** : les actions sont des icônes dans la barre d'application, toujours visibles : Supprimer, Échanger avec l'emplacement…, Ouvrir (dossier), Enregistrer. Le type de case se choisit entre Mot, Dossier et Retour. On touche l'aperçu de l'image, à côté du libellé, pour choisir l'image.
 - **Case Retour** : une case de type « Retour » ramène à la page précédente. « Nouvelle grille » crée une case Retour. Les grilles existantes ne sont pas modifiées : pour en ajouter une, créer une case de type Retour à la main.

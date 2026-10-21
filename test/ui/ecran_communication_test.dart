@@ -1438,6 +1438,12 @@ void main() {
         expect(rTexte.left, closeTo(rt.left, 0.5), reason: '$g ${w.data}');
         expect(rt.center.dy, closeTo(rPicto.center.dy, 0.5), reason: g);
         expect(rTexte.center.dy, closeTo(rPicto.center.dy, 0.5), reason: g);
+        // Ensemble picto + écart + texte centré sur la case (AC-033-16).
+        expect(
+          (rPicto.left + rTexte.right) / 2,
+          closeTo(tester.getRect(cf).center.dx, 0.5),
+          reason: '$g ${w.data}',
+        );
       }
     }
 
@@ -1464,168 +1470,160 @@ void main() {
         });
       }
       for (final t in const [Size(640, 360), Size(915, 412)]) {
-        testWidgets(
-          'REQ001_AC12 $g : même côté de picto, même haut par ligne '
-          'en $t',
-          (tester) async {
-            final e = await exemples(tester, taille: t);
-            e.etat.session.ouvrirGrille(g);
-            await tester.pumpAndSettle();
-            final cases = casesDe(tester).toList();
-            expect(cases, isNotEmpty);
-            final pictos = [
-              for (final c in cases)
-                tester.getRect(
-                  find.descendant(
-                    of: find.byElementPredicate((x) => x == c),
-                    matching: find.byKey(const Key('picto')),
-                  ),
+        testWidgets('REQ001_AC12 $g : même côté de picto, même haut par ligne, '
+            'ensembles centrés '
+            'en $t', (tester) async {
+          final e = await exemples(tester, taille: t);
+          e.etat.session.ouvrirGrille(g);
+          await tester.pumpAndSettle();
+          final cases = casesDe(tester).toList();
+          expect(cases, isNotEmpty);
+          final pictos = [
+            for (final c in cases)
+              tester.getRect(
+                find.descendant(
+                  of: find.byElementPredicate((x) => x == c),
+                  matching: find.byKey(const Key('picto')),
                 ),
-            ];
-            for (final r in pictos) {
-              expect(r.width, closeTo(pictos.first.width, 0.5));
-              expect(r.height, closeTo(pictos.first.width, 0.5));
-            }
-            final hautParLigne = <double, double>{};
-            for (var i = 0; i < cases.length; i++) {
-              final haut = tester
-                  .getRect(find.byElementPredicate((x) => x == cases[i]))
-                  .top;
-              final cle = hautParLigne.keys.firstWhere(
-                (k) => (k - haut).abs() < 0.5,
-                orElse: () => haut,
-              );
-              final ref = hautParLigne.putIfAbsent(cle, () => pictos[i].top);
-              expect(pictos[i].top, closeTo(ref, 0.5), reason: '$g $t');
-            }
-            // Même bord gauche par colonne.
-            final gaucheParColonne = <double, double>{};
-            for (var i = 0; i < cases.length; i++) {
-              final gauche = tester
-                  .getRect(find.byElementPredicate((x) => x == cases[i]))
-                  .left;
-              final cle = gaucheParColonne.keys.firstWhere(
-                (k) => (k - gauche).abs() < 0.5,
-                orElse: () => gauche,
-              );
-              final ref = gaucheParColonne.putIfAbsent(
-                cle,
-                () => pictos[i].left,
-              );
-              expect(pictos[i].left, closeTo(ref, 0.5), reason: '$g $t');
-            }
-            // Même taille de libellé.
-            for (final c in cases) {
-              final texte = find.descendant(
-                of: find.byElementPredicate((x) => x == c),
-                matching: find.byType(Text),
-              );
-              expect(tester.widget<Text>(texte).style!.fontSize, 13);
-              expect(
-                (texte.evaluate().single.renderObject! as RenderParagraph)
-                    .size
-                    .height,
-                closeTo(16, 0.5),
-              );
-            }
-          },
-          skip: true, // réécrit en T-043
-        );
+              ),
+          ];
+          for (final r in pictos) {
+            expect(r.width, closeTo(pictos.first.width, 0.5));
+            expect(r.height, closeTo(pictos.first.width, 0.5));
+          }
+          final hautParLigne = <double, double>{};
+          for (var i = 0; i < cases.length; i++) {
+            final haut = tester
+                .getRect(find.byElementPredicate((x) => x == cases[i]))
+                .top;
+            final cle = hautParLigne.keys.firstWhere(
+              (k) => (k - haut).abs() < 0.5,
+              orElse: () => haut,
+            );
+            final ref = hautParLigne.putIfAbsent(cle, () => pictos[i].top);
+            expect(pictos[i].top, closeTo(ref, 0.5), reason: '$g $t');
+          }
+          // Chaque ensemble picto + libellé est centré sur sa case.
+          for (var i = 0; i < cases.length; i++) {
+            final cf = find.byElementPredicate((x) => x == cases[i]);
+            final texte = find.descendant(of: cf, matching: find.byType(Text));
+            final droite = tester.getRect(texte).right;
+            expect(
+              (pictos[i].left + droite) / 2,
+              closeTo(tester.getRect(cf).center.dx, 0.5),
+              reason: '$g $t',
+            );
+          }
+          // Même taille de libellé.
+          for (final c in cases) {
+            final texte = find.descendant(
+              of: find.byElementPredicate((x) => x == c),
+              matching: find.byType(Text),
+            );
+            expect(tester.widget<Text>(texte).style!.fontSize, 13);
+            expect(
+              (texte.evaluate().single.renderObject! as RenderParagraph)
+                  .size
+                  .height,
+              closeTo(16, 0.5),
+            );
+          }
+        });
       }
     }
 
-    testWidgets(
-      'REQ001_AC11 cotes de « je » et de la flèche de Retour',
-      (tester) async {
-        final e = await exemples(tester);
-        Rect de(String cle, String enfant) => tester.getRect(
-          find.descendant(
-            of: find.byKey(Key(cle)),
-            matching: find.byKey(Key(enfant)),
-          ),
-        );
-        verifie(vis(tester, 'accueil-0'), 12, 88, 148, 81.3, 'je');
-        verifie(de('case-accueil-0', 'picto'), 19, 93, 72.3, 72.3, 'picto je');
-        Rect place(String cle) => tester.getRect(
-          find.descendant(
-            of: find.byKey(Key(cle)),
-            matching: find.byKey(const Key('libelle-place')),
-          ),
-        );
-        final lib = place('case-accueil-0');
-        expect(lib.left, greaterThanOrEqualTo(91.3 - 0.5));
-        expect(lib.right, lessThanOrEqualTo(153 + 0.5));
-        expect(lib.center.dy, closeTo(129.2, 0.5));
-        e.etat.session.ouvrirGrille('manger');
-        await tester.pumpAndSettle();
-        final retour = find.descendant(
-          of: find.byKey(const Key('grille')),
-          matching: find.byIcon(Icons.arrow_back),
-        );
-        expect(retour, findsOneWidget);
-        verifie(vis(tester, 'manger-retour'), 12, 88, 148, 81.3, 'case retour');
-        verifie(
-          tester.getRect(
-            find.descendant(
-              of: find.byKey(const Key('case-manger-retour')),
-              matching: find.byKey(const Key('picto')),
-            ),
-          ),
-          19,
-          93,
-          72.3,
-          72.3,
-          'picto retour',
-        );
-        final libR = place('case-manger-retour');
-        expect(libR.left, greaterThanOrEqualTo(91.3 - 0.5));
-        expect(libR.right, lessThanOrEqualTo(153 + 0.5));
-        expect(libR.center.dy, closeTo(129.2, 0.5));
-        expect(tester.takeException(), isNull);
-      },
-      skip: true, // réécrit en T-043
-    );
-
-    testWidgets(
-      'REQ001_AC13 cotes des libellés de l\'accueil',
-      (tester) async {
-        await exemples(tester);
-        const gauches = [93.3, 249.3, 405.3, 561.3];
-        const hauts = [121.2, 210.5, 299.8];
-        final grille = find.byKey(const Key('grille'));
-        final cases = find.descendant(
-          of: grille,
-          matching: find.byType(CaseWidget),
-        );
-        expect(cases, findsNWidgets(11));
-        for (final c in cases.evaluate()) {
-          final cf = find.byElementPredicate((x) => x == c);
-          final cle = (c.widget.key! as ValueKey<String>).value;
-          final i = int.parse(cle.split('-').last);
-          final texte = find.descendant(of: cf, matching: find.byType(Text));
-          final place = tester.getRect(texte);
-          expect(place.left, closeTo(gauches[i % 4], 0.5), reason: cle);
-          expect(place.top, closeTo(hauts[i ~/ 4], 0.5), reason: cle);
-          final w = tester.widget<Text>(texte);
-          expect(w.style!.fontSize, 13);
-          expect(w.style!.height, closeTo(16 / 13, 0.01));
-          expect(w.textAlign, TextAlign.left);
-        }
-        final emotions = find.descendant(
-          of: find.byKey(const Key('case-accueil-8')),
+    testWidgets('REQ001_AC11 cotes de « je » et de la flèche de Retour', (
+      tester,
+    ) async {
+      final e = await exemples(tester);
+      Rect de(String cle, String enfant) => tester.getRect(
+        find.descendant(
+          of: find.byKey(Key(cle)),
+          matching: find.byKey(Key(enfant)),
+        ),
+      );
+      verifie(vis(tester, 'accueil-0'), 12, 88, 148, 81.3, 'je');
+      final pj = de('case-accueil-0', 'picto');
+      expect(pj.width, closeTo(72.3, 0.5));
+      expect(pj.height, closeTo(72.3, 0.5));
+      expect(pj.top, closeTo(93, 0.5));
+      final tj = tester.getRect(
+        find.descendant(
+          of: find.byKey(const Key('case-accueil-0')),
           matching: find.byType(Text),
+        ),
+      );
+      expect(tj.left, closeTo(pj.right + 2, 0.5));
+      expect(tj.center.dy, closeTo(129.2, 0.5));
+      expect((pj.left + tj.right) / 2, closeTo(86, 0.5));
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      final retour = find.descendant(
+        of: find.byKey(const Key('grille')),
+        matching: find.byIcon(Icons.arrow_back),
+      );
+      expect(retour, findsOneWidget);
+      verifie(vis(tester, 'manger-retour'), 12, 88, 148, 81.3, 'case retour');
+      final fl = tester.getRect(find.byKey(const Key('fleche-retour')));
+      expect(fl.width, closeTo(72.3, 0.5));
+      expect(fl.height, closeTo(72.3, 0.5));
+      expect(fl.top, closeTo(93, 0.5));
+      final tr = tester.getRect(
+        find.descendant(
+          of: find.byKey(const Key('case-manger-retour')),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(tr.left, closeTo(fl.right + 2, 0.5));
+      expect(tr.center.dy, closeTo(129.2, 0.5));
+      expect((fl.left + tr.right) / 2, closeTo(86, 0.5));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('REQ001_AC13 cotes des libellés de l\'accueil', (tester) async {
+      await exemples(tester);
+      const centres = [86.0, 242.0, 398.0, 554.0];
+      const hauts = [121.2, 210.5, 299.8];
+      final grille = find.byKey(const Key('grille'));
+      final cases = find.descendant(
+        of: grille,
+        matching: find.byType(CaseWidget),
+      );
+      expect(cases, findsNWidgets(11));
+      for (final c in cases.evaluate()) {
+        final cf = find.byElementPredicate((x) => x == c);
+        final cle = (c.widget.key! as ValueKey<String>).value;
+        final i = int.parse(cle.split('-').last);
+        final texte = find.descendant(of: cf, matching: find.byType(Text));
+        final place = tester.getRect(texte);
+        final picto = tester.getRect(
+          find.descendant(of: cf, matching: find.byKey(const Key('picto'))),
         );
-        expect(tester.widget<Text>(emotions).data, 'Émotions');
+        expect(place.left, closeTo(picto.right + 2, 0.5), reason: cle);
         expect(
-          (emotions.evaluate().single.renderObject! as RenderParagraph)
-              .didExceedMaxLines,
-          isFalse,
+          (picto.left + place.right) / 2,
+          closeTo(centres[i % 4], 0.5),
+          reason: cle,
         );
-        expect(tester.getRect(emotions).right, lessThanOrEqualTo(153 + 0.5));
-        expect(tester.takeException(), isNull);
-      },
-      skip: true, // réécrit en T-043
-    );
+        expect(place.top, closeTo(hauts[i ~/ 4], 0.5), reason: cle);
+        final w = tester.widget<Text>(texte);
+        expect(w.style!.fontSize, 13);
+        expect(w.style!.height, closeTo(16 / 13, 0.01));
+        expect(w.textAlign, TextAlign.left);
+      }
+      final emotions = find.descendant(
+        of: find.byKey(const Key('case-accueil-8')),
+        matching: find.byType(Text),
+      );
+      expect(tester.widget<Text>(emotions).data, 'Émotions');
+      expect(
+        (emotions.evaluate().single.renderObject! as RenderParagraph)
+            .didExceedMaxLines,
+        isFalse,
+      );
+      expect(tester.getRect(emotions).right, lessThanOrEqualTo(153 + 0.5));
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('REQ035_AC6 accueil identique aux échelles 2 et 0,85', (
       tester,
@@ -1730,36 +1728,192 @@ void main() {
       }
     });
 
-    testWidgets(
-      'REQ037_AC10 édition : flèche et « Retour » comme en '
-      'communication',
-      (tester) async {
-        final e = await exemples(tester);
-        e.etat.session.ouvrirGrille('manger');
-        await tester.pumpAndSettle();
-        Rect fleche() => tester.getRect(find.byKey(const Key('fleche-retour')));
-        Rect libelle() => tester.getRect(
+    testWidgets('REQ037_AC10 édition : flèche et « Retour » comme en '
+        'communication', (tester) async {
+      final e = await exemples(tester);
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      Rect fleche() => tester.getRect(find.byKey(const Key('fleche-retour')));
+      Rect libelle() => tester.getRect(
+        find.descendant(
+          of: find.byKey(const Key('case-manger-retour')),
+          matching: find.byKey(const Key('libelle-place')),
+        ),
+      );
+      final f = fleche();
+      final l = libelle();
+      expect(f.width, closeTo(72.3, 0.5));
+      expect(f.height, closeTo(72.3, 0.5));
+      expect(f.top, closeTo(93, 0.5));
+      expect(l.left, closeTo(f.right + 2, 0.5));
+      expect(l.center.dy, closeTo(f.center.dy, 0.5));
+      expect((f.left + l.right) / 2, closeTo(86, 0.5));
+      expect(
+        tester.widget<Icon>(find.byKey(const Key('fleche-retour'))).size,
+        closeTo(72.3, 0.5),
+      );
+      e.etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      expect(fleche(), f);
+      expect(libelle(), l);
+    });
+
+    testWidgets('REQ037_AC10 flèche et « Retour » en 915x412, '
+        'communication et édition', (tester) async {
+      final e = await exemples(tester, taille: const Size(915, 412));
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      void controle() {
+        final f = tester.getRect(find.byKey(const Key('fleche-retour')));
+        final l = tester.getRect(
           find.descendant(
             of: find.byKey(const Key('case-manger-retour')),
-            matching: find.byKey(const Key('libelle-place')),
+            matching: find.byType(Text),
           ),
         );
-        final f = fleche();
-        final l = libelle();
-        verifie(f, 19, 93, 72.3, 72.3, 'flèche');
-        expect(l.left, closeTo(93.3, 0.5));
-        expect(l.center.dy, closeTo(f.center.dy, 0.5));
-        expect(
-          tester.widget<Icon>(find.byKey(const Key('fleche-retour'))).size,
-          closeTo(72.3, 0.5),
-        );
-        e.etat.ouvrirEdition();
-        await tester.pumpAndSettle();
-        expect(fleche(), f);
-        expect(libelle(), l);
-      },
-      skip: true, // réécrit en T-043
-    );
+        expect(f.width, closeTo(89.7, 0.5));
+        expect(f.top, closeTo(93, 0.5));
+        expect((f.left + l.right) / 2, closeTo(120.4, 0.5));
+      }
+
+      controle();
+      e.etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      controle();
+    });
+
+    testWidgets('REQ037_AC11 appui sur la marge de la case-retour de Manger '
+        'ramène à l\'accueil, sans voix', (tester) async {
+      final e = await exemples(tester);
+      e.etat.session.ouvrirGrille('manger');
+      await tester.pumpAndSettle();
+      final avant = e.etat.session.barre.length;
+      final g = await tester.startGesture(const Offset(156, 128.7));
+      await tester.pump(const Duration(milliseconds: 100));
+      await g.up();
+      await tester.pumpAndSettle();
+      expect(e.etat.session.chemin, ['accueil']);
+      expect(e.voix.textesPrononces, isEmpty);
+      expect(e.etat.session.barre.length, avant);
+    });
+
+    testWidgets('REQ033_AC17 toute la case « je » est sensible', (
+      tester,
+    ) async {
+      final e = await exemples(tester);
+      for (final x in const [16.0, 156.0]) {
+        final g = await tester.startGesture(Offset(x, 128.7));
+        await tester.pump(const Duration(milliseconds: 100));
+        await g.up();
+        await tester.pump();
+      }
+      expect(e.voix.textesPrononces, ['je', 'je']);
+      expect(e.etat.session.barre.length, 2);
+
+      // Voile ink 12 % pendant l'appui maintenu.
+      final cf = find.byKey(const Key('case-accueil-0'));
+      final g = await tester.startGesture(const Offset(16, 128.7));
+      await tester.pump(const Duration(milliseconds: 100));
+      final ink = find.descendant(of: cf, matching: find.byType(InkWell));
+      expect(
+        tester.widget<InkWell>(ink).highlightColor,
+        GlypheTokens.clair.ink.withValues(alpha: 0.12),
+      );
+      verifie(tester.getRect(ink), 12, 88, 148, 81.3, 'voile');
+      await g.up();
+      await tester.pumpAndSettle();
+
+      // Anneau de focus autour de la case, décalé de 2.
+      final anneau = find.descendant(
+        of: cf,
+        matching: find.byKey(const Key('anneau-focus')),
+      );
+      var essais = 0;
+      while (anneau.evaluate().isEmpty && essais++ < 30) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+      }
+      expect(anneau, findsOneWidget);
+      // Bord intérieur de l'anneau à 2 de la case dessinée.
+      verifie(
+        tester.getRect(anneau).deflate(GlypheTokens.anneauFocus),
+        10,
+        86,
+        152,
+        85.3,
+        'anneau',
+      );
+
+      // Nœud sémantique = rectangle de la case.
+      final h = tester.ensureSemantics();
+      final sem = tester.getSemantics(
+        find.descendant(of: cf, matching: find.byType(Semantics)).first,
+      );
+      verifie(
+        sem.rect.shift(
+          sem.transform == null
+              ? Offset.zero
+              : MatrixUtils.transformPoint(sem.transform!, Offset.zero),
+        ),
+        12,
+        88,
+        148,
+        81.3,
+        'sémantique',
+      );
+      h.dispose();
+    });
+
+    testWidgets('REQ033_AC16 édition : mêmes rectangles qu\'en communication, '
+        'renommage de « je »', (tester) async {
+      final e = await exemples(tester);
+      List<Rect> mesures() => [
+        for (final c in casesDe(tester)) ...[
+          tester.getRect(
+            find.descendant(
+              of: find.byElementPredicate((x) => x == c),
+              matching: find.byKey(const Key('picto')),
+            ),
+          ),
+          tester.getRect(
+            find.descendant(
+              of: find.byElementPredicate((x) => x == c),
+              matching: find.byType(Text),
+            ),
+          ),
+        ],
+      ];
+      final avant = mesures();
+      e.etat.ouvrirEdition();
+      await tester.pumpAndSettle();
+      final apres = mesures();
+      expect(apres.length, avant.length);
+      for (var i = 0; i < avant.length; i++) {
+        expect(apres[i].left, closeTo(avant[i].left, 0.5));
+        expect(apres[i].top, closeTo(avant[i].top, 0.5));
+        expect(apres[i].width, closeTo(avant[i].width, 0.5));
+        expect(apres[i].height, closeTo(avant[i].height, 0.5));
+      }
+      await tester.tap(find.byKey(const Key('case-accueil-0')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('champ-libelle')),
+        'je veux aller aux toilettes',
+      );
+      await tester.pump();
+      final enreg = find.byKey(const Key('bouton-enregistrer'));
+      await tester.ensureVisible(enreg);
+      await tester.tap(enreg);
+      await tester.pumpAndSettle();
+      final fin = mesures();
+      expect(fin.length, avant.length);
+      expect(fin[0].left, closeTo(19, 0.5));
+      for (var i = 2; i < avant.length; i++) {
+        expect(fin[i].left, closeTo(avant[i].left, 0.5), reason: '$i');
+        expect(fin[i].top, closeTo(avant[i].top, 0.5), reason: '$i');
+        expect(fin[i].width, closeTo(avant[i].width, 0.5), reason: '$i');
+      }
+    });
 
     testWidgets('REQ037_AC9 édition : mêmes pictos qu\'en communication', (
       tester,
