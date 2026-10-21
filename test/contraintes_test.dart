@@ -352,4 +352,11 @@ void main() {
     expect(p, contains('LandscapeRight'));
     expect(p, matches(RegExp(r'<key>UIRequiresFullScreen</key>\s*<true/>')));
   });
+
+  test('timeouts par test configurés (10 s unitaire, 60 s widget)', () {
+    expect(File('dart_test.yaml').readAsStringSync(), contains('timeout: 10s'));
+    final c = File('test/flutter_test_config.dart').readAsStringSync();
+    expect(c, contains('defaultTestTimeout'));
+    expect(c, contains('Duration(seconds: 60)'));
+  });
 }
