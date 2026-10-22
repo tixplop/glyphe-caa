@@ -1,22 +1,26 @@
 # Glyphe
 
-Glyphe est une application de communication améliorée et alternative (CAA) par pictogrammes : on compose une phrase en touchant des cases, puis l'appli la lit à voix haute. Elle est gratuite, non commerciale, fonctionne entièrement hors ligne et ne demande aucune permission réseau (la permission `INTERNET` est retirée du build).
+Glyphe est une application de communication améliorée et alternative (CAA) par pictogrammes : on compose une phrase en touchant des cases, puis l'appli la lit à voix haute. Elle est gratuite et fonctionne entièrement hors ligne.
+
+![Écran de communication : la phrase « je veux » composée en haut, la grille de pictogrammes en dessous](docs/captures/communication.png)
+
+*Écran de communication : chaque case touchée s'ajoute à la phrase, qu'un appui lit à voix haute. Les cases-dossiers, en bleu, ouvrent une autre page.*
+
+![Mode édition de la grille d'accueil, avec des cases vides « + » pour en ajouter](docs/captures/edition.png)
+
+*Mode édition, déverrouillé par l'aidant (appui long sur le cadenas) : ajouter, modifier ou échanger les cases.*
 
 ## Prérequis
 
 - Flutter (canal stable) : `git clone --depth 1 -b stable https://github.com/flutter/flutter.git ~/development/flutter`, puis ajouter `~/development/flutter/bin` au `PATH`.
 - SDK Android (pour construire l'APK uniquement) :
-  1. Télécharger `commandlinetools-linux-*_latest.zip` (page « Command line tools only » de developer.android.com/studio) et le décompresser pour obtenir `~/Android/Sdk/cmdline-tools/latest/` (contenant `bin/`, `lib/`).
+  1. Télécharger `commandlinetools-linux-*_latest.zip` (page « Command line tools only » de developer.android.com/studio) et le décompresser dans `~/Android/Sdk/cmdline-tools/latest/`.
   2. `export ANDROID_HOME=$HOME/Android/Sdk`
   3. `export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools`
-  4. `android --sdk=$HOME/Android/Sdk sdk install platform-tools "platforms;android-35" "build-tools;35.0.0"` (`sdkmanager` y est un alias déprécié ; pour des cmdline-tools plus anciens, l'équivalent est `sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"`).
+  4. `android --sdk=$HOME/Android/Sdk sdk install platform-tools "platforms;android-35" "build-tools;35.0.0"`
   5. `flutter config --android-sdk ~/Android/Sdk`, puis `flutter doctor --android-licenses`.
-
-  Gradle installe lui-même build-tools/platform 36 et CMake au premier build.
 - Java 21.
 - Vérification : `flutter doctor`.
-
-`flutter test` et `flutter analyze` n'ont besoin que de Flutter.
 
 ## Installation
 
@@ -34,15 +38,15 @@ flutter analyze --no-pub && dart format --output=none --set-exit-if-changed lib 
 ## Construire et installer l'APK
 
 ```
-flutter build apk --release
+bash tool/verifier_apk.sh
 adb install build/app/outputs/flutter-apk/app-release.apk
 ```
 
-L'identifiant de l'appli est `org.glyphe.glyphe`. Pour construire l'APK et vérifier que la permission `INTERNET` y est absente et qu'il est signé avec une clé dédiée (pas celle de debug) : `bash tool/verifier_apk.sh`.
+Le script construit l'APK et vérifie qu'il ne demande pas l'accès à Internet et qu'il est signé avec la clé dédiée. N'installer que l'APK qu'il a validé.
 
 ## Signature de l'APK
 
-Une mise à jour de l'appli installée n'est acceptée qu'avec la même clé de signature. La clé de debug, propre à chaque machine, ne convient donc pas : il faut une clé dédiée, conservée durablement.
+Une mise à jour n'est acceptée que si l'APK est signé avec la même clé : il faut une clé dédiée, conservée durablement.
 
 1. Créer la clé, hors du dépôt :
 
@@ -50,7 +54,7 @@ Une mise à jour de l'appli installée n'est acceptée qu'avec la même clé de 
 keytool -genkeypair -v -keystore ~/glyphe-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias glyphe
 ```
 
-2. Créer `android/key.properties` (jamais commité, ignoré par git) :
+2. Créer `android/key.properties` (ignoré par git) :
 
 ```
 storePassword=<mot de passe>
@@ -59,49 +63,37 @@ keyAlias=glyphe
 storeFile=/home/<vous>/glyphe-release.jks
 ```
 
-3. Sauvegarder le keystore et ses mots de passe hors de la machine : sans eux, plus aucune mise à jour de l'appli installée n'est possible.
+3. Sauvegarder le keystore et son mot de passe hors de la machine : sans eux, plus aucune mise à jour n'est possible.
 
-Sans `key.properties`, l'APK est signé avec la clé de debug et `bash tool/verifier_apk.sh` échoue.
-
-Passage unique depuis la 1.7.0 ou antérieure (APK signé en debug) : exporter les grilles (menu « Plus » du mode édition), désinstaller l'appli, installer le nouvel APK, puis importer la sauvegarde.
+Passage unique depuis la 1.7.0 ou antérieure : exporter les grilles (Réglages > Sauvegarde > Exporter) et enregistrer le fichier hors de l'appli, désinstaller l'appli, installer le nouvel APK, importer la sauvegarde, puis redéfinir le code.
 
 ## Régénérer la banque ARASAAC
 
-La banque de pictogrammes embarquée (`assets/arasaac/`) est produite par un outil qui interroge l'API ARASAAC (réseau nécessaire, uniquement au développement) :
+La banque de pictogrammes embarquée (`assets/arasaac/`) est produite à partir de l'API ARASAAC (réseau nécessaire) :
 
 ```
 dart run tool/generer_banque_arasaac.dart
 ```
 
-## iOS
+## Fonctionnement
 
-Le code est compatible iOS, mais il n'est pas compilé ni testé sans Mac : seul Android est construit.
-
-## Disposition (version 1.7.1)
-
-- **Orientation** : l'appli s'affiche en paysage seulement (les deux sens), y compris quand l'appareil est tenu en portrait. Tailles d'écran de référence : de 640×360 à 1280×800 (915×412 pour un Pixel 7 en paysage).
-- **Grilles en 4 colonnes × 3 lignes** : les nouvelles grilles et les grilles d'exemple ont 4 colonnes et 3 lignes. Une installation existante garde ses grilles en 4×4 ; pour les passer en 4×3, utiliser « Taille de la grille » du menu « Plus » du mode édition.
-- **Communication** : en haut, la barre de phrase, sur toute la largeur. De gauche à droite : « Accueil », la phrase composée (un appui sur la phrase la lit à voix haute, un nouvel appui pendant la lecture l'arrête), « Corbeille » (efface toute la phrase en un appui), « Effacer » (le dernier mot) et le cadenas, discret, à maintenir appuyé pour déverrouiller l'édition. Il n'y a plus de bouton Parler ni de barre de navigation : on change de page par les cases-dossiers et on revient par la case « Retour ». La grille de cases remplit le reste de l'écran, sans défilement.
-- **Cases** : sur la grille, le picto occupe toute la hauteur de la case, à gauche, et le libellé, plus petit (13), est à sa droite ; un libellé trop long se termine par « … » (le lecteur d'écran dit le libellé complet) ; une grille aux cases hautes et étroites garde le picto au-dessus du libellé. Dans chaque case, le picto et son libellé forment un bloc centré : un mot court laisse autant de marge des deux côtés, et toute la case reste sensible au toucher. Un libellé trop long est centré avec son « … », comme un mot entier. Les sauvegardes restent compatibles avec la version 1.7.
-- **Édition** : la barre d'édition remplace la barre de phrase ; elle affiche le titre (« Mode édition » et le nom de la grille), « Ajouter une case », le menu « Plus » (code, grilles, taille de la grille, réglages, À propos) et « Terminer » (icône de cadenas) pour refermer l'édition.
-- **Édition d'une case** : les actions sont des icônes dans la barre d'application, toujours visibles : Supprimer, Échanger avec l'emplacement…, Ouvrir (dossier), Enregistrer. Le type de case se choisit entre Mot, Dossier et Retour. On touche l'aperçu de l'image, à côté du libellé, pour choisir l'image.
-- **Case Retour** : une case de type « Retour » ramène à la page précédente. « Nouvelle grille » crée une case Retour. Les grilles existantes ne sont pas modifiées : pour en ajouter une, créer une case de type Retour à la main.
-- **Aide pour l'aidant** : les boutons de la barre d'édition et de l'édition de case ont une info-bulle (appui long) qui donne leur nom ; l'écran de communication n'en affiche pas.
-- **Catégories de cases** : chaque case a une catégorie grammaticale (personne, action, objet, description, social, question, petit mot) qui détermine sa couleur de fond et de contour, comme dans Grid 3.
-- **Thème sombre automatique** : l'appli suit le réglage clair ou sombre du système ; il n'y a pas de réglage manuel. Les couleurs viennent des tokens du design system (`lib/ui/tokens.dart`).
-- **Police** : Atkinson Hyperlegible (Braille Institute), embarquée, licence SIL Open Font License 1.1 (`assets/fonts/OFL.txt`). Aucun téléchargement à l'exécution.
-- **Taille de texte du système** : appliquée aux réglages, à l'édition et à À propos ; l'écran de communication garde sa géométrie.
-- **Sauvegarde** : le format est la version 3 ; les sauvegardes des versions 1 et 2 restent importables. Une sauvegarde de version 3 est refusée par Glyphe 1.2 et les versions antérieures. Les sauvegardes de Glyphe 1.3 à 1.5 sont compatibles avec la 1.6.
+- **Affichage** : en paysage seulement. Les grilles ont 4 colonnes et 3 lignes par défaut ; la taille se change par « Taille de la grille » dans le menu « Plus » du mode édition.
+- **Communication** : la barre du haut contient « Accueil », la phrase composée (un appui la lit, un nouvel appui arrête la lecture), « Corbeille » (efface la phrase), « Effacer » (le dernier mot) et le cadenas. On change de page par les cases-dossiers et on revient par la case « Retour ».
+- **Cases** : chaque case a une catégorie grammaticale (personne, action, objet, description, social, question, petit mot) qui détermine sa couleur. Une case est de type Mot, Dossier ou Retour.
+- **Édition** : la barre d'édition donne accès à « Ajouter une case », au menu « Plus » (code, grilles, taille de la grille, réglages, À propos) et à « Terminer ». En édition d'une case : Supprimer, Échanger avec l'emplacement…, Ouvrir (dossier), Enregistrer ; on touche l'aperçu de l'image pour la choisir.
+- **Thème** : clair ou sombre, selon le réglage du système.
 
 ## Usage
 
 - **Déverrouiller l'édition** : maintenir le cadenas appuyé 3 secondes. Si un code est défini, il est demandé.
 - **Code** : le code de déverrouillage (4 chiffres) se définit, se modifie ou se supprime dans les réglages.
-- **Code oublié** : sur l'écran de saisie du code, « Code oublié » affiche une phrase à recopier. Si la recopie est correcte, le code est supprimé et le mode édition s'ouvre (ensuite l'appui long seul suffit ; on peut redéfinir un code dans les réglages). Si la recopie est fausse, le code est conservé et l'appli reste verrouillée.
-- **Export / import** : dans les réglages, section « Sauvegarde », « Exporter » crée un fichier de sauvegarde et « Importer » le restaure. L'import remplace toutes les données actuelles après confirmation.
+- **Code oublié** : sur l'écran de saisie du code, « Code oublié » affiche une phrase à recopier. Si la recopie est correcte, le code est supprimé et le mode édition s'ouvre.
+- **Export / import** : dans les réglages, section « Sauvegarde ». L'import remplace toutes les données actuelles après confirmation.
 
 ## Licence et attribution
 
 Glyphe est gratuit et réservé à un usage non commercial.
 
-Les symboles pictographiques utilisés sont la propriété du Gouvernement d'Aragon et ont été créés par Sergio Palao pour ARASAAC (http://www.arasaac.org), qui les distribue sous licence Creative Commons BY-NC-SA (usage non commercial, partage dans les mêmes conditions).
+Les symboles pictographiques utilisés sont la propriété du Gouvernement d'Aragon et ont été créés par Sergio Palao pour ARASAAC (http://www.arasaac.org), qui les distribue sous licence Creative Commons BY-NC-SA.
+
+La police Atkinson Hyperlegible (Braille Institute) est distribuée sous licence SIL Open Font License 1.1 (`assets/fonts/OFL.txt`).
